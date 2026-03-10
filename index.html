@@ -987,8 +987,8 @@ let userAnswers = {};
 let currentSubject = 'คณิตศาสตร์';
 
 // ========== GEMINI API ==========
-const GEMINI_API_KEY = localStorage.getItem('gemini_api_key') || 'AIzaSyAKMKoEmhlm0d7erxbE20L_DkESTWzftrI';
-const GEMINI_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent`;
+const GEMINI_API_KEY = localStorage.getItem('gemini_api_key') || 'AIzaSyBYIa3ao3jxGFCLm1F5xd3MNN4yMGtqYyU';
+const GEMINI_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent`;
 
 async function callGemini(systemPrompt, userPrompt) {
   const key = localStorage.getItem('gemini_api_key') || GEMINI_API_KEY;
