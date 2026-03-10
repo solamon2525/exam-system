@@ -126,6 +126,23 @@
     margin-bottom: 3px;
   }
   .subject-btn:hover { background: #eef2ff; }
+  .subject-count {
+    margin-left: auto;
+    background: rgba(26,63,160,0.12);
+    color: var(--blue);
+    font-size: 0.7rem;
+    font-weight: 700;
+    padding: 1px 6px;
+    border-radius: 20px;
+    min-width: 20px;
+    text-align: center;
+    display: none;
+  }
+  .subject-btn.active .subject-count {
+    background: rgba(15,37,87,0.2);
+    color: var(--navy);
+  }
+  .subject-count.has-data { display: inline-block; }
   .subject-btn.active { background: var(--blue); color: white; font-weight: 600; }
   .subject-icon { font-size: 1.1rem; width: 24px; text-align: center; }
 
@@ -445,16 +462,16 @@
   <aside class="sidebar no-print">
     <div class="sidebar-section">
       <div class="sidebar-label">รายวิชา</div>
-      <button class="subject-btn active" onclick="selectSubject(this,'คณิตศาสตร์')"><span class="subject-icon">🔢</span>คณิตศาสตร์</button>
-      <button class="subject-btn" onclick="selectSubject(this,'ภาษาไทย')"><span class="subject-icon">🇹🇭</span>ภาษาไทย</button>
-      <button class="subject-btn" onclick="selectSubject(this,'สังคมศึกษา')"><span class="subject-icon">🌍</span>สังคมศึกษา</button>
-      <button class="subject-btn" onclick="selectSubject(this,'วิทยาศาสตร์')"><span class="subject-icon">🔬</span>วิทยาศาสตร์</button>
-      <button class="subject-btn" onclick="selectSubject(this,'ภาษาอังกฤษ')"><span class="subject-icon">🔤</span>ภาษาอังกฤษ</button>
-      <button class="subject-btn" onclick="selectSubject(this,'ประวัติศาสตร์')"><span class="subject-icon">📜</span>ประวัติศาสตร์</button>
-      <button class="subject-btn" onclick="selectSubject(this,'สุขศึกษา')"><span class="subject-icon">💪</span>สุขศึกษา</button>
-      <button class="subject-btn" onclick="selectSubject(this,'ศิลปะ')"><span class="subject-icon">🎨</span>ศิลปะ</button>
-      <button class="subject-btn" onclick="selectSubject(this,'การงานอาชีพ')"><span class="subject-icon">🔧</span>การงานอาชีพ</button>
-      <button class="subject-btn" onclick="selectSubject(this,'ด้านทุจริต')"><span class="subject-icon">⚖️</span>ด้านทุจริต</button>
+      <button class="subject-btn active" data-subject="คณิตศาสตร์" onclick="selectSubject(this,'คณิตศาสตร์')"><span class="subject-icon">🔢</span>คณิตศาสตร์<span class="subject-count" id="sc-คณิตศาสตร์"></span></button>
+      <button class="subject-btn" data-subject="ภาษาไทย" onclick="selectSubject(this,'ภาษาไทย')"><span class="subject-icon">🇹🇭</span>ภาษาไทย<span class="subject-count" id="sc-ภาษาไทย"></span></button>
+      <button class="subject-btn" data-subject="สังคมศึกษา" onclick="selectSubject(this,'สังคมศึกษา')"><span class="subject-icon">🌍</span>สังคมศึกษา<span class="subject-count" id="sc-สังคมศึกษา"></span></button>
+      <button class="subject-btn" data-subject="วิทยาศาสตร์" onclick="selectSubject(this,'วิทยาศาสตร์')"><span class="subject-icon">🔬</span>วิทยาศาสตร์<span class="subject-count" id="sc-วิทยาศาสตร์"></span></button>
+      <button class="subject-btn" data-subject="ภาษาอังกฤษ" onclick="selectSubject(this,'ภาษาอังกฤษ')"><span class="subject-icon">🔤</span>ภาษาอังกฤษ<span class="subject-count" id="sc-ภาษาอังกฤษ"></span></button>
+      <button class="subject-btn" data-subject="ประวัติศาสตร์" onclick="selectSubject(this,'ประวัติศาสตร์')"><span class="subject-icon">📜</span>ประวัติศาสตร์<span class="subject-count" id="sc-ประวัติศาสตร์"></span></button>
+      <button class="subject-btn" data-subject="สุขศึกษา" onclick="selectSubject(this,'สุขศึกษา')"><span class="subject-icon">💪</span>สุขศึกษา<span class="subject-count" id="sc-สุขศึกษา"></span></button>
+      <button class="subject-btn" data-subject="ศิลปะ" onclick="selectSubject(this,'ศิลปะ')"><span class="subject-icon">🎨</span>ศิลปะ<span class="subject-count" id="sc-ศิลปะ"></span></button>
+      <button class="subject-btn" data-subject="การงานอาชีพ" onclick="selectSubject(this,'การงานอาชีพ')"><span class="subject-icon">🔧</span>การงานอาชีพ<span class="subject-count" id="sc-การงานอาชีพ"></span></button>
+      <button class="subject-btn" data-subject="ด้านทุจริต" onclick="selectSubject(this,'ด้านทุจริต')"><span class="subject-icon">⚖️</span>ด้านทุจริต<span class="subject-count" id="sc-ด้านทุจริต"></span></button>
     </div>
     <div class="divider"></div>
     <div class="sidebar-section">
@@ -769,6 +786,19 @@
       </div>
 
       <div id="exam-area" style="display:none">
+        <!-- Timer Bar -->
+        <div id="timer-bar" style="display:none;position:sticky;top:0;z-index:100;background:white;padding:10px 16px;border-radius:14px;margin-bottom:12px;box-shadow:0 2px 12px rgba(0,0,0,0.1);display:none;align-items:center;gap:14px">
+          <div style="font-size:1.6rem" id="timer-icon">⏱️</div>
+          <div style="flex:1">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+              <span style="font-family:Mitr,sans-serif;font-weight:700;font-size:0.9rem" id="timer-label">เวลาที่เหลือ</span>
+              <span style="font-family:monospace;font-size:1.4rem;font-weight:800;letter-spacing:2px" id="timer-display">30:00</span>
+            </div>
+            <div style="background:#e2e8f0;border-radius:20px;height:8px;overflow:hidden">
+              <div id="timer-progress" style="height:100%;border-radius:20px;background:var(--green);transition:width 1s linear;width:100%"></div>
+            </div>
+          </div>
+        </div>
         <!-- กฎการสอบ -->
         <div class="card" style="border:2px solid #fbbf24;background:linear-gradient(135deg,#fffbeb,#fef3c7)">
           <div style="display:flex;align-items:flex-start;gap:14px">
@@ -870,6 +900,14 @@
         <div class="card-title">📊 สรุปผลการสอบแยกรายวิชา</div>
         <div id="dash-subject-summary">
           <div class="empty-state"><div class="empty-icon">📊</div><h3>ยังไม่มีข้อมูล</h3><p>ทำข้อสอบและส่งผลก่อนนะครับ</p></div>
+        </div>
+      </div>
+
+      <!-- ติดตามรายบุคคล -->
+      <div class="card">
+        <div class="card-title">🎯 ติดตามรายบุคคล — วิชาที่สอบไปแล้ว</div>
+        <div id="dash-student-tracking">
+          <div class="empty-state"><div class="empty-icon">🎯</div><h3>ยังไม่มีข้อมูล</h3></div>
         </div>
       </div>
 
@@ -1482,6 +1520,51 @@ function printExam() {
 }
 
 // ========== EXAM PAGE ==========
+let examTimerInterval = null;
+let examTimerSeconds = 0;
+let examTimerTotal = 0;
+
+function startExamTimer(minutes) {
+  clearInterval(examTimerInterval);
+  examTimerSeconds = minutes * 60;
+  examTimerTotal = examTimerSeconds;
+
+  const bar = document.getElementById('timer-bar');
+  bar.style.display = 'flex';
+
+  function tick() {
+    examTimerSeconds--;
+    const m = Math.floor(examTimerSeconds / 60);
+    const s = examTimerSeconds % 60;
+    const display = document.getElementById('timer-display');
+    const prog = document.getElementById('timer-progress');
+    const icon = document.getElementById('timer-icon');
+    const label = document.getElementById('timer-label');
+    if (display) display.textContent = `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+    const pct = (examTimerSeconds / examTimerTotal) * 100;
+    if (prog) {
+      prog.style.width = pct + '%';
+      prog.style.background = pct > 50 ? 'var(--green)' : pct > 20 ? '#f59e0b' : 'var(--red)';
+    }
+    if (examTimerSeconds <= 60 && icon) icon.textContent = '⚠️';
+    if (examTimerSeconds <= 300 && label) { label.textContent = '⚠️ เวลาใกล้หมด!'; label.style.color = '#dc2626'; }
+    if (examTimerSeconds <= 0) {
+      clearInterval(examTimerInterval);
+      if (display) display.textContent = '00:00';
+      toast('⏰ หมดเวลา! ส่งข้อสอบอัตโนมัติ', 'error');
+      setTimeout(() => submitExam(true), 1500);
+    }
+  }
+  examTimerInterval = setInterval(tick, 1000);
+}
+
+function stopExamTimer() {
+  clearInterval(examTimerInterval);
+  examTimerInterval = null;
+  const bar = document.getElementById('timer-bar');
+  if (bar) bar.style.display = 'none';
+}
+
 function renderExamSets() {
   const el = document.getElementById('exam-set-list');
   if (examSets.length === 0) {
@@ -1517,13 +1600,11 @@ function startExam(id) {
   document.getElementById('exam-area').style.display = '';
   document.getElementById('score-result').style.display = 'none';
   document.getElementById('exam-area-title').textContent = '📝 ' + currentExamSet.title;
-  // Reset student fields & sync dropdown
   document.getElementById('student-name').value = '';
   document.getElementById('student-class').value = '';
   document.getElementById('student-no').value = '';
   document.getElementById('student-select').value = '';
   renderStudentSidebar();
-  // Reset progress
   const btn = document.getElementById('submit-btn');
   if (btn) { btn.disabled = true; btn.style.opacity = '0.45'; btn.style.cursor = 'not-allowed'; btn.textContent = '✅ ส่งข้อสอบ & ตรวจ'; }
   const hint = document.getElementById('submit-hint');
@@ -1534,6 +1615,9 @@ function startExam(id) {
   if (bar) bar.style.width = '0%';
   const prog = document.getElementById('answer-progress');
   if (prog) prog.textContent = `ตอบแล้ว 0/${currentExamSet.questions.length} ข้อ`;
+
+  // เริ่ม timer 30 นาที
+  startExamTimer(30);
 
   // Render questions
   const qArea = document.getElementById('exam-questions-area');
@@ -1652,13 +1736,12 @@ function clearAnswers() {
   updateProgress();
 }
 
-function submitExam() {
+function submitExam(forceSubmit = false) {
   if (!currentExamSet) return;
   const total = currentExamSet.questions.length;
   const answered = Object.keys(userAnswers).length;
 
-  // ตรวจว่าตอบครบยัง
-  if (answered < total) {
+  if (!forceSubmit && answered < total) {
     const missing = [];
     for (let i = 0; i < total; i++) {
       if (userAnswers[i] === undefined) missing.push(`ข้อ ${i+1}`);
@@ -1667,11 +1750,16 @@ function submitExam() {
     const list = document.getElementById('unanswered-list');
     if (warn) warn.style.display = '';
     if (list) list.textContent = missing.join(', ');
-    // Scroll ไปที่คำเตือน
     warn?.scrollIntoView({ behavior: 'smooth', block: 'center' });
     toast(`⚠️ ยังไม่ได้ตอบ ${missing.length} ข้อ`, 'error');
     return;
   }
+
+  // หยุด timer และคำนวณเวลาที่ใช้
+  const timeUsedSec = examTimerTotal - examTimerSeconds;
+  const timeUsedMin = Math.floor(timeUsedSec / 60);
+  const timeUsedStr = `${timeUsedMin} นาที ${timeUsedSec % 60} วินาที`;
+  stopExamTimer();
 
   let correct = 0;
   currentExamSet.questions.forEach((q, i) => {
@@ -1707,7 +1795,8 @@ function submitExam() {
         <div class="score-num" style="color:${pass ? 'var(--green)' : 'var(--red)'}">${correct}/${total}</div>
         <div class="score-label">คะแนนที่ได้</div>
         <div class="score-grade">${pct}% — ระดับ ${grade}</div>
-        <div style="margin-top:12px;font-size:1.1rem">${pass ? '🎉 ผ่านการสอบ!' : '📚 ต้องทบทวนเพิ่ม'}</div>
+        <div style="margin-top:6px;font-size:0.85rem;color:#64748b">⏱️ ใช้เวลา ${timeUsedStr}</div>
+        <div style="margin-top:10px;font-size:1.1rem">${pass ? '🎉 ผ่านการสอบ!' : '📚 ต้องทบทวนเพิ่ม'}</div>
       </div>
       <div style="display:flex;gap:10px;flex-wrap:wrap">
         <button class="btn btn-outline" onclick="clearAnswers()">🔄 ทำใหม่</button>
@@ -1724,6 +1813,7 @@ function submitExam() {
     id: Date.now(), studentName, studentClass, studentNo,
     examTitle: currentExamSet.title, subject: currentExamSet.subject,
     score: correct, total, pct, pass,
+    timeUsed: timeUsedStr,
     date: new Date().toLocaleString('th-TH')
   });
   localStorage.setItem('examhistory', JSON.stringify(examHistory)); if(window._syncExamData) window._syncExamData();
@@ -1804,6 +1894,76 @@ function renderDashboard() {
         </div>
       `;
     }).join('');
+  }
+
+  // Student tracking — วิชาที่แต่ละคนสอบไปแล้ว
+  const trackEl = document.getElementById('dash-student-tracking');
+  if (trackEl) {
+    const allSubjects = [...new Set(examHistory.map(h => h.subject))].sort();
+    const studentNames = [...new Set(examHistory.map(h => h.studentName).filter(n => n && n !== 'ไม่ระบุชื่อ'))].sort();
+    if (studentNames.length === 0) {
+      trackEl.innerHTML = `<div class="empty-state"><div class="empty-icon">🎯</div><h3>ยังไม่มีข้อมูล</h3><p>ทำข้อสอบและใส่ชื่อเพื่อติดตาม</p></div>`;
+    } else {
+      // สร้าง map: student -> subject -> [ผลล่าสุด]
+      const map = {};
+      studentNames.forEach(n => { map[n] = {}; });
+      examHistory.forEach(h => {
+        if (!h.studentName || h.studentName === 'ไม่ระบุชื่อ') return;
+        if (!map[h.studentName][h.subject]) map[h.studentName][h.subject] = [];
+        map[h.studentName][h.subject].push(h);
+      });
+
+      trackEl.innerHTML = `
+        <div style="overflow-x:auto">
+          <table style="width:100%;border-collapse:collapse;font-size:0.85rem">
+            <thead>
+              <tr style="background:#f8fafc">
+                <th style="padding:10px 14px;text-align:left;border-bottom:2px solid #e2e8f0;white-space:nowrap;font-size:0.8rem;color:#64748b">👤 ชื่อนักเรียน</th>
+                ${allSubjects.map(s => `<th style="padding:10px 8px;text-align:center;border-bottom:2px solid #e2e8f0;white-space:nowrap;font-size:0.78rem;color:#64748b">${SUBJECT_ICONS[s]||'📖'}<br>${s}</th>`).join('')}
+                <th style="padding:10px 8px;text-align:center;border-bottom:2px solid #e2e8f0;font-size:0.78rem;color:#64748b">สอบแล้ว</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${studentNames.map(name => {
+                const row = map[name];
+                const doneCount = Object.keys(row).length;
+                const totalSubjects = allSubjects.length;
+                const pct = Math.round(doneCount / totalSubjects * 100);
+                return `
+                  <tr style="border-bottom:1px solid #f0f0f0" onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background=''">
+                    <td style="padding:10px 14px;font-weight:600;white-space:nowrap">${name}</td>
+                    ${allSubjects.map(s => {
+                      const records = row[s];
+                      if (!records || records.length === 0) {
+                        return `<td style="text-align:center;padding:8px"><span style="font-size:1.1rem;opacity:0.25">○</span></td>`;
+                      }
+                      const best = records.reduce((a,b) => a.pct > b.pct ? a : b);
+                      const bg = best.pct >= 80 ? '#dcfce7' : best.pct >= 50 ? '#fef9c3' : '#fee2e2';
+                      const col = best.pct >= 80 ? '#15803d' : best.pct >= 50 ? '#92400e' : '#b91c1c';
+                      const ico = best.pass ? '✅' : '❌';
+                      return `<td style="text-align:center;padding:6px">
+                        <div title="สอบ ${records.length} ครั้ง | ดีสุด ${best.pct}%" style="display:inline-flex;flex-direction:column;align-items:center;gap:1px;background:${bg};border-radius:8px;padding:4px 8px;cursor:default">
+                          <span style="font-size:0.95rem">${ico}</span>
+                          <span style="font-size:0.72rem;font-weight:700;color:${col}">${best.pct}%</span>
+                        </div>
+                      </td>`;
+                    }).join('')}
+                    <td style="text-align:center;padding:8px">
+                      <div style="font-size:0.8rem;font-weight:700;color:${pct===100?'var(--green)':'var(--blue)'}">${doneCount}/${totalSubjects}</div>
+                      <div style="background:#e2e8f0;border-radius:20px;height:4px;width:60px;margin:3px auto;overflow:hidden">
+                        <div style="height:100%;background:${pct===100?'var(--green)':'var(--blue)'};width:${pct}%;border-radius:20px"></div>
+                      </div>
+                    </td>
+                  </tr>`;
+              }).join('')}
+            </tbody>
+          </table>
+        </div>
+        <div style="margin-top:10px;font-size:0.78rem;color:var(--muted)">
+          ✅ = ผ่าน &nbsp;|&nbsp; ❌ = ไม่ผ่าน &nbsp;|&nbsp; ○ = ยังไม่ได้สอบ &nbsp;|&nbsp; แสดงคะแนนดีที่สุด (hover เพื่อดูรายละเอียด)
+        </div>
+      `;
+    }
   }
 
   // Student table
@@ -2139,6 +2299,23 @@ function updateStats() {
   document.getElementById('stat-exams').textContent = examSets.length;
   if (questionBank.length > 0) document.getElementById('create-exam-card').style.display = '';
   renderSubjectSummary();
+  renderSubjectCounts();
+}
+
+function renderSubjectCounts() {
+  const subjects = ['คณิตศาสตร์','ภาษาไทย','สังคมศึกษา','วิทยาศาสตร์','ภาษาอังกฤษ','ประวัติศาสตร์','สุขศึกษา','ศิลปะ','การงานอาชีพ','ด้านทุจริต'];
+  subjects.forEach(s => {
+    const el = document.getElementById('sc-' + s);
+    if (!el) return;
+    const cnt = questionBank.filter(q => q.subject === s).length;
+    if (cnt > 0) {
+      el.textContent = cnt;
+      el.classList.add('has-data');
+    } else {
+      el.textContent = '';
+      el.classList.remove('has-data');
+    }
+  });
 }
 
 const SUBJECT_ICONS = {
