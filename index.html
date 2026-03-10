@@ -498,6 +498,11 @@
         <div class="stat-chip">✅ <div><div class="stat-value" id="stat-exams">0</div><div style="font-size:0.75rem;color:var(--muted)">ชุดข้อสอบ</div></div></div>
       </div>
 
+      <!-- Subject Summary Panel -->
+      <div id="subject-summary-panel" style="display:none">
+        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:10px;margin-bottom:4px" id="subject-summary-grid"></div>
+      </div>
+
       <!-- AI Generate -->
       <div class="card">
         <div class="card-title">🤖 AI ช่วยสร้างข้อสอบ <span class="badge badge-gold">Claude AI</span></div>
@@ -705,9 +710,10 @@
           <div class="ml-auto flex-row" style="gap:8px">
             <button class="btn btn-primary btn-sm" onclick="exportAllQuestions()">📤 Export ทุกวิชา</button>
             <label class="btn btn-outline btn-sm" style="cursor:pointer;margin:0">
-              📥 Import ทุกวิชา
+              📥 Import ไฟล์ .json
               <input type="file" id="import-all-file" accept=".json" style="display:none" onchange="importAllQuestions(event)">
             </label>
+            <button class="btn btn-outline btn-sm" onclick="showImportPaste()">📋 Import วาง JSON</button>
             <select id="filter-subject" style="padding:6px 10px;border-radius:7px;border:1.5px solid var(--border);font-family:Sarabun,sans-serif;font-size:0.82rem" onchange="renderBank()">
               <option value="">ทุกวิชา</option>
               <option>คณิตศาสตร์</option><option>ภาษาไทย</option><option>สังคมศึกษา</option>
@@ -2021,58 +2027,109 @@ function importAllQuestions(event) {
   if (!file) return;
   const reader = new FileReader();
   reader.onload = e => {
-    try {
-      const data = JSON.parse(e.target.result);
-
-      // รองรับทั้ง format ใหม่ (มี .questions) และ array เปล่า
-      let incoming = Array.isArray(data) ? data : (data.questions || []);
-      if (!incoming.length) throw new Error('ไม่พบข้อสอบในไฟล์');
-
-      // ตรวจ field ที่จำเป็น
-      const valid = incoming.filter(q => q.question && Array.isArray(q.options) && q.options.length >= 4);
-      const invalid = incoming.length - valid.length;
-
-      // ป้องกันซ้ำโดยเช็คจาก question text
-      const existingTexts = new Set(questionBank.map(q => q.question));
-      const newOnly = valid.filter(q => !existingTexts.has(q.question));
-      const duplicates = valid.length - newOnly.length;
-
-      if (newOnly.length === 0) {
-        toast(`ข้อสอบทั้งหมดมีอยู่แล้วในคลัง (${duplicates} ซ้ำ)`, 'error');
-        event.target.value = '';
-        return;
-      }
-
-      // Normalize options ให้มี ก. ข. ค. ง.
-      const labels = ['ก. ', 'ข. ', 'ค. ', 'ง. '];
-      newOnly.forEach(q => {
-        q.id = q.id || (Date.now() + Math.random());
-        q.options = q.options.map((opt, i) => {
-          const stripped = String(opt).replace(/^[กขคง][.)]\s*/u, '').trim();
-          return labels[i] + stripped;
-        });
-        q.answer = Math.min(Math.max(parseInt(q.answer) || 0, 0), 3);
-        questionBank.push(q);
-      });
-
-      saveBank();
-      renderBank();
-      updateStats();
-      document.getElementById('create-exam-card').style.display = questionBank.length > 0 ? '' : 'none';
-
-      // สรุปผล
-      const subjectsIn = [...new Set(newOnly.map(q => q.subject))];
-      let msg = `✅ Import สำเร็จ ${newOnly.length} ข้อ (${subjectsIn.length} วิชา)`;
-      if (duplicates) msg += ` | ข้ามซ้ำ ${duplicates}`;
-      if (invalid) msg += ` | ผิดรูปแบบ ${invalid}`;
-      toast(msg, 'success');
-
-    } catch (err) {
-      toast('❌ ไฟล์ผิดรูปแบบ: ' + err.message, 'error');
-    }
-    event.target.value = ''; // reset input
+    processImportData(e.target.result);
+    event.target.value = '';
   };
   reader.readAsText(file, 'UTF-8');
+}
+
+function importFromPaste() {
+  const text = document.getElementById('import-paste-area').value.trim();
+  if (!text) { toast('กรุณาวาง JSON ก่อน', 'error'); return; }
+  processImportData(text);
+  document.getElementById('import-paste-area').value = '';
+}
+
+function showImportPaste() {
+  const modal = document.createElement('div');
+  modal.id = 'import-paste-modal';
+  modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px';
+  modal.innerHTML = `
+    <div style="background:white;border-radius:16px;padding:24px;max-width:680px;width:100%;max-height:80vh;display:flex;flex-direction:column;gap:14px">
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <div style="font-family:Mitr,sans-serif;font-weight:700;font-size:1.1rem">📋 Import — วาง JSON</div>
+        <button onclick="document.getElementById('import-paste-modal').remove()" style="background:none;border:none;font-size:1.4rem;cursor:pointer;color:#888">✕</button>
+      </div>
+      <div style="font-size:0.83rem;color:#555;background:#f0f4ff;padding:10px 14px;border-radius:8px">
+        💡 คัดลอก JSON จากหน้า Export แล้ววางในช่องด้านล่างได้เลย
+      </div>
+      <textarea id="import-paste-area" style="flex:1;min-height:300px;padding:12px;border:1.5px solid #e2e8f0;border-radius:10px;font-family:monospace;font-size:0.78rem;resize:vertical" placeholder='วาง JSON ที่นี่... เช่น {"version":"1.0","questions":[...]} หรือ [{"question":"..."}]'></textarea>
+      <div style="display:flex;gap:10px">
+        <button onclick="importFromPaste();document.getElementById('import-paste-modal').remove()" 
+          style="flex:1;padding:10px;background:var(--blue);color:white;border:none;border-radius:8px;font-family:Sarabun,sans-serif;font-size:0.9rem;font-weight:600;cursor:pointer">
+          📥 Import เลย
+        </button>
+        <button onclick="document.getElementById('import-paste-modal').remove()" 
+          style="padding:10px 20px;background:white;border:1.5px solid #e2e8f0;border-radius:8px;font-family:Sarabun,sans-serif;font-size:0.9rem;cursor:pointer">ปิด</button>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(modal);
+  setTimeout(() => document.getElementById('import-paste-area')?.focus(), 100);
+}
+
+function processImportData(raw) {
+  try {
+    // ล้าง BOM และ whitespace
+    let text = raw.trim().replace(/^\uFEFF/, '');
+
+    // หา JSON array หรือ object
+    const s = text.indexOf('[') !== -1 ? text.indexOf('[') : text.indexOf('{');
+    const e = text.lastIndexOf(']') !== -1 ? text.lastIndexOf(']') : text.lastIndexOf('}');
+    if (s === -1 || e === -1) throw new Error('ไม่พบข้อมูลที่ถูกต้อง');
+    text = text.substring(s, e + 1);
+
+    const data = JSON.parse(text);
+
+    // รองรับทุก format: array, {questions:[]}, {version,questions:[]}
+    let incoming = Array.isArray(data) ? data : (data.questions || []);
+    if (!incoming.length) throw new Error('ไม่พบข้อสอบในข้อมูล');
+
+    // ตรวจ field — รองรับทั้ง q และ question
+    const valid = incoming.filter(q => (q.question || q.q) && Array.isArray(q.options) && q.options.length >= 4);
+    if (!valid.length) throw new Error(`พบข้อมูล ${incoming.length} รายการ แต่ไม่มีรูปแบบถูกต้อง (ต้องมี question, options 4 ตัว)`);
+
+    const invalid = incoming.length - valid.length;
+    const existingTexts = new Set(questionBank.map(q => q.question));
+    const newOnly = valid.filter(q => !existingTexts.has(q.question || q.q));
+    const duplicates = valid.length - newOnly.length;
+
+    if (newOnly.length === 0) {
+      toast(`ข้อสอบทั้งหมดมีอยู่แล้วในคลัง (${duplicates} ซ้ำ)`, 'error');
+      return;
+    }
+
+    const labels = ['ก. ', 'ข. ', 'ค. ', 'ง. '];
+    newOnly.forEach(q => {
+      q.id = q.id || (Date.now() + Math.random());
+      q.question = q.question || q.q;
+      q.options = q.options.map((opt, i) => {
+        const stripped = String(opt).replace(/^[กขคง][.)]\s*/u, '').trim();
+        return labels[i] + stripped;
+      });
+      q.answer = Math.min(Math.max(parseInt(q.answer) || 0, 0), 3);
+      questionBank.push(q);
+    });
+
+    saveBank();
+    renderBank();
+    updateStats();
+    document.getElementById('create-exam-card').style.display = '';
+
+    let msg = `✅ Import สำเร็จ ${newOnly.length} ข้อ`;
+    const subjectsIn = [...new Set(newOnly.map(q => q.subject).filter(Boolean))];
+    if (subjectsIn.length) msg += ` (${subjectsIn.length} วิชา)`;
+    if (duplicates) msg += ` | ข้ามซ้ำ ${duplicates}`;
+    if (invalid) msg += ` | ผิดรูปแบบ ${invalid}`;
+    toast(msg, 'success');
+
+    // ปิด import panel
+    document.getElementById('import-card').style.display = 'none';
+
+  } catch (err) {
+    toast('❌ ' + err.message, 'error');
+    console.error('Import error:', err);
+  }
 }
 
 // ========== STATS ==========
@@ -2081,6 +2138,59 @@ function updateStats() {
   document.getElementById('stat-subject-count').textContent = new Set(questionBank.map(q=>q.subject)).size;
   document.getElementById('stat-exams').textContent = examSets.length;
   if (questionBank.length > 0) document.getElementById('create-exam-card').style.display = '';
+  renderSubjectSummary();
+}
+
+const SUBJECT_ICONS = {
+  'คณิตศาสตร์':'🔢','ภาษาไทย':'🇹🇭','สังคมศึกษา':'🌍','วิทยาศาสตร์':'🔬',
+  'ภาษาอังกฤษ':'🔤','ประวัติศาสตร์':'📜','สุขศึกษา':'💪','ศิลปะ':'🎨',
+  'การงานอาชีพ':'🔧','ด้านทุจริต':'⚖️'
+};
+const SUBJECT_COLORS = [
+  ['#eff6ff','#1d4ed8'],['#fdf4ff','#7e22ce'],['#fff7ed','#c2410c'],['#f0fdf4','#15803d'],
+  ['#fefce8','#a16207'],['#fff1f2','#be123c'],['#f0f9ff','#0369a1'],['#fdf2f8','#9d174d'],
+  ['#f7fee7','#3f6212'],['#fef3c7','#92400e']
+];
+
+function renderSubjectSummary() {
+  const panel = document.getElementById('subject-summary-panel');
+  const grid = document.getElementById('subject-summary-grid');
+  if (!panel || !grid) return;
+
+  const subjects = [...new Set(questionBank.map(q => q.subject))];
+  if (subjects.length === 0) { panel.style.display = 'none'; return; }
+
+  panel.style.display = '';
+  grid.innerHTML = subjects.map((subject, idx) => {
+    const qCount = questionBank.filter(q => q.subject === subject).length;
+    const setCount = examSets.filter(s => s.subject === subject || s.questions?.some(q => q.subject === subject)).length;
+    const [bg, color] = SUBJECT_COLORS[idx % SUBJECT_COLORS.length];
+    const icon = SUBJECT_ICONS[subject] || '📖';
+    const bar = Math.min(100, Math.round((qCount / Math.max(...subjects.map(s => questionBank.filter(q=>q.subject===s).length))) * 100));
+    return `
+      <div style="background:${bg};border:1.5px solid ${color}22;border-radius:14px;padding:12px 14px;cursor:pointer;transition:transform 0.15s" 
+           onclick="document.getElementById('filter-subject').value='${subject}';renderBank();document.getElementById('filter-subject').dispatchEvent(new Event('change'))"
+           onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform=''">
+        <div style="display:flex;align-items:center;gap:7px;margin-bottom:6px">
+          <span style="font-size:1.3rem">${icon}</span>
+          <span style="font-weight:700;font-size:0.85rem;color:${color};flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${subject}</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:6px">
+          <div>
+            <div style="font-size:1.5rem;font-weight:800;color:${color};line-height:1">${qCount}</div>
+            <div style="font-size:0.72rem;color:#888">ข้อสอบ</div>
+          </div>
+          <div style="text-align:right">
+            <div style="font-size:1.1rem;font-weight:700;color:${color};line-height:1">${setCount}</div>
+            <div style="font-size:0.72rem;color:#888">ชุด</div>
+          </div>
+        </div>
+        <div style="background:${color}22;border-radius:20px;height:5px;overflow:hidden">
+          <div style="height:100%;border-radius:20px;background:${color};width:${bar}%;transition:width 0.5s"></div>
+        </div>
+      </div>
+    `;
+  }).join('');
 }
 
 // ========== IMPORT ==========
