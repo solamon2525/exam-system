@@ -2235,13 +2235,30 @@ function showImportPaste() {
 
 function processImportData(raw) {
   try {
-    // ล้าง BOM และ whitespace
-    let text = raw.trim().replace(/^\uFEFF/, '');
+    // ล้าง BOM, whitespace, และอักขระพิเศษที่อาจติดมา
+    let text = raw.trim()
+      .replace(/^\uFEFF/, '')       // BOM
+      .replace(/\u00A0/g, ' ')      // non-breaking space
+      .replace(/[\u200B-\u200D\uFEFF]/g, ''); // zero-width chars
 
-    // หา JSON array หรือ object
-    const s = text.indexOf('[') !== -1 ? text.indexOf('[') : text.indexOf('{');
-    const e = text.lastIndexOf(']') !== -1 ? text.lastIndexOf(']') : text.lastIndexOf('}');
-    if (s === -1 || e === -1) throw new Error('ไม่พบข้อมูลที่ถูกต้อง');
+    // หาจุดเริ่มต้น JSON ที่แท้จริง
+    const firstBrace = text.indexOf('{');
+    const firstBracket = text.indexOf('[');
+
+    let s, e;
+    if (firstBracket !== -1 && (firstBrace === -1 || firstBracket < firstBrace)) {
+      // เป็น array [...]
+      s = firstBracket;
+      e = text.lastIndexOf(']');
+    } else if (firstBrace !== -1) {
+      // เป็น object {...}
+      s = firstBrace;
+      e = text.lastIndexOf('}');
+    } else {
+      throw new Error('ไม่พบ JSON ในข้อมูล');
+    }
+
+    if (s === -1 || e === -1 || e <= s) throw new Error('JSON ไม่ครบถ้วน');
     text = text.substring(s, e + 1);
 
     const data = JSON.parse(text);
