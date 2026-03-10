@@ -988,11 +988,11 @@ let currentSubject = 'คณิตศาสตร์';
 
 // ========== GEMINI API ==========
 const GEMINI_API_KEY = localStorage.getItem('gemini_api_key') || 'AIzaSyBYIa3ao3jxGFCLm1F5xd3MNN4yMGtqYyU';
-const GEMINI_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent`;
+const GEMINI_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent`;
 
 async function callGemini(systemPrompt, userPrompt) {
   const key = localStorage.getItem('gemini_api_key') || GEMINI_API_KEY;
-  if (!key) throw new Error('ยังไม่ได้ใส่ Gemini API Key — ไปที่ ⚙️ ตั้งค่า');  const res = await fetch(`${GEMINI_URL}?key=${key}`, {
+  if (!key) throw new Error('ยังไม่มี Gemini API Key — กด ⚙️ ตั้งค่า');  const res = await fetch(`${GEMINI_URL}?key=${key}`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
@@ -1844,17 +1844,45 @@ function clearHistory() {
   toast('ล้างประวัติแล้ว');
 }
 
-function resetEverything() {
-  if (!confirm('⚠️ ล้างข้อมูลทั้งหมดในระบบ?\n\nจะลบ: คลังข้อสอบ, ชุดข้อสอบ, ประวัติการสอบ ทั้งหมด\nไม่สามารถกู้คืนได้!')) return;
+async function resetEverything() {
+  if (!confirm('⚠️ ล้างข้อมูลทั้งหมดในระบบ?\n\nจะลบ: คลังข้อสอบ, ชุดข้อสอบ, ประวัติการสอบ, รายชื่อนักเรียน\nทั้งในเครื่องและบน Firebase\nไม่สามารถกู้คืนได้!')) return;
   if (!confirm('ยืนยันอีกครั้ง — ต้องการล้างข้อมูลทุกอย่างจริงๆ ใช่ไหม?')) return;
+
+  // เก็บ keys ไว้ก่อน (ไม่ลบ)
+  const geminiKey = localStorage.getItem('gemini_api_key');
+  const fbConfig = localStorage.getItem('fb_config');
+
+  // ล้าง state
   questionBank = [];
   examSets = [];
   examHistory = [];
   studentList = [];
   aiPreviewQuestions = [];
+
+  // ล้าง localStorage ทั้งหมด
   localStorage.clear();
-  renderStudentSidebar();
+
+  // คืน keys กลับ
+  if (geminiKey) localStorage.setItem('gemini_api_key', geminiKey);
+  if (fbConfig) localStorage.setItem('fb_config', fbConfig);
+
+  // ล้างข้อมูลบน Firebase ด้วย (ถ้าเชื่อมอยู่)
+  if (window._fb?.connected) {
+    try {
+      const { doc, setDoc } = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js');
+      const db = window._fb.db;
+      await setDoc(doc(db, 'data', 'qbank_0'),    { questions: [], chunk: 0, total: 1 });
+      await setDoc(doc(db, 'data', 'examsets'),   { data: [] });
+      await setDoc(doc(db, 'data', 'examhistory'),{ data: [] });
+      await setDoc(doc(db, 'data', 'studentlist'),{ data: [] });
+      await setDoc(doc(db, 'meta', 'info'),       { lastUpdated: new Date().toISOString(), qCount: 0 });
+    } catch(e) {
+      console.error('Firebase clear error:', e);
+    }
+  }
+
   // Reset UI
+  renderStudentSidebar();
   renderBank();
   renderExamSets();
   renderHistory();
@@ -1866,7 +1894,7 @@ function resetEverything() {
   if (pa) { pa.style.display = 'none'; pa.innerHTML = ''; }
   document.getElementById('exam-area').style.display = 'none';
   document.getElementById('score-result').style.display = 'none';
-  toast('🗑️ ล้างข้อมูลทั้งหมดเรียบร้อยแล้ว');
+  toast('🗑️ ล้างข้อมูลทั้งหมดเรียบร้อย (เครื่อง + Firebase)');
 }
 
 function saveStudents() {
