@@ -882,7 +882,25 @@
     <!-- PAGE: SETTINGS -->
     <div id="page-settings" class="page">
       <div class="card" style="max-width:640px;margin:0 auto">
-        <div class="card-title">⚙️ ตั้งค่า Firebase — เก็บข้อมูล Online</div>
+        <div class="card-title">⚙️ ตั้งค่าระบบ</div>
+
+        <!-- GEMINI API KEY -->
+        <div style="background:#f0fdf4;border:1.5px solid #86efac;border-radius:12px;padding:16px;margin-bottom:20px">
+          <div style="font-weight:700;color:#14532d;margin-bottom:10px;font-size:1rem">🤖 Gemini API Key (สำหรับสร้างข้อสอบด้วย AI)</div>
+          <div style="font-size:0.83rem;color:#166534;margin-bottom:12px">
+            ฟรี 1,500 requests/วัน — สมัครได้ที่ 
+            <a href="https://aistudio.google.com/app/apikey" target="_blank" style="color:var(--blue);font-weight:600">aistudio.google.com/app/apikey</a>
+          </div>
+          <div style="display:flex;gap:8px;align-items:center">
+            <input type="password" id="gemini-key-input" placeholder="AIzaSy..." 
+              style="flex:1;padding:9px 12px;border:1.5px solid #86efac;border-radius:8px;font-family:monospace;font-size:0.88rem">
+            <button class="btn btn-green" onclick="saveGeminiKey()">💾 บันทึก</button>
+            <button class="btn btn-outline btn-sm" onclick="toggleGeminiKeyVisibility()">👁️</button>
+          </div>
+          <div id="gemini-key-status" style="margin-top:8px;font-size:0.82rem;color:var(--muted)"></div>
+        </div>
+
+        <div class="divider"></div>
 
         <!-- Status -->
         <div id="fb-status-box" style="padding:14px;border-radius:12px;margin-bottom:20px;background:#f1f5f9;border:1.5px solid var(--border)">
@@ -968,6 +986,30 @@ let currentExamSet = null;
 let userAnswers = {};
 let currentSubject = 'คณิตศาสตร์';
 
+// ========== GEMINI API ==========
+const GEMINI_API_KEY = localStorage.getItem('gemini_api_key') || 'AIzaSyAKMKoEmhlm0d7erxbE20L_DkESTWzftrI';
+const GEMINI_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent`;
+
+async function callGemini(systemPrompt, userPrompt) {
+  const key = localStorage.getItem('gemini_api_key') || GEMINI_API_KEY;
+  if (!key) throw new Error('ยังไม่ได้ใส่ Gemini API Key — ไปที่ ⚙️ ตั้งค่า');  const res = await fetch(`${GEMINI_URL}?key=${key}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      contents: [{ parts: [{ text: systemPrompt + '\n\n' + userPrompt }] }],
+      generationConfig: { temperature: 0.7, maxOutputTokens: 4096 }
+    })
+  });
+  if (!res.ok) {
+    const err = await res.json();
+    throw new Error(err.error?.message || 'Gemini API Error');
+  }
+  const data = await res.json();
+  let text = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+  text = text.replace(/```json\s*/gi, '').replace(/```\s*/g, '').trim();
+  return text;
+}
+
 // ========== INIT ==========
 document.addEventListener('DOMContentLoaded', () => {
   updateStats();
@@ -977,7 +1019,40 @@ document.addEventListener('DOMContentLoaded', () => {
   renderDashboard();
   renderStudentSidebar();
   syncSubjectSelect();
+  // Load saved Gemini key
+  const savedKey = localStorage.getItem('gemini_api_key');
+  if (savedKey) {
+    const el = document.getElementById('gemini-key-input');
+    if (el) el.value = savedKey;
+    updateGeminiStatus(savedKey);
+  }
 });
+
+function saveGeminiKey() {
+  const key = document.getElementById('gemini-key-input').value.trim();
+  if (!key) { toast('กรุณากรอก API Key', 'error'); return; }
+  localStorage.setItem('gemini_api_key', key);
+  updateGeminiStatus(key);
+  toast('✅ บันทึก Gemini API Key แล้ว', 'success');
+}
+
+function updateGeminiStatus(key) {
+  const el = document.getElementById('gemini-key-status');
+  if (!el) return;
+  if (key) {
+    const masked = key.substring(0, 8) + '••••••••••••••••' + key.slice(-4);
+    el.innerHTML = `✅ <strong>มี API Key แล้ว</strong> — ${masked}`;
+    el.style.color = 'var(--green)';
+  } else {
+    el.textContent = '⚠️ ยังไม่มี API Key';
+    el.style.color = '#f59e0b';
+  }
+}
+
+function toggleGeminiKeyVisibility() {
+  const el = document.getElementById('gemini-key-input');
+  if (el) el.type = el.type === 'password' ? 'text' : 'password';
+}
 
 function syncSubjectSelect() {
   document.getElementById('ai-subject').value = currentSubject;
@@ -1039,19 +1114,10 @@ async function fetchAIQuestions(subject, grade, count, difficulty, topic, mode =
 รูปแบบ JSON: [{"q":"คำถาม","options":["ตอบ1","ตอบ2","ตอบ3","ตอบ4"],"answer":0}]`;
 
   try {
-    const res = await fetch("https://api.anthropic.com/v1/messages", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        model: "claude-sonnet-4-20250514",
-        max_tokens: 4000,
-        system: "คุณเป็นผู้ออกข้อสอบ ตอบด้วย JSON array เท่านั้น ห้ามมีข้อความอื่น ห้าม markdown",
-        messages: [{ role: "user", content: prompt }]
-      })
-    });
-    const data = await res.json();
-    let text = data.content.map(i => i.text || '').join('').trim();
-    text = text.replace(/```json\s*/gi, '').replace(/```\s*/g, '').trim();
+    const text = await callGemini(
+      'คุณเป็นผู้ออกข้อสอบภาษาไทย ตอบด้วย JSON array เท่านั้น ห้ามมีข้อความอื่น ห้าม markdown',
+      prompt
+    );
     const s = text.indexOf('['), e = text.lastIndexOf(']');
     if (s === -1 || e === -1) throw new Error('AI ไม่ส่งกลับ JSON ที่ถูกต้อง');
     const questions = JSON.parse(text.substring(s, e + 1));
@@ -1198,19 +1264,7 @@ async function regenerateSingle(i, subject, grade, difficulty, topic) {
 ตอบ JSON array 1 element เท่านั้น: [{"q":"คำถาม","options":["ตอบ1","ตอบ2","ตอบ3","ตอบ4"],"answer":0}]`;
 
   try {
-    const res = await fetch("https://api.anthropic.com/v1/messages", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        model: "claude-sonnet-4-20250514",
-        max_tokens: 800,
-        system: "ตอบ JSON array เท่านั้น",
-        messages: [{ role: "user", content: prompt }]
-      })
-    });
-    const data = await res.json();
-    let text = data.content.map(x => x.text || '').join('').trim();
-    text = text.replace(/```json\s*/gi,'').replace(/```\s*/g,'').trim();
+    const text = await callGemini('ตอบ JSON array เท่านั้น', prompt);
     const s = text.indexOf('['), e = text.lastIndexOf(']');
     if (s === -1) throw new Error('ไม่ได้รับ JSON');
     const arr = JSON.parse(text.substring(s, e+1));
@@ -2141,19 +2195,7 @@ ${text}
 รูปแบบ: [{"q":"คำถาม","options":["ตอบ1","ตอบ2","ตอบ3","ตอบ4"],"answer":0}]`;
 
   try {
-    const res = await fetch("https://api.anthropic.com/v1/messages", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        model: "claude-sonnet-4-20250514",
-        max_tokens: 4000,
-        system: "ตอบด้วย JSON array เท่านั้น ห้ามมีข้อความอื่น",
-        messages: [{ role: "user", content: prompt }]
-      })
-    });
-    const data = await res.json();
-    let raw = data.content.map(i=>i.text||'').join('').trim();
-    raw = raw.replace(/```json\s*/gi,'').replace(/```\s*/g,'').trim();
+    const raw = await callGemini('ตอบด้วย JSON array เท่านั้น ห้ามมีข้อความอื่น', prompt);
     const s = raw.indexOf('['), e = raw.lastIndexOf(']');
     if (s === -1 || e === -1) throw new Error('AI ไม่ส่งกลับ JSON');
     const qs = JSON.parse(raw.substring(s, e+1));
