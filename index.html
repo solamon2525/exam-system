@@ -2135,56 +2135,67 @@ function exportAllQuestions() {
 
   const subjects = [...new Set(questionBank.map(q => q.subject))];
   const exportData = {
-    version: '1.0',
+    version: '2.0',
     exportedAt: new Date().toLocaleString('th-TH'),
     totalQuestions: questionBank.length,
-    subjects: subjects,
+    subjects,
     questions: questionBank
   };
-  const json = JSON.stringify(exportData, null, 2);
+  const json = JSON.stringify(exportData);
 
-  // แสดง modal ให้ copy แทนการดาวน์โหลด (รองรับ claude.ai)
+  // เข้ารหัส base64 เพื่อป้องกันอักขระพิเศษพัง
+  const b64 = btoa(unescape(encodeURIComponent(json)));
+
   const modal = document.createElement('div');
   modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px';
   modal.innerHTML = `
-    <div style="background:white;border-radius:16px;padding:24px;max-width:680px;width:100%;max-height:80vh;display:flex;flex-direction:column;gap:14px">
+    <div style="background:white;border-radius:16px;padding:24px;max-width:600px;width:100%;display:flex;flex-direction:column;gap:16px">
       <div style="display:flex;justify-content:space-between;align-items:center">
-        <div style="font-family:Mitr,sans-serif;font-weight:700;font-size:1.1rem">📤 Export ข้อสอบ ${questionBank.length} ข้อ (${subjects.length} วิชา)</div>
+        <div style="font-family:Mitr,sans-serif;font-weight:700;font-size:1.1rem">📤 Export ข้อสอบ ${questionBank.length} ข้อ</div>
         <button onclick="this.closest('div[style*=fixed]').remove()" style="background:none;border:none;font-size:1.4rem;cursor:pointer;color:#888">✕</button>
       </div>
-      <div style="font-size:0.85rem;color:#666;background:#fff7ed;padding:10px 14px;border-radius:8px;border:1px solid #fcd34d">
-        💡 <strong>วิธีบันทึก:</strong> กด <strong>คัดลอกทั้งหมด</strong> → เปิด Notepad หรือ VSCode → วาง (Ctrl+V) → บันทึกเป็นไฟล์ <code>.json</code>
+
+      <!-- วิธี 1: คัดลอก Code -->
+      <div style="background:#f0f4ff;border:1.5px solid #93c5fd;border-radius:12px;padding:16px">
+        <div style="font-weight:700;color:#1e3a8a;margin-bottom:6px;font-size:0.9rem">📋 วิธีที่ 1 — คัดลอก Export Code</div>
+        <div style="font-size:0.8rem;color:#475569;margin-bottom:10px">คัดลอก code นี้ไปวางในช่อง <strong>"Import วาง Code"</strong> ได้เลย ไม่มีปัญหาอักขระพัง</div>
+        <textarea id="export-b64-area" style="width:100%;height:80px;padding:8px;border:1px solid #93c5fd;border-radius:8px;font-family:monospace;font-size:0.72rem;resize:none;background:#fff;color:#1e3a8a" readonly></textarea>
+        <button id="export-copy-btn" style="margin-top:8px;width:100%;padding:9px;background:var(--blue);color:white;border:none;border-radius:8px;font-family:Sarabun,sans-serif;font-size:0.9rem;font-weight:600;cursor:pointer">📋 คัดลอก Code</button>
       </div>
-      <textarea id="export-textarea" style="flex:1;min-height:320px;padding:12px;border:1.5px solid #e2e8f0;border-radius:10px;font-family:monospace;font-size:0.78rem;resize:vertical;background:#f8fafc" readonly></textarea>
-      <div style="display:flex;gap:10px">
-        <button id="export-copy-btn" style="flex:1;padding:10px;background:var(--blue);color:white;border:none;border-radius:8px;font-family:Sarabun,sans-serif;font-size:0.9rem;font-weight:600;cursor:pointer">📋 คัดลอกทั้งหมด</button>
-        <button onclick="this.closest('div[style*=fixed]').remove()" style="padding:10px 20px;background:white;border:1.5px solid #e2e8f0;border-radius:8px;font-family:Sarabun,sans-serif;font-size:0.9rem;cursor:pointer">ปิด</button>
+
+      <!-- วิธี 2: บันทึกข้อความ JSON -->
+      <div style="background:#f0fdf4;border:1.5px solid #86efac;border-radius:12px;padding:16px">
+        <div style="font-weight:700;color:#14532d;margin-bottom:6px;font-size:0.9rem">💾 วิธีที่ 2 — บันทึกเป็นไฟล์ .txt</div>
+        <div style="font-size:0.8rem;color:#475569;margin-bottom:10px">เปิด Notepad → วาง → บันทึกเป็น <code>exam.txt</code> → แล้ว Import ด้วยปุ่ม <strong>"Import ไฟล์"</strong></div>
+        <button id="export-json-btn" style="width:100%;padding:9px;background:#16a34a;color:white;border:none;border-radius:8px;font-family:Sarabun,sans-serif;font-size:0.9rem;font-weight:600;cursor:pointer">📄 คัดลอก JSON ข้อความ</button>
       </div>
     </div>
   `;
   document.body.appendChild(modal);
 
-  // ใช้ textContent แทน innerHTML เพื่อป้องกัน JSON พัง
-  const ta = modal.querySelector('#export-textarea');
-  ta.value = json;
+  // ใส่ base64 ด้วย textContent
+  const b64area = modal.querySelector('#export-b64-area');
+  b64area.value = 'EXAMDATA:' + b64;
 
-  // ปุ่มคัดลอก
+  // ปุ่มคัดลอก code
   modal.querySelector('#export-copy-btn').onclick = () => {
-    ta.select();
-    ta.setSelectionRange(0, 99999);
-    const btn = modal.querySelector('#export-copy-btn');
-    navigator.clipboard.writeText(ta.value).then(() => {
-      btn.textContent = '✅ คัดลอกแล้ว!';
-      btn.style.background = 'var(--green)';
-      setTimeout(() => { btn.textContent = '📋 คัดลอกทั้งหมด'; btn.style.background = ''; }, 2500);
-    }).catch(() => {
-      document.execCommand('copy');
-      btn.textContent = '✅ คัดลอกแล้ว!';
+    navigator.clipboard.writeText(b64area.value).then(() => {
+      const btn = modal.querySelector('#export-copy-btn');
+      btn.textContent = '✅ คัดลอกแล้ว!'; btn.style.background = 'var(--green)';
+      setTimeout(() => { btn.textContent = '📋 คัดลอก Code'; btn.style.background = ''; }, 2500);
+    }).catch(() => { b64area.select(); document.execCommand('copy'); });
+  };
+
+  // ปุ่มคัดลอก JSON ธรรมดา
+  modal.querySelector('#export-json-btn').onclick = () => {
+    navigator.clipboard.writeText(json).then(() => {
+      const btn = modal.querySelector('#export-json-btn');
+      btn.textContent = '✅ คัดลอกแล้ว!'; btn.style.background = 'var(--green)';
+      setTimeout(() => { btn.textContent = '📄 คัดลอก JSON ข้อความ'; btn.style.background = ''; }, 2500);
     });
   };
 
-  setTimeout(() => ta.select(), 100);
-  toast(`✅ Export ${questionBank.length} ข้อ พร้อมคัดลอก`, 'success');
+  toast(`✅ Export ${questionBank.length} ข้อ พร้อมแล้ว`, 'success');
 }
 
 function importAllQuestions(event) {
@@ -2218,7 +2229,10 @@ function showImportPaste() {
       <div style="font-size:0.83rem;color:#555;background:#f0f4ff;padding:10px 14px;border-radius:8px">
         💡 คัดลอก JSON จากหน้า Export แล้ววางในช่องด้านล่างได้เลย
       </div>
-      <textarea id="import-paste-area" style="flex:1;min-height:300px;padding:12px;border:1.5px solid #e2e8f0;border-radius:10px;font-family:monospace;font-size:0.78rem;resize:vertical" placeholder='วาง JSON ที่นี่... เช่น {"version":"1.0","questions":[...]} หรือ [{"question":"..."}]'></textarea>
+      <textarea id="import-paste-area" style="flex:1;min-height:300px;padding:12px;border:1.5px solid #e2e8f0;border-radius:10px;font-family:monospace;font-size:0.78rem;resize:vertical" placeholder='วาง Export Code ที่นี่...
+ตัวอย่าง: EXAMDATA:eyJ2ZXJzaW9uIjoiMi4w...
+
+หรือวาง JSON ธรรมดาก็ได้: {"version":"1.0","questions":[...]}'></textarea>
       <div style="display:flex;gap:10px">
         <button onclick="importFromPaste();document.getElementById('import-paste-modal').remove()" 
           style="flex:1;padding:10px;background:var(--blue);color:white;border:none;border-radius:8px;font-family:Sarabun,sans-serif;font-size:0.9rem;font-weight:600;cursor:pointer">
@@ -2235,30 +2249,30 @@ function showImportPaste() {
 
 function processImportData(raw) {
   try {
-    // ล้าง BOM, whitespace, และอักขระพิเศษที่อาจติดมา
-    let text = raw.trim()
-      .replace(/^\uFEFF/, '')       // BOM
-      .replace(/\u00A0/g, ' ')      // non-breaking space
-      .replace(/[\u200B-\u200D\uFEFF]/g, ''); // zero-width chars
+    let text = raw.trim().replace(/^\uFEFF/, '').replace(/\u00A0/g, ' ').replace(/[\u200B-\u200D]/g, '');
 
-    // หาจุดเริ่มต้น JSON ที่แท้จริง
+    // ตรวจว่าเป็น base64 format (EXAMDATA:...)
+    if (text.startsWith('EXAMDATA:')) {
+      const b64 = text.slice(9).trim();
+      try {
+        text = decodeURIComponent(escape(atob(b64)));
+      } catch(e) {
+        throw new Error('Export Code ไม่ถูกต้องหรือไม่ครบ กรุณาคัดลอกใหม่');
+      }
+    }
+
+    // หาจุดเริ่มต้น JSON
     const firstBrace = text.indexOf('{');
     const firstBracket = text.indexOf('[');
-
     let s, e;
     if (firstBracket !== -1 && (firstBrace === -1 || firstBracket < firstBrace)) {
-      // เป็น array [...]
-      s = firstBracket;
-      e = text.lastIndexOf(']');
+      s = firstBracket; e = text.lastIndexOf(']');
     } else if (firstBrace !== -1) {
-      // เป็น object {...}
-      s = firstBrace;
-      e = text.lastIndexOf('}');
+      s = firstBrace; e = text.lastIndexOf('}');
     } else {
       throw new Error('ไม่พบ JSON ในข้อมูล');
     }
-
-    if (s === -1 || e === -1 || e <= s) throw new Error('JSON ไม่ครบถ้วน');
+    if (e <= s) throw new Error('JSON ไม่ครบถ้วน');
     text = text.substring(s, e + 1);
 
     const data = JSON.parse(text);
