@@ -884,20 +884,20 @@
       <div class="card" style="max-width:640px;margin:0 auto">
         <div class="card-title">⚙️ ตั้งค่าระบบ</div>
 
-        <!-- GEMINI API KEY -->
-        <div style="background:#f0fdf4;border:1.5px solid #86efac;border-radius:12px;padding:16px;margin-bottom:20px">
-          <div style="font-weight:700;color:#14532d;margin-bottom:10px;font-size:1rem">🤖 Gemini API Key (สำหรับสร้างข้อสอบด้วย AI)</div>
-          <div style="font-size:0.83rem;color:#166534;margin-bottom:12px">
-            ฟรี 1,500 requests/วัน — สมัครได้ที่ 
-            <a href="https://aistudio.google.com/app/apikey" target="_blank" style="color:var(--blue);font-weight:600">aistudio.google.com/app/apikey</a>
+        <!-- CLAUDE API KEY -->
+        <div style="background:#f0f4ff;border:1.5px solid #93c5fd;border-radius:12px;padding:16px;margin-bottom:20px">
+          <div style="font-weight:700;color:#1e3a8a;margin-bottom:10px;font-size:1rem">🤖 Claude API Key (สำหรับสร้างข้อสอบด้วย AI)</div>
+          <div style="font-size:0.83rem;color:#1e40af;margin-bottom:12px">
+            สมัครได้ที่ 
+            <a href="https://console.anthropic.com" target="_blank" style="color:var(--blue);font-weight:600">console.anthropic.com</a>
           </div>
           <div style="display:flex;gap:8px;align-items:center">
-            <input type="password" id="gemini-key-input" placeholder="AIzaSy..." 
-              style="flex:1;padding:9px 12px;border:1.5px solid #86efac;border-radius:8px;font-family:monospace;font-size:0.88rem">
-            <button class="btn btn-green" onclick="saveGeminiKey()">💾 บันทึก</button>
-            <button class="btn btn-outline btn-sm" onclick="toggleGeminiKeyVisibility()">👁️</button>
+            <input type="password" id="claude-key-input" placeholder="sk-ant-api03-..." 
+              style="flex:1;padding:9px 12px;border:1.5px solid #93c5fd;border-radius:8px;font-family:monospace;font-size:0.88rem">
+            <button class="btn btn-primary" onclick="saveClaudeKey()">💾 บันทึก</button>
+            <button class="btn btn-outline btn-sm" onclick="toggleClaudeKeyVisibility()">👁️</button>
           </div>
-          <div id="gemini-key-status" style="margin-top:8px;font-size:0.82rem;color:var(--muted)"></div>
+          <div id="claude-key-status" style="margin-top:8px;font-size:0.82rem;color:var(--muted)"></div>
         </div>
 
         <div class="divider"></div>
@@ -986,26 +986,28 @@ let currentExamSet = null;
 let userAnswers = {};
 let currentSubject = 'คณิตศาสตร์';
 
-// ========== GEMINI API ==========
-const GEMINI_API_KEY = localStorage.getItem('gemini_api_key') || 'AIzaSyBYIa3ao3jxGFCLm1F5xd3MNN4yMGtqYyU';
-const GEMINI_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent`;
-
-async function callGemini(systemPrompt, userPrompt) {
-  const key = localStorage.getItem('gemini_api_key') || GEMINI_API_KEY;
-  if (!key) throw new Error('ยังไม่มี Gemini API Key — กด ⚙️ ตั้งค่า');  const res = await fetch(`${GEMINI_URL}?key=${key}`, {
+// ========== AI API ==========
+async function callAI(systemPrompt, userPrompt, maxTokens = 4000) {
+  const res = await fetch('https://api.anthropic.com/v1/messages', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: {
+      'Content-Type': 'application/json',
+      'anthropic-version': '2023-06-01',
+      'anthropic-dangerous-direct-browser-access': 'true'
+    },
     body: JSON.stringify({
-      contents: [{ parts: [{ text: systemPrompt + '\n\n' + userPrompt }] }],
-      generationConfig: { temperature: 0.7, maxOutputTokens: 4096 }
+      model: 'claude-sonnet-4-6',
+      max_tokens: maxTokens,
+      system: systemPrompt,
+      messages: [{ role: 'user', content: userPrompt }]
     })
   });
   if (!res.ok) {
     const err = await res.json();
-    throw new Error(err.error?.message || 'Gemini API Error');
+    throw new Error(err.error?.message || 'API Error');
   }
   const data = await res.json();
-  let text = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+  let text = data.content?.map(i => i.text || '').join('').trim() || '';
   text = text.replace(/```json\s*/gi, '').replace(/```\s*/g, '').trim();
   return text;
 }
@@ -1019,28 +1021,28 @@ document.addEventListener('DOMContentLoaded', () => {
   renderDashboard();
   renderStudentSidebar();
   syncSubjectSelect();
-  // Load saved Gemini key
-  const savedKey = localStorage.getItem('gemini_api_key');
+  // Load saved Claude key
+  const savedKey = localStorage.getItem('claude_api_key');
   if (savedKey) {
-    const el = document.getElementById('gemini-key-input');
+    const el = document.getElementById('claude-key-input');
     if (el) el.value = savedKey;
-    updateGeminiStatus(savedKey);
+    updateClaudeKeyStatus(savedKey);
   }
 });
 
-function saveGeminiKey() {
-  const key = document.getElementById('gemini-key-input').value.trim();
+function saveClaudeKey() {
+  const key = document.getElementById('claude-key-input').value.trim();
   if (!key) { toast('กรุณากรอก API Key', 'error'); return; }
-  localStorage.setItem('gemini_api_key', key);
-  updateGeminiStatus(key);
-  toast('✅ บันทึก Gemini API Key แล้ว', 'success');
+  localStorage.setItem('claude_api_key', key);
+  updateClaudeKeyStatus(key);
+  toast('✅ บันทึก Claude API Key แล้ว', 'success');
 }
 
-function updateGeminiStatus(key) {
-  const el = document.getElementById('gemini-key-status');
+function updateClaudeKeyStatus(key) {
+  const el = document.getElementById('claude-key-status');
   if (!el) return;
   if (key) {
-    const masked = key.substring(0, 8) + '••••••••••••••••' + key.slice(-4);
+    const masked = key.substring(0, 12) + '••••••••••••' + key.slice(-4);
     el.innerHTML = `✅ <strong>มี API Key แล้ว</strong> — ${masked}`;
     el.style.color = 'var(--green)';
   } else {
@@ -1049,8 +1051,8 @@ function updateGeminiStatus(key) {
   }
 }
 
-function toggleGeminiKeyVisibility() {
-  const el = document.getElementById('gemini-key-input');
+function toggleClaudeKeyVisibility() {
+  const el = document.getElementById('claude-key-input');
   if (el) el.type = el.type === 'password' ? 'text' : 'password';
 }
 
@@ -1114,7 +1116,7 @@ async function fetchAIQuestions(subject, grade, count, difficulty, topic, mode =
 รูปแบบ JSON: [{"q":"คำถาม","options":["ตอบ1","ตอบ2","ตอบ3","ตอบ4"],"answer":0}]`;
 
   try {
-    const text = await callGemini(
+    const text = await callAI(
       'คุณเป็นผู้ออกข้อสอบภาษาไทย ตอบด้วย JSON array เท่านั้น ห้ามมีข้อความอื่น ห้าม markdown',
       prompt
     );
@@ -1264,7 +1266,7 @@ async function regenerateSingle(i, subject, grade, difficulty, topic) {
 ตอบ JSON array 1 element เท่านั้น: [{"q":"คำถาม","options":["ตอบ1","ตอบ2","ตอบ3","ตอบ4"],"answer":0}]`;
 
   try {
-    const text = await callGemini('ตอบ JSON array เท่านั้น', prompt);
+    const text = await callAI('ตอบ JSON array เท่านั้น', prompt);
     const s = text.indexOf('['), e = text.lastIndexOf(']');
     if (s === -1) throw new Error('ไม่ได้รับ JSON');
     const arr = JSON.parse(text.substring(s, e+1));
@@ -1849,7 +1851,7 @@ async function resetEverything() {
   if (!confirm('ยืนยันอีกครั้ง — ต้องการล้างข้อมูลทุกอย่างจริงๆ ใช่ไหม?')) return;
 
   // เก็บ keys ไว้ก่อน (ไม่ลบ)
-  const geminiKey = localStorage.getItem('gemini_api_key');
+  const claudeKey = localStorage.getItem('claude_api_key');
   const fbConfig = localStorage.getItem('fb_config');
 
   // ล้าง state
@@ -1863,7 +1865,7 @@ async function resetEverything() {
   localStorage.clear();
 
   // คืน keys กลับ
-  if (geminiKey) localStorage.setItem('gemini_api_key', geminiKey);
+  if (claudeKey) localStorage.setItem('claude_api_key', claudeKey);
   if (fbConfig) localStorage.setItem('fb_config', fbConfig);
 
   // ล้างข้อมูลบน Firebase ด้วย (ถ้าเชื่อมอยู่)
@@ -1973,17 +1975,45 @@ function exportAllQuestions() {
     subjects: subjects,
     questions: questionBank
   };
-
   const json = JSON.stringify(exportData, null, 2);
-  const blob = new Blob([json], { type: 'application/json' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  const date = new Date().toLocaleDateString('th-TH').replace(/\//g, '-');
-  a.href = url;
-  a.download = `คลังข้อสอบ_ทุกวิชา_${date}.json`;
-  a.click();
-  URL.revokeObjectURL(url);
-  toast(`✅ Export ${questionBank.length} ข้อ (${subjects.length} วิชา) เรียบร้อย`, 'success');
+
+  // แสดง modal ให้ copy แทนการดาวน์โหลด (รองรับ claude.ai)
+  const modal = document.createElement('div');
+  modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px';
+  modal.innerHTML = `
+    <div style="background:white;border-radius:16px;padding:24px;max-width:680px;width:100%;max-height:80vh;display:flex;flex-direction:column;gap:14px">
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <div style="font-family:Mitr,sans-serif;font-weight:700;font-size:1.1rem">📤 Export ข้อสอบ ${questionBank.length} ข้อ (${subjects.length} วิชา)</div>
+        <button onclick="this.closest('div[style*=fixed]').remove()" style="background:none;border:none;font-size:1.4rem;cursor:pointer;color:#888">✕</button>
+      </div>
+      <div style="font-size:0.85rem;color:#666;background:#fff7ed;padding:10px 14px;border-radius:8px;border:1px solid #fcd34d">
+        💡 <strong>วิธีบันทึก:</strong> กด <strong>คัดลอกทั้งหมด</strong> → เปิด Notepad หรือ VSCode → วาง (Ctrl+V) → บันทึกเป็นไฟล์ <code>.json</code>
+      </div>
+      <textarea id="export-textarea" style="flex:1;min-height:320px;padding:12px;border:1.5px solid #e2e8f0;border-radius:10px;font-family:monospace;font-size:0.78rem;resize:vertical;background:#f8fafc" readonly>${json}</textarea>
+      <div style="display:flex;gap:10px">
+        <button onclick="
+          const ta = document.getElementById('export-textarea');
+          ta.select(); ta.setSelectionRange(0,99999);
+          navigator.clipboard.writeText(ta.value).then(()=>{
+            this.textContent='✅ คัดลอกแล้ว!';
+            this.style.background='var(--green)';
+            setTimeout(()=>{this.textContent='📋 คัดลอกทั้งหมด';this.style.background=''},2000);
+          }).catch(()=>{
+            document.execCommand('copy');
+            this.textContent='✅ คัดลอกแล้ว!';
+          });
+        " style="flex:1;padding:10px;background:var(--blue);color:white;border:none;border-radius:8px;font-family:Sarabun,sans-serif;font-size:0.9rem;font-weight:600;cursor:pointer">📋 คัดลอกทั้งหมด</button>
+        <button onclick="this.closest('div[style*=fixed]').remove()" style="padding:10px 20px;background:white;border:1.5px solid #e2e8f0;border-radius:8px;font-family:Sarabun,sans-serif;font-size:0.9rem;cursor:pointer">ปิด</button>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(modal);
+  // Auto select textarea
+  setTimeout(() => {
+    const ta = document.getElementById('export-textarea');
+    if (ta) ta.select();
+  }, 100);
+  toast(`✅ Export ${questionBank.length} ข้อ พร้อมคัดลอก`, 'success');
 }
 
 function importAllQuestions(event) {
@@ -2223,7 +2253,7 @@ ${text}
 รูปแบบ: [{"q":"คำถาม","options":["ตอบ1","ตอบ2","ตอบ3","ตอบ4"],"answer":0}]`;
 
   try {
-    const raw = await callGemini('ตอบด้วย JSON array เท่านั้น ห้ามมีข้อความอื่น', prompt);
+    const raw = await callAI('ตอบด้วย JSON array เท่านั้น ห้ามมีข้อความอื่น', prompt);
     const s = raw.indexOf('['), e = raw.lastIndexOf(']');
     if (s === -1 || e === -1) throw new Error('AI ไม่ส่งกลับ JSON');
     const qs = JSON.parse(raw.substring(s, e+1));
