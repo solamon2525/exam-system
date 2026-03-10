@@ -2155,30 +2155,35 @@ function exportAllQuestions() {
       <div style="font-size:0.85rem;color:#666;background:#fff7ed;padding:10px 14px;border-radius:8px;border:1px solid #fcd34d">
         💡 <strong>วิธีบันทึก:</strong> กด <strong>คัดลอกทั้งหมด</strong> → เปิด Notepad หรือ VSCode → วาง (Ctrl+V) → บันทึกเป็นไฟล์ <code>.json</code>
       </div>
-      <textarea id="export-textarea" style="flex:1;min-height:320px;padding:12px;border:1.5px solid #e2e8f0;border-radius:10px;font-family:monospace;font-size:0.78rem;resize:vertical;background:#f8fafc" readonly>${json}</textarea>
+      <textarea id="export-textarea" style="flex:1;min-height:320px;padding:12px;border:1.5px solid #e2e8f0;border-radius:10px;font-family:monospace;font-size:0.78rem;resize:vertical;background:#f8fafc" readonly></textarea>
       <div style="display:flex;gap:10px">
-        <button onclick="
-          const ta = document.getElementById('export-textarea');
-          ta.select(); ta.setSelectionRange(0,99999);
-          navigator.clipboard.writeText(ta.value).then(()=>{
-            this.textContent='✅ คัดลอกแล้ว!';
-            this.style.background='var(--green)';
-            setTimeout(()=>{this.textContent='📋 คัดลอกทั้งหมด';this.style.background=''},2000);
-          }).catch(()=>{
-            document.execCommand('copy');
-            this.textContent='✅ คัดลอกแล้ว!';
-          });
-        " style="flex:1;padding:10px;background:var(--blue);color:white;border:none;border-radius:8px;font-family:Sarabun,sans-serif;font-size:0.9rem;font-weight:600;cursor:pointer">📋 คัดลอกทั้งหมด</button>
+        <button id="export-copy-btn" style="flex:1;padding:10px;background:var(--blue);color:white;border:none;border-radius:8px;font-family:Sarabun,sans-serif;font-size:0.9rem;font-weight:600;cursor:pointer">📋 คัดลอกทั้งหมด</button>
         <button onclick="this.closest('div[style*=fixed]').remove()" style="padding:10px 20px;background:white;border:1.5px solid #e2e8f0;border-radius:8px;font-family:Sarabun,sans-serif;font-size:0.9rem;cursor:pointer">ปิด</button>
       </div>
     </div>
   `;
   document.body.appendChild(modal);
-  // Auto select textarea
-  setTimeout(() => {
-    const ta = document.getElementById('export-textarea');
-    if (ta) ta.select();
-  }, 100);
+
+  // ใช้ textContent แทน innerHTML เพื่อป้องกัน JSON พัง
+  const ta = modal.querySelector('#export-textarea');
+  ta.value = json;
+
+  // ปุ่มคัดลอก
+  modal.querySelector('#export-copy-btn').onclick = () => {
+    ta.select();
+    ta.setSelectionRange(0, 99999);
+    const btn = modal.querySelector('#export-copy-btn');
+    navigator.clipboard.writeText(ta.value).then(() => {
+      btn.textContent = '✅ คัดลอกแล้ว!';
+      btn.style.background = 'var(--green)';
+      setTimeout(() => { btn.textContent = '📋 คัดลอกทั้งหมด'; btn.style.background = ''; }, 2500);
+    }).catch(() => {
+      document.execCommand('copy');
+      btn.textContent = '✅ คัดลอกแล้ว!';
+    });
+  };
+
+  setTimeout(() => ta.select(), 100);
   toast(`✅ Export ${questionBank.length} ข้อ พร้อมคัดลอก`, 'success');
 }
 
