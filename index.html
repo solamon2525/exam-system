@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>ระบบออกข้อสอบอัจฉริยะ — ประถมศึกษา</title>
+<title>ระบบจัดการสอบบ้านคำไผ่ v2.1</title>
 <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700;800&family=Mitr:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
 :root {
@@ -65,6 +65,7 @@ body { font-family:'Sarabun',sans-serif; background:var(--bg); color:var(--text)
 .badge { font-size:0.72rem; padding:2px 8px; border-radius:20px; background:#dbeafe; color:var(--blue); font-weight:600; }
 .badge-gold { background:#fef3c7; color:#92400e; }
 .badge-green { background:#dcfce7; color:#15803d; }
+.badge-red { background:#fee2e2; color:#991b1b; }
 
 /* FORM */
 .form-row { display:flex; gap:14px; flex-wrap:wrap; margin-bottom:16px; }
@@ -87,6 +88,8 @@ textarea { resize:vertical; min-height:80px; }
 .btn-danger { background:var(--red); color:white; }
 .btn-sm { padding:6px 14px; font-size:0.82rem; }
 .btn:disabled { opacity:0.45; cursor:not-allowed; transform:none!important; }
+.btn-purple { background:#7c3aed; color:white; }
+.btn-purple:hover { background:#6d28d9; transform:translateY(-1px); }
 
 /* QUESTION ITEM */
 .question-list { display:flex; flex-direction:column; gap:12px; }
@@ -181,6 +184,14 @@ textarea { resize:vertical; min-height:80px; }
 #toast.success { background:var(--green); }
 #toast.error { background:var(--red); }
 
+/* OMR */
+#omr-canvas-container { position:relative; display:inline-block; }
+#omr-canvas { border:2px solid var(--border); border-radius:10px; max-width:100%; }
+#omr-overlay { position:absolute; top:0; left:0; pointer-events:none; }
+.omr-result-row { display:flex; align-items:center; gap:8px; padding:6px 10px; border-radius:8px; border:1.5px solid var(--border); margin-bottom:4px; }
+.omr-result-row.omr-correct { border-color:var(--green); background:#f0fdf4; }
+.omr-result-row.omr-wrong { border-color:var(--red); background:#fff5f5; }
+
 /* PRINT */
 @media print {
   .no-print { display:none!important; }
@@ -230,13 +241,14 @@ textarea { resize:vertical; min-height:80px; }
     <button id="mobile-menu-btn" onclick="toggleMobileSidebar()">☰</button>
     <div class="logo-icon">📝</div>
     <div class="logo-text">
-      <h1>ระบบออกข้อสอบอัจฉริยะ</h1>
+      <h1>ระบบจัดการสอบบ้านคำไผ่ <span id="app-version" style="font-size:0.65rem;background:rgba(255,255,255,0.2);padding:2px 8px;border-radius:20px;font-weight:400;vertical-align:middle;letter-spacing:0.5px">v2.1</span></h1>
       <p>ระดับประถมศึกษา — AI ช่วยสร้างข้อสอบ</p>
     </div>
   </div>
   <nav class="header-nav">
     <button class="nav-btn active" id="navbtn-create" onclick="showPage('create',this)">✏️ ออกข้อสอบ</button>
     <button class="nav-btn" id="navbtn-exam" onclick="showPage('exam',this)">📋 ทำข้อสอบ</button>
+    <button class="nav-btn" id="navbtn-omr" onclick="showPage('omr',this)">📷 OMR สแกน</button>
     <button class="nav-btn" id="navbtn-dashboard" onclick="showPage('dashboard',this)">📈 แดชบอร์ด</button>
     <button class="nav-btn" id="navbtn-settings" onclick="showPage('settings',this)" style="border-color:rgba(251,191,36,0.5);color:#fde68a">⚙️ ตั้งค่า</button>
     <button class="nav-btn nav-btn-danger" onclick="resetEverything()">🗑️ ล้างข้อมูล</button>
@@ -301,6 +313,7 @@ textarea { resize:vertical; min-height:80px; }
         <div class="stat-chip">📚 <div><div class="stat-value" id="stat-total">0</div><div style="font-size:0.75rem;color:var(--muted)">ข้อสอบทั้งหมด</div></div></div>
         <div class="stat-chip">🎯 <div><div class="stat-value" id="stat-subject-count">0</div><div style="font-size:0.75rem;color:var(--muted)">วิชาที่มีข้อสอบ</div></div></div>
         <div class="stat-chip">✅ <div><div class="stat-value" id="stat-exams">0</div><div style="font-size:0.75rem;color:var(--muted)">ชุดข้อสอบ</div></div></div>
+        <div class="stat-chip" id="storage-chip" style="cursor:pointer" onclick="showPage('settings')">💾 <div><div class="stat-value" id="stat-storage">0KB</div><div style="font-size:0.75rem;color:var(--muted)">พื้นที่ใช้</div></div></div>
       </div>
 
       <div id="subject-summary-panel" style="display:none">
@@ -322,7 +335,7 @@ textarea { resize:vertical; min-height:80px; }
           <div class="form-group">
             <label>ระดับชั้น</label>
             <select id="ai-grade">
-              <option>ป.1</option><option>ป.2</option><option>ป.3</option><option>ป.4</option><option>ป.5</option><option selected>ป.6</option>
+              <option>ป.1</option><option>ป.2</option><option>ป.3</option><option>ป.4</option><option selected>ป.5</option><option>ป.6</option>
             </select>
           </div>
           <div class="form-group">
@@ -376,7 +389,7 @@ textarea { resize:vertical; min-height:80px; }
             <div class="form-group"><label>วิชา (กรณีไม่มีในไฟล์)</label>
               <select id="import-subject"><option>คณิตศาสตร์</option><option>ภาษาไทย</option><option>สังคมศึกษา</option><option>วิทยาศาสตร์</option><option>ภาษาอังกฤษ</option><option>ประวัติศาสตร์</option><option>สุขศึกษา</option><option>ศิลปะ</option><option>การงานอาชีพ</option><option>ด้านทุจริต</option></select></div>
             <div class="form-group"><label>ระดับชั้น</label>
-              <select id="import-grade"><option>ป.1</option><option>ป.2</option><option>ป.3</option><option>ป.4</option><option>ป.5</option><option selected>ป.6</option></select></div>
+              <select id="import-grade"><option>ป.1</option><option>ป.2</option><option>ป.3</option><option>ป.4</option><option selected>ป.5</option><option>ป.6</option></select></div>
           </div>
           <div id="csv-drop-zone" style="border:2.5px dashed var(--sky);border-radius:14px;padding:36px;text-align:center;cursor:pointer;background:#f8faff" onclick="document.getElementById('csv-file-input').click()" ondragover="event.preventDefault();this.style.background='#dbeafe'" ondragleave="this.style.background='#f8faff'" ondrop="handleFileDrop(event)">
             <div style="font-size:2.5rem;margin-bottom:10px">📂</div>
@@ -389,7 +402,7 @@ textarea { resize:vertical; min-height:80px; }
         <div id="import-tab-text" style="display:none">
           <div class="form-row" style="margin-bottom:12px">
             <div class="form-group"><label>วิชา</label><select id="import-text-subject"><option>คณิตศาสตร์</option><option>ภาษาไทย</option><option>สังคมศึกษา</option><option>วิทยาศาสตร์</option><option>ภาษาอังกฤษ</option><option>ประวัติศาสตร์</option><option>สุขศึกษา</option><option>ศิลปะ</option><option>การงานอาชีพ</option><option>ด้านทุจริต</option></select></div>
-            <div class="form-group"><label>ระดับชั้น</label><select id="import-text-grade"><option>ป.1</option><option>ป.2</option><option>ป.3</option><option>ป.4</option><option>ป.5</option><option selected>ป.6</option></select></div>
+            <div class="form-group"><label>ระดับชั้น</label><select id="import-text-grade"><option>ป.1</option><option>ป.2</option><option>ป.3</option><option>ป.4</option><option selected>ป.5</option><option>ป.6</option></select></div>
           </div>
           <textarea id="import-text-area" style="width:100%;min-height:180px;padding:12px;border:1.5px solid var(--border);border-radius:10px;font-family:Sarabun,sans-serif;font-size:0.9rem" placeholder="วางข้อสอบที่นี่... AI จะแปลงให้อัตโนมัติ"></textarea>
           <div id="text-parse-loading" style="display:none;margin-top:10px" class="ai-loading"><div class="spinner"></div><span>AI กำลังแปลง...</span></div>
@@ -420,7 +433,7 @@ textarea { resize:vertical; min-height:80px; }
           <div class="form-group"><label>วิชา</label>
             <select id="manual-subject"><option>คณิตศาสตร์</option><option>ภาษาไทย</option><option>สังคมศึกษา</option><option>วิทยาศาสตร์</option><option>ภาษาอังกฤษ</option><option>ประวัติศาสตร์</option><option>สุขศึกษา</option><option>ศิลปะ</option><option>การงานอาชีพ</option><option>ด้านทุจริต</option></select></div>
           <div class="form-group"><label>ระดับชั้น</label>
-            <select id="manual-grade"><option>ป.1</option><option>ป.2</option><option>ป.3</option><option>ป.4</option><option>ป.5</option><option selected>ป.6</option></select></div>
+            <select id="manual-grade"><option>ป.1</option><option>ป.2</option><option>ป.3</option><option>ป.4</option><option selected>ป.5</option><option>ป.6</option></select></div>
         </div>
         <button class="btn btn-primary" onclick="addManualQuestion()">➕ เพิ่มข้อสอบ</button>
       </div>
@@ -449,7 +462,7 @@ textarea { resize:vertical; min-height:80px; }
       <div class="card no-print" id="create-exam-card" style="display:none">
         <div class="card-title">📋 สร้างชุดข้อสอบ & พิมพ์</div>
         <div class="form-row">
-          <div class="form-group"><label>ชื่อชุดข้อสอบ</label><input type="text" id="exam-title" placeholder="เช่น ข้อสอบปลายภาค ป.6"></div>
+          <div class="form-group"><label>ชื่อชุดข้อสอบ</label><input type="text" id="exam-title" placeholder="เช่น ข้อสอบปลายภาค ป.5"></div>
           <div class="form-group" style="max-width:160px"><label>จำนวนข้อ</label><input type="number" id="exam-count" value="10" min="1"></div>
         </div>
         <div class="flex-row">
@@ -553,6 +566,111 @@ textarea { resize:vertical; min-height:80px; }
       </div>
     </div>
 
+    <!-- PAGE: OMR SCAN -->
+    <div id="page-omr" class="page">
+      <div class="card">
+        <div class="card-title">📷 OMR สแกนกระดาษคำตอบ <span class="badge badge-gold">AI Vision</span></div>
+        <p style="color:var(--muted);font-size:0.9rem;margin-bottom:16px">ถ่ายภาพหรืออัปโหลดกระดาษคำตอบ ระบบจะตรวจให้อัตโนมัติ</p>
+
+        <!-- Setup -->
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px" id="omr-setup">
+          <div class="form-group">
+            <label>เลือกชุดข้อสอบ (เฉลย)</label>
+            <select id="omr-examset-select" style="padding:9px 12px;border:1.5px solid var(--border);border-radius:8px;font-family:Sarabun,sans-serif">
+              <option value="">— เลือกชุดข้อสอบ —</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>ชื่อนักเรียน</label>
+            <select id="omr-student-select" style="padding:9px 12px;border:1.5px solid var(--border);border-radius:8px;font-family:Sarabun,sans-serif">
+              <option value="">— เลือกหรือกรอกเอง —</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>ชื่อ-นามสกุล (กรณีไม่มีในรายชื่อ)</label>
+            <input type="text" id="omr-student-name" placeholder="ชื่อ-นามสกุล">
+          </div>
+          <div class="form-group">
+            <label>ชั้น / เลขที่</label>
+            <div style="display:flex;gap:8px">
+              <input type="text" id="omr-student-class" placeholder="ป.5" style="flex:1">
+              <input type="number" id="omr-student-no" placeholder="เลขที่" min="1" style="width:80px">
+            </div>
+          </div>
+        </div>
+
+        <!-- Upload zone -->
+        <div id="omr-drop-zone" style="border:2.5px dashed var(--sky);border-radius:14px;padding:40px;text-align:center;cursor:pointer;background:#f8faff;margin-bottom:16px;transition:all 0.2s"
+             onclick="document.getElementById('omr-file-input').click()"
+             ondragover="event.preventDefault();this.style.background='#dbeafe'"
+             ondragleave="this.style.background='#f8faff'"
+             ondrop="omrHandleDrop(event)">
+          <div style="font-size:3rem;margin-bottom:10px">📷</div>
+          <div style="font-weight:700;color:var(--blue);font-size:1rem">คลิกเพื่ออัปโหลด หรือลากภาพมาวาง</div>
+          <div style="font-size:0.82rem;color:var(--muted);margin-top:6px">รองรับ JPG, PNG, WEBP</div>
+          <input type="file" id="omr-file-input" accept="image/*" style="display:none" onchange="omrHandleFile(event)">
+        </div>
+
+        <!-- Camera -->
+        <div style="margin-bottom:20px">
+          <button class="btn btn-outline" id="omr-camera-btn" onclick="omrToggleCamera()">📸 ใช้กล้องถ่ายภาพ</button>
+          <div id="omr-camera-area" style="display:none;margin-top:12px">
+            <video id="omr-video" autoplay playsinline style="width:100%;max-width:480px;border-radius:12px;border:2px solid var(--border)"></video>
+            <div style="margin-top:10px;display:flex;gap:10px">
+              <button class="btn btn-green" onclick="omrCaptureCamera()">📷 ถ่ายภาพ</button>
+              <button class="btn btn-outline" onclick="omrStopCamera()">✕ ปิดกล้อง</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Processing -->
+        <div id="omr-processing" style="display:none" class="ai-loading">
+          <div class="spinner"></div>
+          <span id="omr-process-text">AI กำลังวิเคราะห์กระดาษคำตอบ...</span>
+        </div>
+
+        <!-- Canvas preview -->
+        <div id="omr-canvas-wrap" style="display:none;margin-bottom:20px">
+          <div style="font-family:Mitr,sans-serif;font-weight:600;color:var(--navy);margin-bottom:10px">ภาพที่อัปโหลด</div>
+          <div id="omr-canvas-container">
+            <canvas id="omr-canvas" style="max-width:100%;border-radius:10px;border:2px solid var(--border)"></canvas>
+          </div>
+          <div style="margin-top:10px;display:flex;gap:10px;flex-wrap:wrap">
+            <button class="btn btn-gold" onclick="omrAnalyzeWithAI()">🤖 วิเคราะห์ด้วย AI</button>
+            <button class="btn btn-outline" onclick="omrReset()">🔄 เริ่มใหม่</button>
+          </div>
+        </div>
+
+        <!-- Results -->
+        <div id="omr-results" style="display:none">
+          <div style="font-family:Mitr,sans-serif;font-weight:600;color:var(--navy);margin-bottom:12px;font-size:1.05rem">📊 ผลการตรวจ</div>
+          <div id="omr-score-box" style="margin-bottom:16px"></div>
+          <div id="omr-detail-list"></div>
+          <div style="margin-top:16px;display:flex;gap:10px;flex-wrap:wrap">
+            <button class="btn btn-green" onclick="omrSaveResult()">💾 บันทึกผล</button>
+            <button class="btn btn-outline" onclick="omrReset()">🔄 สแกนใหม่</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- OMR Answer Sheet Template -->
+      <div class="card">
+        <div class="card-title">📄 พิมพ์กระดาษคำตอบ OMR <span class="badge">สำหรับนักเรียน</span></div>
+        <p style="color:var(--muted);font-size:0.88rem;margin-bottom:16px">พิมพ์กระดาษคำตอบสำหรับนักเรียนกรอก แล้วนำมาสแกนด้วยระบบ OMR</p>
+        <div class="form-row">
+          <div class="form-group">
+            <label>เลือกชุดข้อสอบ</label>
+            <select id="omr-print-examset" style="padding:9px 12px;border:1.5px solid var(--border);border-radius:8px;font-family:Sarabun,sans-serif"></select>
+          </div>
+          <div class="form-group" style="max-width:160px">
+            <label>จำนวนชุด</label>
+            <input type="number" id="omr-print-copies" value="1" min="1" max="50">
+          </div>
+        </div>
+        <button class="btn btn-primary" onclick="omrPrintTemplate()">🖨️ พิมพ์กระดาษคำตอบ</button>
+      </div>
+    </div>
+
     <!-- PAGE: DASHBOARD -->
     <div id="page-dashboard" class="page">
       <div class="stats-bar">
@@ -609,13 +727,45 @@ textarea { resize:vertical; min-height:80px; }
       <div class="card" style="max-width:640px;margin:0 auto">
         <div class="card-title">⚙️ ตั้งค่าระบบ</div>
 
+        <!-- Version Info -->
+        <div style="background:linear-gradient(135deg,var(--navy),var(--blue));border-radius:12px;padding:14px 18px;margin-bottom:20px;color:white;display:flex;align-items:center;gap:14px">
+          <div style="font-size:2rem">🏫</div>
+          <div style="flex:1">
+            <div style="font-family:Mitr,sans-serif;font-weight:700;font-size:1rem">ระบบจัดการสอบบ้านคำไผ่</div>
+            <div style="font-size:0.8rem;opacity:0.8;margin-top:2px">โรงเรียนบ้านคำไผ่ — ระดับประถมศึกษา</div>
+          </div>
+          <div style="text-align:right">
+            <div style="background:var(--gold);color:var(--navy);padding:4px 14px;border-radius:20px;font-family:Mitr,sans-serif;font-weight:700;font-size:0.9rem" id="settings-version-badge">v2.1</div>
+            <div style="font-size:0.72rem;opacity:0.7;margin-top:4px" id="settings-version-date">2026-03-11</div>
+          </div>
+        </div>
+
+        <!-- Changelog -->
+        <div style="background:#f8faff;border:1.5px solid var(--border);border-radius:12px;padding:14px;margin-bottom:20px">
+          <div style="font-weight:700;color:var(--navy);margin-bottom:10px;font-size:0.9rem">📋 ประวัติการอัปเดต</div>
+          <div id="changelog-list"></div>
+        </div>
+
         <div style="background:#f0fdf4;border:1.5px solid #86efac;border-radius:12px;padding:14px;margin-bottom:20px;display:flex;align-items:center;gap:12px">
           <span style="font-size:1.8rem">🤖</span>
           <div>
             <div style="font-weight:700;color:#14532d;font-size:0.95rem">ใช้ Claude AI โดยตรง</div>
-            <div style="font-size:0.82rem;color:#166534;margin-top:2px">ระบบนี้ทำงานภายใน Claude.ai — ไม่ต้องใส่ API Key</div>
+            <div style="font-size:0.82rem;color:#166534;margin-top:2px">ระบบจัดการสอบบ้านคำไผ่ ทำงานภายใน Claude.ai — ไม่ต้องใส่ API Key</div>
           </div>
           <span style="margin-left:auto;background:#dcfce7;color:#15803d;padding:4px 12px;border-radius:20px;font-size:0.8rem;font-weight:700">✅ พร้อมใช้งาน</span>
+        </div>
+
+        <!-- LocalStorage Status -->
+        <div style="background:#eff6ff;border:1.5px solid #93c5fd;border-radius:12px;padding:14px;margin-bottom:20px">
+          <div style="font-weight:700;color:#1e3a8a;margin-bottom:8px;display:flex;align-items:center;gap:8px">
+            💾 ข้อมูลในเครื่อง (localStorage)
+            <span id="ls-status-badge" style="background:#dcfce7;color:#15803d;padding:2px 10px;border-radius:20px;font-size:0.75rem;font-weight:700">บันทึกอัตโนมัติ</span>
+          </div>
+          <div id="ls-detail" style="font-size:0.82rem;color:#1e40af;line-height:1.8">กำลังตรวจสอบ...</div>
+          <div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap">
+            <button class="btn btn-primary btn-sm" onclick="exportLocalBackup()">⬇️ Backup ไฟล์</button>
+            <label class="btn btn-outline btn-sm" style="cursor:pointer;margin:0">⬆️ Restore<input type="file" accept=".json" style="display:none" onchange="importLocalBackup(event)"></label>
+          </div>
         </div>
 
         <div class="divider"></div>
@@ -634,7 +784,7 @@ textarea { resize:vertical; min-height:80px; }
 
         <div style="background:#faf5ff;border:1.5px solid #c4b5fd;border-radius:12px;padding:16px;margin-bottom:20px">
           <div style="font-weight:700;color:#581c87;margin-bottom:8px">📊 Export ประวัติการสอบ</div>
-          <button class="btn btn-sm" style="background:#7c3aed;color:white" onclick="exportHistoryCSV()">📥 Download CSV</button>
+          <button class="btn btn-sm btn-purple" onclick="exportHistoryCSV()">📥 Download CSV</button>
         </div>
 
         <div class="divider"></div>
@@ -695,24 +845,29 @@ textarea { resize:vertical; min-height:80px; }
 <nav id="bottom-nav">
   <button class="bnav-btn active" id="bnav-create" onclick="showPage('create',this)"><span class="bnav-icon">✏️</span>ออกข้อสอบ</button>
   <button class="bnav-btn" id="bnav-exam" onclick="showPage('exam',this)"><span class="bnav-icon">📋</span>ทำข้อสอบ</button>
+  <button class="bnav-btn" id="bnav-omr" onclick="showPage('omr',this)"><span class="bnav-icon">📷</span>OMR</button>
   <button class="bnav-btn" id="bnav-dashboard" onclick="showPage('dashboard',this)"><span class="bnav-icon">📈</span>แดชบอร์ด</button>
   <button class="bnav-btn" id="bnav-settings" onclick="showPage('settings',this)"><span class="bnav-icon">⚙️</span>ตั้งค่า</button>
 </nav>
 
 <script>
 // ============================================================
+// VERSION
+// ============================================================
+const APP_VERSION = 'v2.1';
+const APP_CHANGELOG = [
+  { v:'v2.1', date:'2026-03-11', note:'เปลี่ยนชื่อเป็น ระบบจัดการสอบบ้านคำไผ่ + เพิ่มระบบ Version' },
+  { v:'v2.0', date:'2026-03-11', note:'แก้ localStorage persistence, เพิ่ม OMR สแกนกระดาษคำตอบ, Backup/Restore' },
+  { v:'v1.0', date:'2026-03-10', note:'เวอร์ชันแรก — AI สร้างข้อสอบ, ทำข้อสอบออนไลน์, Firebase sync' },
+];
+
+// ============================================================
 // STATE
 // ============================================================
 let questionBank = [];
 let examSets     = [];
 let examHistory  = [];
-let studentList  = [
-  { id:1, name:'ด.ช. ตะวัน จันทะวัง',    grade:'ป.4', no:1 },
-  { id:2, name:'ด.ช. ศุภกรณ์ ทำสุนา',    grade:'ป.5', no:1 },
-  { id:3, name:'ด.ช. ชัยญวิทย์ คำสุแพง', grade:'ป.5', no:2 },
-  { id:4, name:'ด.ช. กลวัชร์ ทองแสนคำ',  grade:'ป.5', no:3 },
-  { id:5, name:'ด.ช. ศุภกรณ์ เลขกระโทก', grade:'ป.5', no:4 },
-];
+let studentList  = [];
 let currentExamSet = null;
 let userAnswers    = {};
 let currentSubject = 'คณิตศาสตร์';
@@ -720,35 +875,125 @@ let passThreshold  = 60;
 let aiPreviewQuestions = [];
 
 const LABELS = ['ก. ','ข. ','ค. ','ง. '];
-// Expose globals for Firebase module access
-window._getQBank = () => questionBank;
-window._getExamSets = () => examSets;
-window._getExamHistory = () => examHistory;
-window._getStudentList = () => studentList;
-window._setQBank = (v) => { questionBank = v; };
-window._setExamSets = (v) => { examSets = v; };
-window._setExamHistory = (v) => { examHistory = v; };
-window._setStudentList = (v) => { studentList = v; };
-
 const LABEL_MAP = {'ก':0,'ก.':0,'a':0,'0':0,'ข':1,'ข.':1,'b':1,'1':1,'ค':2,'ค.':2,'c':2,'2':2,'ง':3,'ง.':3,'d':3,'3':3};
 const SUBJECT_ICONS = {'คณิตศาสตร์':'🔢','ภาษาไทย':'🇹🇭','สังคมศึกษา':'🌍','วิทยาศาสตร์':'🔬','ภาษาอังกฤษ':'🔤','ประวัติศาสตร์':'📜','สุขศึกษา':'💪','ศิลปะ':'🎨','การงานอาชีพ':'🔧','ด้านทุจริต':'⚖️'};
 const SUBJECT_COLORS = [['#eff6ff','#1d4ed8'],['#fdf4ff','#7e22ce'],['#fff7ed','#c2410c'],['#f0fdf4','#15803d'],['#fefce8','#a16207'],['#fff1f2','#be123c'],['#f0f9ff','#0369a1'],['#fdf2f8','#9d174d'],['#f7fee7','#3f6212'],['#fef3c7','#92400e']];
 
 // ============================================================
+// LOCALSTORAGE — PERSISTENCE (CRITICAL FIX)
+// ============================================================
+const LS_KEYS = {
+  qbank: 'examai_qbank',
+  examsets: 'examai_examsets',
+  history: 'examai_history',
+  students: 'examai_students',
+  passthresh: 'examai_passthresh'
+};
+
+function saveToLS() {
+  try {
+    localStorage.setItem(LS_KEYS.qbank,    JSON.stringify(questionBank));
+    localStorage.setItem(LS_KEYS.examsets, JSON.stringify(examSets));
+    localStorage.setItem(LS_KEYS.history,  JSON.stringify(examHistory));
+    localStorage.setItem(LS_KEYS.students, JSON.stringify(studentList));
+    localStorage.setItem(LS_KEYS.passthresh, String(passThreshold));
+    updateStorageStat();
+  } catch(e) {
+    // localStorage might be full
+    console.warn('localStorage save failed:', e.message);
+    toast('⚠️ พื้นที่เก็บข้อมูลเต็ม — ลอง Export ก่อน', 'error');
+  }
+}
+
+function loadFromLS() {
+  try {
+    const qb = localStorage.getItem(LS_KEYS.qbank);
+    const es = localStorage.getItem(LS_KEYS.examsets);
+    const eh = localStorage.getItem(LS_KEYS.history);
+    const sl = localStorage.getItem(LS_KEYS.students);
+    const pt = localStorage.getItem(LS_KEYS.passthresh);
+    if (qb) questionBank = JSON.parse(qb);
+    if (es) examSets = JSON.parse(es);
+    if (eh) examHistory = JSON.parse(eh);
+    if (sl) studentList = JSON.parse(sl);
+    if (pt) passThreshold = parseInt(pt) || 60;
+  } catch(e) {
+    console.warn('localStorage load failed:', e);
+  }
+  // Seed default students if empty
+  if (!studentList.length) {
+    studentList = [
+      { id:1, name:'ด.ช. ตะวัน จันทะวัง',    grade:'ป.4', no:1 },
+      { id:2, name:'ด.ช. ศุภกรณ์ ทำสุนา',    grade:'ป.5', no:1 },
+      { id:3, name:'ด.ช. ชัยญวิทย์ คำสุแพง', grade:'ป.5', no:2 },
+      { id:4, name:'ด.ช. กลวัชร์ ทองแสนคำ',  grade:'ป.5', no:3 },
+      { id:5, name:'ด.ช. ศุภกรณ์ เลขกระโทก', grade:'ป.5', no:4 },
+    ];
+  }
+}
+
+function updateStorageStat() {
+  try {
+    const total = Object.values(LS_KEYS).reduce((sum, k) => {
+      const v = localStorage.getItem(k);
+      return sum + (v ? v.length : 0);
+    }, 0);
+    const kb = (total / 1024).toFixed(1);
+    const el = document.getElementById('stat-storage');
+    if (el) el.textContent = kb + 'KB';
+    // Update settings page detail
+    const d = document.getElementById('ls-detail');
+    if (d) d.innerHTML = `📚 ข้อสอบ: <strong>${questionBank.length} ข้อ</strong> | 
+                          📋 ชุดข้อสอบ: <strong>${examSets.length} ชุด</strong> | 
+                          📊 ประวัติ: <strong>${examHistory.length} รายการ</strong> | 
+                          🧑‍🎓 นักเรียน: <strong>${studentList.length} คน</strong><br>
+                          💾 ใช้พื้นที่: <strong>${kb}KB</strong> / ~5,000KB`;
+  } catch(e) {}
+}
+
+// Expose globals for Firebase module
+window._getQBank = () => questionBank;
+window._getExamSets = () => examSets;
+window._getExamHistory = () => examHistory;
+window._getStudentList = () => studentList;
+window._setQBank = (v) => { questionBank = v; saveToLS(); };
+window._setExamSets = (v) => { examSets = v; saveToLS(); };
+window._setExamHistory = (v) => { examHistory = v; saveToLS(); };
+window._setStudentList = (v) => { studentList = v; saveToLS(); };
+
+// ============================================================
 // INIT
 // ============================================================
 document.addEventListener('DOMContentLoaded', () => {
+  loadFromLS();
+  // Set version badges
+  document.querySelectorAll('#app-version,#settings-version-badge').forEach(el=>{ if(el) el.textContent=APP_VERSION; });
+  const vDate = document.getElementById('settings-version-date');
+  if(vDate) vDate.textContent = APP_CHANGELOG[0]?.date || '';
+  // Render changelog
+  const clEl = document.getElementById('changelog-list');
+  if(clEl) clEl.innerHTML = APP_CHANGELOG.map((c,i)=>`
+    <div style="display:flex;gap:10px;padding:7px 0;border-bottom:${i<APP_CHANGELOG.length-1?'1px solid var(--border)':'none'}">
+      <span style="background:${i===0?'var(--blue)':'#e2e8f0'};color:${i===0?'white':'var(--muted)'};padding:2px 10px;border-radius:20px;font-size:0.75rem;font-weight:700;white-space:nowrap;align-self:flex-start">${c.v}</span>
+      <div style="flex:1">
+        <div style="font-size:0.82rem;color:var(--text)">${c.note}</div>
+        <div style="font-size:0.72rem;color:var(--muted);margin-top:2px">${c.date}</div>
+      </div>
+      ${i===0?'<span style="background:#dcfce7;color:#15803d;padding:2px 8px;border-radius:20px;font-size:0.7rem;font-weight:700;white-space:nowrap;align-self:flex-start">ปัจจุบัน</span>':''}
+    </div>`).join('');
   updateStats();
   renderBank();
   renderExamSets();
   renderStudentSidebar();
   populateStudentDashSelect();
+  updateStorageStat();
   const sl = document.getElementById('pass-threshold-slider');
   const vl = document.getElementById('pass-threshold-val');
   const hl = document.getElementById('pass-threshold-hint');
   if(sl) sl.value = passThreshold;
   if(vl) vl.textContent = passThreshold + '%';
   if(hl) hl.textContent = `ค่าปัจจุบัน: ${passThreshold}%`;
+  renderOMRSelects();
 });
 
 // ============================================================
@@ -761,7 +1006,7 @@ async function callAI(system, user, maxTokens=2000) {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
       model: 'claude-sonnet-4-20250514',
-      max_tokens: 2000,
+      max_tokens: maxTokens,
       messages: [{ role: 'user', content: combined }]
     })
   });
@@ -775,14 +1020,36 @@ async function callAI(system, user, maxTokens=2000) {
   return text.replace(/```json\s*/gi,'').replace(/```\s*/g,'').trim();
 }
 
+async function callAIWithImage(prompt, base64Image, mediaType='image/jpeg') {
+  const res = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      model: 'claude-sonnet-4-20250514',
+      max_tokens: 2000,
+      messages: [{
+        role: 'user',
+        content: [
+          { type: 'image', source: { type: 'base64', media_type: mediaType, data: base64Image } },
+          { type: 'text', text: prompt }
+        ]
+      }]
+    })
+  });
+  if (!res.ok) {
+    let errMsg = 'HTTP ' + res.status;
+    try { const e = await res.json(); errMsg = e.error?.message || errMsg; } catch(_){}
+    throw new Error(errMsg);
+  }
+  const data = await res.json();
+  return (data.content || []).map(i => i.type === 'text' ? i.text : '').join('').trim();
+}
+
 // ============================================================
 // AI GENERATE
 // ============================================================
 function extractJSON(raw) {
-  // ลบ markdown fences ก่อน
   let text = raw.replace(/```json\s*/gi,'').replace(/```\s*/gi,'').trim();
-
-  // หา JSON array [ ... ] ที่สมบูรณ์ด้วย bracket matching
   const start = text.indexOf('[');
   if (start < 0) throw new Error('ไม่พบ JSON array ในผลลัพธ์');
   let depth = 0, end = -1;
@@ -823,18 +1090,10 @@ async function generateWithAI() {
   document.getElementById('ai-loading').style.display = 'flex';
   try {
     const raw = await callAI(systemPrompt, userPrompt, 4000);
-    console.log('AI raw response:', raw.substring(0, 200));
-
     let qs;
-    try {
-      qs = extractJSON(raw);
-    } catch(parseErr) {
-      console.error('JSON parse error, raw:', raw);
-      throw new Error('AI ตอบผิดรูปแบบ — ลองกดสร้างใหม่อีกครั้ง');
-    }
-
+    try { qs = extractJSON(raw); }
+    catch(parseErr) { throw new Error('AI ตอบผิดรูปแบบ — ลองกดสร้างใหม่อีกครั้ง'); }
     if (!Array.isArray(qs) || qs.length === 0) throw new Error('ไม่พบข้อสอบในผลลัพธ์');
-
     aiPreviewQuestions = qs
       .filter(q => (q.q || q.question) && Array.isArray(q.options) && q.options.length >= 4)
       .map(q => ({
@@ -845,12 +1104,10 @@ async function generateWithAI() {
         answer: Math.min(Math.max(parseInt(q.answer) || 0, 0), 3),
         selected: true
       }));
-
     if (!aiPreviewQuestions.length) throw new Error('ไม่พบข้อสอบที่ถูกรูปแบบ');
     renderAIPreview(subject, grade, diff, topic);
     toast(`✅ AI สร้าง ${aiPreviewQuestions.length} ข้อ`, 'success');
   } catch(e) {
-    console.error('generateWithAI error:', e);
     toast('❌ ' + e.message, 'error');
   } finally {
     document.getElementById('ai-loading').style.display = 'none';
@@ -871,7 +1128,7 @@ function renderAIPreview(subject, grade, diff, topic) {
       </div>
     </div>
     <div id="preview-q-list" style="display:flex;flex-direction:column;gap:10px;margin-bottom:16px">
-      ${aiPreviewQuestions.map((q,i)=>renderPreviewItem(q,i,subject,grade,diff,topic)).join('')}
+      ${aiPreviewQuestions.map((q,i)=>renderPreviewItem(q,i)).join('')}
     </div>
     <div style="display:flex;gap:10px;flex-wrap:wrap;padding-top:12px;border-top:1.5px solid var(--border)">
       <button class="btn btn-green" onclick="saveSelectedToBank()">✅ บันทึก (<span id="preview-sel-count">${selCnt}</span> ข้อ)</button>
@@ -880,7 +1137,7 @@ function renderAIPreview(subject, grade, diff, topic) {
     </div>`;
 }
 
-function renderPreviewItem(q,i,subject,grade,diff,topic) {
+function renderPreviewItem(q,i) {
   return `<div id="preview-item-${i}" style="border:2px solid ${q.selected?'var(--blue)':'var(--border)'};border-radius:12px;padding:14px;background:${q.selected?'#f0f4ff':'white'};transition:all 0.2s">
     <div style="display:flex;align-items:flex-start;gap:10px">
       <div onclick="togglePreviewSelect(${i})" style="cursor:pointer;width:22px;height:22px;border-radius:6px;border:2px solid ${q.selected?'var(--blue)':'var(--border)'};background:${q.selected?'var(--blue)':'white'};display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:2px">
@@ -924,11 +1181,13 @@ function saveSelectedToBank() {
   const toSave = aiPreviewQuestions.filter(q=>q.selected);
   if (!toSave.length) { toast('กรุณาเลือกอย่างน้อย 1 ข้อ','error'); return; }
   toSave.forEach(q=>{ const {selected,...clean}=q; questionBank.push(clean); });
-  saveBank(); renderBank(); updateStats();
+  saveBank();
+  renderBank(); updateStats();
   aiPreviewQuestions = [];
   document.getElementById('ai-preview-panel').style.display = 'none';
   document.getElementById('create-exam-card').style.display = '';
   document.getElementById('exam-title').value = `ข้อสอบ${document.getElementById('ai-subject').value}`;
+  renderOMRSelects();
   toast(`✅ บันทึก ${toSave.length} ข้อ เข้าคลังแล้ว`, 'success');
 }
 
@@ -946,7 +1205,7 @@ function addManualQuestion() {
     id: Date.now(), subject: document.getElementById('manual-subject').value,
     grade: document.getElementById('manual-grade').value, difficulty:'ปานกลาง',
     question: q,
-    options: ['ก.'+a,'ข.'+b,'ค.'+c,'ง.'+d],
+    options: ['ก. '+a,'ข. '+b,'ค. '+c,'ง. '+d],
     answer: parseInt(document.getElementById('correct-ans').value)
   });
   saveBank(); renderBank(); updateStats();
@@ -956,10 +1215,10 @@ function addManualQuestion() {
 }
 
 // ============================================================
-// BANK
+// BANK — FIXED SAVE
 // ============================================================
 function saveBank() {
-
+  saveToLS();
   if (window._fb?.connected) window.pushToFirebase(true);
 }
 
@@ -1055,10 +1314,10 @@ function deleteQuestion(id) {
 async function clearBank() {
   if (!await showConfirm('ลบข้อสอบและชุดข้อสอบทั้งหมด?', '🗑️')) return;
   questionBank=[]; examSets=[];
-
-
+  saveToLS();
   if(window._fb?.connected) window.pushToFirebase(true);
   renderBank(); renderExamSets(); updateStats();
+  renderOMRSelects();
   document.getElementById('create-exam-card').style.display='none';
   toast('ล้างคลังแล้ว');
 }
@@ -1075,9 +1334,9 @@ function createExamSet() {
   const selected = [...pool].sort(()=>Math.random()-0.5).slice(0,Math.min(count,pool.length));
   const examSet = { id:Date.now(), title, subject:filterSubject||'รวมทุกวิชา', questions:selected, createdAt:new Date().toLocaleDateString('th-TH') };
   examSets.push(examSet);
-
+  saveToLS();
   if(window._fb?.connected) window.pushToFirebase(true);
-  updateStats(); renderExamSets(); renderPrintArea(examSet);
+  updateStats(); renderExamSets(); renderOMRSelects(); renderPrintArea(examSet);
   toast('✅ สร้างชุดข้อสอบแล้ว','success');
 }
 
@@ -1149,9 +1408,9 @@ function renderExamSets() {
 
 function deleteExamSet(id) {
   examSets = examSets.filter(s=>String(s.id)!==String(id));
-
+  saveToLS();
   if(window._fb?.connected) window.pushToFirebase(true);
-  renderExamSets(); toast('ลบชุดข้อสอบแล้ว');
+  renderExamSets(); renderOMRSelects(); toast('ลบชุดข้อสอบแล้ว');
 }
 
 function startExam(id) {
@@ -1159,32 +1418,22 @@ function startExam(id) {
   if (!currentExamSet) return;
   userAnswers = {};
   stopExamTimer();
-
   document.getElementById('exam-area').style.display = '';
   document.getElementById('score-result').style.display = 'none';
   document.getElementById('exam-area-title').textContent = '📝 '+currentExamSet.title;
-
-  // Reset student info
   ['student-name','student-class','student-no'].forEach(id=>{ const el=document.getElementById(id); if(el) el.value=''; });
   document.getElementById('student-select').value = '';
   document.getElementById('name-warning').style.display = 'none';
-
-  // Show info card, hide exam cards
   document.getElementById('student-info-card').style.display = '';
   document.getElementById('exam-rules-card').style.display = 'none';
   document.getElementById('questions-card').style.display = 'none';
   document.getElementById('answer-sheet-card').style.display = 'none';
-
-  // Reset buttons
   const startBtn = document.getElementById('start-exam-btn');
-  if (startBtn) { startBtn.disabled=true; }
+  if (startBtn) startBtn.disabled=true;
   const submitBtn = document.getElementById('submit-btn');
-  if (submitBtn) { submitBtn.disabled=true; }
+  if (submitBtn) submitBtn.disabled=true;
   document.getElementById('submit-hint').textContent = 'ต้องตอบทุกข้อก่อนส่ง';
-
   renderStudentSidebar();
-
-  // Render questions
   document.getElementById('exam-questions-area').innerHTML = currentExamSet.questions.map((q,i)=>`
     <div class="question-item" style="margin-bottom:16px" id="qitem-exam-${i}">
       <div class="q-header">
@@ -1195,8 +1444,6 @@ function startExam(id) {
         ${q.options.map((opt,oi)=>`<div class="q-option" id="qopt-${i}-${oi}" onclick="selectOption(${i},${oi})" style="cursor:pointer;transition:all 0.15s">${opt}</div>`).join('')}
       </div>
     </div>`).join('');
-
-  // Render answer sheet
   document.getElementById('answer-sheet-grid').innerHTML = currentExamSet.questions.map((_,i)=>`
     <div class="answer-row" id="ans-row-${i}">
       <span class="ans-num">${i+1}.</span>
@@ -1204,19 +1451,13 @@ function startExam(id) {
         ${['ก','ข','ค','ง'].map((l,oi)=>`<div class="ans-opt" id="ans-${i}-${oi}" onclick="selectAnswer(${i},${oi})">${l}</div>`).join('')}
       </div>
     </div>`).join('');
-
   document.getElementById('exam-area').scrollIntoView({behavior:'smooth'});
 }
 
-// ============================================================
-// ✅ BUG FIX: checkStudentReady — show/hide warning correctly
-// ============================================================
 function checkStudentReady() {
   const name = (document.getElementById('student-name')?.value||'').trim();
   const btn  = document.getElementById('start-exam-btn');
-  const warn = document.getElementById('name-warning');
   if (btn)  btn.disabled = !name;
-  if (warn) warn.style.display = name ? 'none' : 'none'; // hide initially, show on click
 }
 
 function beginExam() {
@@ -1233,9 +1474,6 @@ function beginExam() {
   window.scrollTo(0,0);
 }
 
-// ============================================================
-// ✅ BUG FIX: fillStudentFromList — calls checkStudentReady
-// ============================================================
 function fillStudentFromList() {
   const id = parseInt(document.getElementById('student-select').value);
   if (!id) return;
@@ -1244,7 +1482,7 @@ function fillStudentFromList() {
   document.getElementById('student-name').value  = s.name;
   document.getElementById('student-class').value = s.grade;
   document.getElementById('student-no').value    = s.no;
-  checkStudentReady(); // ✅ KEY FIX
+  checkStudentReady();
 }
 
 function selectOption(qIdx, optIdx) {
@@ -1382,7 +1620,7 @@ function submitExam(forceSubmit=false) {
   const studentClass=(document.getElementById('student-class').value||'').trim();
   const studentNo=(document.getElementById('student-no').value||'').trim();
   examHistory.unshift({ id:Date.now(), studentName, studentClass, studentNo, examTitle:currentExamSet.title, subject:currentExamSet.subject, score:correct, total, pct, pass, timeUsed:timeUsedStr, date:new Date().toLocaleString('th-TH') });
-
+  saveToLS();
   if(window._fb?.connected) window.pushToFirebase(true);
   populateStudentDashSelect();
   toast(`✅ ตรวจแล้ว: ${correct}/${total}`, pass?'success':'');
@@ -1420,7 +1658,6 @@ function renderDashboard() {
       </div>`;
     }).join('');
   }
-  // Tracking
   const trackEl=document.getElementById('dash-student-tracking');
   if(trackEl){
     const allSubjects=[...new Set(examHistory.map(h=>h.subject))].sort();
@@ -1475,7 +1712,7 @@ function renderHistory() {
 async function clearHistory() {
   if (!await showConfirm('ล้างประวัติทั้งหมด?', '🗑️')) return;
   examHistory=[];
-
+  saveToLS();
   if(window._fb?.connected) window.pushToFirebase(true);
   renderHistory(); renderDashboard();
   toast('ล้างประวัติแล้ว');
@@ -1492,7 +1729,7 @@ function populateStudentDashSelect() {
   const fromHist = [...new Set(examHistory.map(h=>h.studentName).filter(n=>n&&n!=='ไม่ระบุชื่อ'))];
   const all = [...new Set([...fromList,...fromHist])].sort();
   sel.innerHTML = '<option value="">— เลือกชื่อ —</option>' +
-    all.map(n=>{ const info=studentList.find(s=>s.name===n); return `<option value="${n}" ${n===cur?'selected':''}>${n}${info?` (${info.grade})`:''}` ; }).join('');
+    all.map(n=>{ const info=studentList.find(s=>s.name===n); return `<option value="${n}" ${n===cur?'selected':''}>${n}${info?` (${info.grade})`:''}</option>`; }).join('');
 }
 
 function renderStudentDashboard() {
@@ -1553,6 +1790,7 @@ function updateStats() {
   document.getElementById('stat-exams').textContent = examSets.length;
   if (questionBank.length>0) document.getElementById('create-exam-card').style.display='';
   renderSubjectSummary(); renderSubjectCounts();
+  updateStorageStat();
 }
 
 function renderSubjectCounts() {
@@ -1602,7 +1840,9 @@ function showPage(p, triggerEl) {
   if(bnb) bnb.classList.add('active');
   document.querySelector('.sidebar')?.classList.remove('mobile-open');
   if(p==='exam') renderExamSets();
+  if(p==='omr') renderOMRSelects();
   if(p==='dashboard'){ renderDashboard(); populateStudentDashSelect(); }
+  if(p==='settings') updateStorageStat();
   window.scrollTo(0,0);
 }
 
@@ -1631,10 +1871,10 @@ function selectSubject(btn, subject) {
 }
 
 // ============================================================
-// STUDENT LIST
+// STUDENT LIST — FIXED SAVE
 // ============================================================
 function saveStudents() {
-
+  saveToLS();
   if(window._fb?.connected) window.pushToFirebase(true);
 }
 
@@ -1663,6 +1903,7 @@ function addStudent() {
   if (!name) { toast('กรุณากรอกชื่อ','error'); return; }
   studentList.push({ id:Date.now(), name, grade:document.getElementById('new-student-grade').value, no:parseInt(document.getElementById('new-student-no').value)||studentList.length+1 });
   saveStudents(); renderStudentSidebar();
+  populateStudentDashSelect();
   document.getElementById('new-student-name').value='';
   document.getElementById('new-student-no').value='';
   document.getElementById('add-student-form').style.display='none';
@@ -1711,6 +1952,7 @@ function saveEditStudent(id) {
 function savePassThreshold() {
   const val=parseInt(document.getElementById('pass-threshold-slider').value);
   passThreshold=val;
+  localStorage.setItem(LS_KEYS.passthresh, String(val));
   document.getElementById('pass-threshold-hint').textContent=`ค่าปัจจุบัน: ${val}%`;
   toast(`✅ เกณฑ์ผ่าน ${val}%`,'success');
 }
@@ -1722,6 +1964,38 @@ function exportHistoryCSV() {
   const csv='\uFEFF'+h.join(',')+'\n'+rows.join('\n');
   const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8;'})); a.download=`ประวัติการสอบ.csv`; a.click();
   toast('✅ Download CSV','success');
+}
+
+// Backup / Restore localStorage
+function exportLocalBackup() {
+  const backup = { version:'2.1', exportedAt: new Date().toISOString(), questionBank, examSets, examHistory, studentList, passThreshold };
+  const json = JSON.stringify(backup, null, 2);
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([json], {type:'application/json'}));
+  a.download = `examai_backup_${new Date().toISOString().slice(0,10)}.json`;
+  a.click();
+  toast('✅ Backup ดาวน์โหลดแล้ว', 'success');
+}
+
+function importLocalBackup(event) {
+  const file = event.target.files[0]; if(!file) return;
+  const r = new FileReader();
+  r.onload = async (e) => {
+    try {
+      const data = JSON.parse(e.target.result);
+      if (!await showConfirm('นำเข้าข้อมูล Backup?\nข้อมูลปัจจุบันจะถูกแทนที่', '⚠️')) return;
+      if (data.questionBank) questionBank = data.questionBank;
+      if (data.examSets) examSets = data.examSets;
+      if (data.examHistory) examHistory = data.examHistory;
+      if (data.studentList) studentList = data.studentList;
+      if (data.passThreshold) passThreshold = data.passThreshold;
+      saveToLS();
+      renderBank(); renderExamSets(); renderHistory(); renderDashboard(); renderStudentSidebar(); updateStats();
+      toast('✅ Restore สำเร็จ','success');
+    } catch(err) { toast('❌ ไฟล์ไม่ถูกต้อง','error'); }
+  };
+  r.readAsText(file,'UTF-8');
+  event.target.value = '';
 }
 
 // ============================================================
@@ -1739,15 +2013,15 @@ function exportAllQuestions() {
       <button onclick="this.closest('[style*=fixed]').remove()" style="background:none;border:none;font-size:1.4rem;cursor:pointer;color:#888">✕</button>
     </div>
     <div style="background:#f0f4ff;border:1.5px solid #93c5fd;border-radius:12px;padding:16px">
-      <div style="font-weight:700;color:#1e3a8a;margin-bottom:8px">📋 Export Code (แนะนำ)</div>
+      <div style="font-weight:700;color:#1e3a8a;margin-bottom:8px">📋 Export Code</div>
       <textarea id="export-b64-area" style="width:100%;height:80px;padding:8px;border:1px solid #93c5fd;border-radius:8px;font-family:monospace;font-size:0.72rem;resize:none" readonly></textarea>
-      <button id="copy-btn" style="margin-top:8px;width:100%;padding:9px;background:var(--blue);color:white;border:none;border-radius:8px;font-family:Sarabun,sans-serif;font-size:0.9rem;font-weight:600;cursor:pointer">📋 คัดลอก Code</button>
+      <button id="copy-btn" style="margin-top:8px;width:100%;padding:9px;background:var(--blue);color:white;border:none;border-radius:8px;font-family:Sarabun,sans-serif;font-size:0.9rem;font-weight:600;cursor:pointer">📋 คัดลอก</button>
     </div>
   </div>`;
   document.body.appendChild(modal);
   modal.querySelector('#export-b64-area').value = b64;
   modal.querySelector('#copy-btn').onclick = () => {
-    navigator.clipboard.writeText(b64).then(()=>{ const btn=modal.querySelector('#copy-btn'); btn.textContent='✅ คัดลอกแล้ว!'; btn.style.background='var(--green)'; setTimeout(()=>{ btn.textContent='📋 คัดลอก Code'; btn.style.background=''; },2500); });
+    navigator.clipboard.writeText(b64).then(()=>{ const btn=modal.querySelector('#copy-btn'); btn.textContent='✅ คัดลอกแล้ว!'; btn.style.background='var(--green)'; setTimeout(()=>{ btn.textContent='📋 คัดลอก'; btn.style.background=''; },2500); });
   };
 }
 
@@ -1818,7 +2092,8 @@ function processImportData(raw) {
 // CSV / FILE IMPORT
 // ============================================================
 function handleFileDrop(e) {
-  e.preventDefault(); this.style.background='#f8faff';
+  e.preventDefault();
+  document.getElementById('csv-drop-zone').style.background='#f8faff';
   const file=e.dataTransfer.files[0]; if(file) processImportFile(file);
 }
 
@@ -1896,7 +2171,7 @@ function importJSON() {
   try {
     let arr=JSON.parse(document.getElementById('import-json-area').value.trim());
     if(!Array.isArray(arr)) arr=[arr];
-    const parsed=arr.filter(q=>(q.question||q.q)&&(q.options||q.opts)).map(q=>({ id:Date.now()+Math.random(), subject:q.subject||'คณิตศาสตร์', grade:q.grade||'ป.6', difficulty:'ปานกลาง', question:q.question||q.q, options:(q.options||q.opts).map((o,i)=>LABELS[i]+String(o).replace(/^[กขคง][.)]\s*/u,'').trim()), answer:Math.min(Math.max(q.answer||0,0),3) }));
+    const parsed=arr.filter(q=>(q.question||q.q)&&(q.options||q.opts)).map(q=>({ id:Date.now()+Math.random(), subject:q.subject||'คณิตศาสตร์', grade:q.grade||'ป.5', difficulty:'ปานกลาง', question:q.question||q.q, options:(q.options||q.opts).map((o,i)=>LABELS[i]+String(o).replace(/^[กขคง][.)]\s*/u,'').trim()), answer:Math.min(Math.max(q.answer||0,0),3) }));
     if(!parsed.length) throw new Error('ไม่พบข้อมูล');
     confirmImport(parsed);
   } catch(e){ toast('❌ JSON ผิดรูปแบบ: '+e.message,'error'); }
@@ -1908,6 +2183,7 @@ function confirmImport(parsed) {
   saveBank(); renderBank(); updateStats();
   document.getElementById('create-exam-card').style.display='';
   document.getElementById('import-card').style.display='none';
+  renderOMRSelects();
   toast(`✅ Import ${parsed.length} ข้อ`, 'success');
   window._csvParsed=window._textParsed=null;
 }
@@ -1918,7 +2194,281 @@ function switchImportTab(tab, btn) {
   btn.classList.add('active');
 }
 
+// ============================================================
+// OMR — OPTICAL MARK RECOGNITION
+// ============================================================
+let omrCurrentImage = null;
+let omrCurrentResults = null;
+let omrVideoStream = null;
 
+function renderOMRSelects() {
+  const sels = ['omr-examset-select','omr-print-examset'];
+  sels.forEach(selId => {
+    const sel = document.getElementById(selId);
+    if (!sel) return;
+    const cur = sel.value;
+    sel.innerHTML = `<option value="">— เลือกชุดข้อสอบ —</option>` +
+      examSets.map(s=>`<option value="${s.id}" ${String(s.id)===cur?'selected':''}>${s.title} (${s.questions.length} ข้อ)</option>`).join('');
+  });
+  const studentSel = document.getElementById('omr-student-select');
+  if (studentSel) {
+    studentSel.innerHTML = `<option value="">— เลือกหรือกรอกเอง —</option>` +
+      studentList.map(s=>`<option value="${s.id}">${s.name} (${s.grade} เลขที่ ${s.no})</option>`).join('');
+  }
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  const omrStudentSel = document.getElementById('omr-student-select');
+  if (omrStudentSel) omrStudentSel.addEventListener('change', () => {
+    const id = parseInt(omrStudentSel.value);
+    if (!id) return;
+    const s = studentList.find(s=>s.id===id);
+    if (!s) return;
+    document.getElementById('omr-student-name').value = s.name;
+    document.getElementById('omr-student-class').value = s.grade;
+    document.getElementById('omr-student-no').value = s.no;
+  });
+});
+
+function omrHandleDrop(e) {
+  e.preventDefault();
+  document.getElementById('omr-drop-zone').style.background='#f8faff';
+  const file = e.dataTransfer.files[0];
+  if (file && file.type.startsWith('image/')) omrLoadFile(file);
+  else toast('กรุณาใช้ไฟล์ภาพ','error');
+}
+
+function omrHandleFile(e) {
+  const file = e.target.files[0];
+  if (file) omrLoadFile(file);
+  e.target.value = '';
+}
+
+function omrLoadFile(file) {
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    omrCurrentImage = e.target.result;
+    displayOMRCanvas(omrCurrentImage);
+  };
+  reader.readAsDataURL(file);
+}
+
+function displayOMRCanvas(dataUrl) {
+  const img = new Image();
+  img.onload = () => {
+    const canvas = document.getElementById('omr-canvas');
+    const maxW = Math.min(600, img.width);
+    const scale = maxW / img.width;
+    canvas.width = img.width * scale;
+    canvas.height = img.height * scale;
+    const ctx = canvas.getContext('2d');
+    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+    document.getElementById('omr-canvas-wrap').style.display = '';
+    document.getElementById('omr-results').style.display = 'none';
+    omrCurrentResults = null;
+  };
+  img.src = dataUrl;
+}
+
+async function omrToggleCamera() {
+  const area = document.getElementById('omr-camera-area');
+  if (area.style.display === 'none' || !area.style.display) {
+    try {
+      omrVideoStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment', width:{ideal:1280}, height:{ideal:720} } });
+      document.getElementById('omr-video').srcObject = omrVideoStream;
+      area.style.display = '';
+      document.getElementById('omr-camera-btn').textContent = '📸 กล้องเปิดอยู่';
+    } catch(e) { toast('❌ ไม่สามารถเปิดกล้องได้: '+e.message,'error'); }
+  } else {
+    omrStopCamera();
+  }
+}
+
+function omrStopCamera() {
+  if (omrVideoStream) { omrVideoStream.getTracks().forEach(t=>t.stop()); omrVideoStream=null; }
+  document.getElementById('omr-camera-area').style.display = 'none';
+  document.getElementById('omr-camera-btn').textContent = '📸 ใช้กล้องถ่ายภาพ';
+}
+
+function omrCaptureCamera() {
+  const video = document.getElementById('omr-video');
+  const canvas = document.createElement('canvas');
+  canvas.width = video.videoWidth;
+  canvas.height = video.videoHeight;
+  canvas.getContext('2d').drawImage(video, 0, 0);
+  omrCurrentImage = canvas.toDataURL('image/jpeg', 0.92);
+  omrStopCamera();
+  displayOMRCanvas(omrCurrentImage);
+  toast('📷 ถ่ายภาพแล้ว ตรวจสอบภาพด้านล่าง','success');
+}
+
+async function omrAnalyzeWithAI() {
+  if (!omrCurrentImage) { toast('กรุณาอัปโหลดภาพก่อน','error'); return; }
+  const examSetId = document.getElementById('omr-examset-select').value;
+  if (!examSetId) { toast('กรุณาเลือกชุดข้อสอบ (เฉลย)','error'); return; }
+  const examSet = examSets.find(s=>String(s.id)===String(examSetId));
+  if (!examSet) { toast('ไม่พบชุดข้อสอบ','error'); return; }
+
+  document.getElementById('omr-processing').style.display = 'flex';
+  document.getElementById('omr-process-text').textContent = 'AI กำลังวิเคราะห์กระดาษคำตอบ...';
+
+  try {
+    const base64 = omrCurrentImage.split(',')[1];
+    const mediaType = omrCurrentImage.startsWith('data:image/png') ? 'image/png' : 'image/jpeg';
+
+    const answerKey = examSet.questions.map((q,i)=>`ข้อ ${i+1}: เฉลย ${['ก','ข','ค','ง'][q.answer]}`).join(', ');
+    const numQ = examSet.questions.length;
+
+    const prompt = `นี่คือกระดาษคำตอบสอบของนักเรียน มี ${numQ} ข้อ แต่ละข้อมีตัวเลือก ก ข ค ง
+
+กรุณาอ่านคำตอบที่นักเรียนทำเครื่องหมายในแต่ละข้อ
+
+ตอบเป็น JSON เท่านั้น รูปแบบ:
+{"answers": [0, 1, 2, 3, ...]}
+โดย 0=ก, 1=ข, 2=ค, 3=ง, null=ไม่ได้ทำเครื่องหมาย หรือไม่ชัดเจน
+
+ต้องมีคำตอบครบ ${numQ} ข้อ ถ้าอ่านไม่ออกให้ใส่ null
+ห้ามมีข้อความอื่นนอกจาก JSON`;
+
+    const raw = await callAIWithImage(prompt, base64, mediaType);
+    let parsed;
+    try {
+      const clean = raw.replace(/```json\s*/gi,'').replace(/```\s*/gi,'').trim();
+      const start = clean.indexOf('{');
+      const end = clean.lastIndexOf('}');
+      parsed = JSON.parse(clean.substring(start, end+1));
+    } catch(e) { throw new Error('AI ตอบผิดรูปแบบ กรุณาลองใหม่'); }
+
+    if (!parsed.answers || !Array.isArray(parsed.answers)) throw new Error('ไม่พบข้อมูลคำตอบ');
+
+    // Pad or trim to match question count
+    while (parsed.answers.length < numQ) parsed.answers.push(null);
+    parsed.answers = parsed.answers.slice(0, numQ);
+
+    omrCurrentResults = { examSet, answers: parsed.answers };
+    renderOMRResults(examSet, parsed.answers);
+  } catch(e) {
+    toast('❌ '+e.message,'error');
+    console.error(e);
+  } finally {
+    document.getElementById('omr-processing').style.display = 'none';
+  }
+}
+
+function renderOMRResults(examSet, answers) {
+  const resultEl = document.getElementById('omr-results');
+  resultEl.style.display = '';
+
+  let correct = 0;
+  const details = examSet.questions.map((q, i) => {
+    const studentAns = answers[i];
+    const ok = studentAns === q.answer;
+    if (ok) correct++;
+    return { i, q, studentAns, ok };
+  });
+
+  const total = examSet.questions.length;
+  const pct = Math.round(correct/total*100);
+  const pass = pct >= passThreshold;
+
+  document.getElementById('omr-score-box').innerHTML = `
+    <div class="score-box ${pass?'pass':'fail'}" style="padding:20px">
+      <div class="score-num" style="color:${pass?'var(--green)':'var(--red)'};font-size:2.5rem">${correct}/${total}</div>
+      <div class="score-grade">${pct}% — ${pass?'✅ ผ่าน':'❌ ไม่ผ่าน'}</div>
+    </div>`;
+
+  document.getElementById('omr-detail-list').innerHTML = `
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:8px">
+      ${details.map(({i,q,studentAns,ok})=>`
+        <div class="omr-result-row ${ok?'omr-correct':'omr-wrong'}">
+          <span style="font-weight:700;min-width:28px;color:var(--muted)">ข้อ ${i+1}</span>
+          <span style="flex:1;font-size:0.8rem;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${q.question.substring(0,30)}...</span>
+          <span style="margin-left:6px">
+            <span style="background:${ok?'var(--green)':'var(--red)'};color:white;border-radius:5px;padding:2px 7px;font-size:0.78rem;font-weight:700">
+              ${studentAns!==null&&studentAns!==undefined?['ก','ข','ค','ง'][studentAns]:'?'}
+            </span>
+            ${!ok?`<span style="background:#dcfce7;color:var(--green);border-radius:5px;padding:2px 7px;font-size:0.78rem;margin-left:3px">เฉลย: ${['ก','ข','ค','ง'][q.answer]}</span>`:''}
+          </span>
+        </div>`).join('')}
+    </div>`;
+}
+
+function omrSaveResult() {
+  if (!omrCurrentResults) return;
+  const { examSet, answers } = omrCurrentResults;
+  const total = examSet.questions.length;
+  let correct = 0;
+  examSet.questions.forEach((q, i) => { if (answers[i] === q.answer) correct++; });
+  const pct = Math.round(correct/total*100);
+  const pass = pct >= passThreshold;
+
+  const studentName = (document.getElementById('omr-student-name').value||'').trim() || 'ไม่ระบุชื่อ';
+  const studentClass = (document.getElementById('omr-student-class').value||'').trim();
+  const studentNo = (document.getElementById('omr-student-no').value||'').trim();
+
+  examHistory.unshift({
+    id: Date.now(), studentName, studentClass, studentNo,
+    examTitle: examSet.title, subject: examSet.subject,
+    score: correct, total, pct, pass,
+    timeUsed: 'OMR สแกน', date: new Date().toLocaleString('th-TH'),
+    source: 'omr'
+  });
+  saveToLS();
+  if(window._fb?.connected) window.pushToFirebase(true);
+  populateStudentDashSelect();
+  toast(`✅ บันทึกผล ${correct}/${total} แล้ว`, pass?'success':'');
+}
+
+function omrReset() {
+  omrCurrentImage = null;
+  omrCurrentResults = null;
+  document.getElementById('omr-canvas-wrap').style.display = 'none';
+  document.getElementById('omr-results').style.display = 'none';
+  document.getElementById('omr-processing').style.display = 'none';
+  document.getElementById('omr-file-input').value = '';
+  omrStopCamera();
+}
+
+function omrPrintTemplate() {
+  const examSetId = document.getElementById('omr-print-examset').value;
+  const examSet = examSets.find(s=>String(s.id)===String(examSetId));
+  if (!examSet) { toast('กรุณาเลือกชุดข้อสอบ','error'); return; }
+  const copies = parseInt(document.getElementById('omr-print-copies').value) || 1;
+  const numQ = examSet.questions.length;
+  
+  const sheetHTML = (copyNum) => `
+    <div style="page-break-after:always;padding:20px;font-family:Sarabun,sans-serif;max-width:600px;margin:0 auto">
+      <div style="text-align:center;border:2px solid #333;border-radius:8px;padding:16px;margin-bottom:16px">
+        <h2 style="font-size:1.2rem;font-weight:700;margin-bottom:4px">${examSet.title}</h2>
+        <div style="font-size:0.85rem;color:#666">วิชา: ${examSet.subject} | จำนวน ${numQ} ข้อ</div>
+        <div style="display:flex;gap:30px;margin-top:10px;font-size:0.88rem">
+          <div>ชื่อ: ________________________</div>
+          <div>ชั้น: ________</div>
+          <div>เลขที่: _____</div>
+        </div>
+      </div>
+      <div style="border:2px solid #333;border-radius:8px;padding:16px">
+        <div style="font-weight:700;font-size:0.9rem;margin-bottom:12px;text-align:center">กระดาษคำตอบ — วงกลมคำตอบที่ถูกต้อง</div>
+        <div style="display:grid;grid-template-columns:repeat(${Math.min(5, numQ)},1fr);gap:8px">
+          ${Array.from({length:numQ},(_,i)=>`
+            <div style="display:flex;align-items:center;gap:6px;padding:4px">
+              <span style="font-weight:700;min-width:22px;font-size:0.88rem">${i+1}.</span>
+              ${['ก','ข','ค','ง'].map(l=>`<span style="width:24px;height:24px;border:2px solid #333;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:0.75rem;font-weight:600">${l}</span>`).join('')}
+            </div>`).join('')}
+        </div>
+      </div>
+    </div>`;
+  
+  const win = window.open('','_blank');
+  win.document.write(`<html><head><meta charset="UTF-8"><style>@media print{body{margin:0}}</style></head><body>`);
+  for(let c=0;c<copies;c++) win.document.write(sheetHTML(c+1));
+  win.document.write(`<script>window.onload=()=>{window.print();}<\/script></body></html>`);
+  win.document.close();
+}
+
+// ============================================================
+// CONFIRM MODAL
+// ============================================================
 function showConfirm(msg, icon='⚠️') {
   return new Promise(resolve => {
     document.getElementById('confirm-icon').textContent = icon;
@@ -1930,12 +2480,14 @@ function showConfirm(msg, icon='⚠️') {
     };
   });
 }
+
 // ============================================================
 // RESET
 // ============================================================
 async function resetEverything() {
   if (!await showConfirm('ล้างข้อมูลทั้งหมด?\nจะลบ: คลังข้อสอบ, ชุดข้อสอบ, ประวัติ, รายชื่อ นร.', '⚠️')) return;
   questionBank=[]; examSets=[]; examHistory=[]; studentList=[]; aiPreviewQuestions=[];
+  saveToLS();
   if(window._fb?.connected){
     try{
       const {doc,setDoc}=await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js');
@@ -1947,11 +2499,13 @@ async function resetEverything() {
     }catch(e){}
   }
   renderStudentSidebar(); renderBank(); renderExamSets(); renderHistory(); renderDashboard(); updateStats();
+  renderOMRSelects();
   document.getElementById('create-exam-card').style.display='none';
   document.getElementById('ai-preview-panel').style.display='none';
   document.getElementById('exam-area').style.display='none';
   document.getElementById('score-result').style.display='none';
   const pa=document.getElementById('print-area'); if(pa){ pa.style.display='none'; pa.innerHTML=''; }
+  omrReset();
   toast('🗑️ ล้างข้อมูลทั้งหมดแล้ว');
 }
 
@@ -2013,8 +2567,7 @@ window.disconnectFirebase=function(){
 function setSyncStatus(state,text,detail){
   const colors={connected:'#16a34a',error:'#dc2626',syncing:'#f59e0b',off:'#6b7280'};
   const color=colors[state]||'#6b7280';
-  const els=['fb-status-dot','sync-dot'].map(id=>document.getElementById(id));
-  els.forEach(el=>{ if(el) el.style.background=color; });
+  ['fb-status-dot','sync-dot'].forEach(id=>{ const el=document.getElementById(id); if(el) el.style.background=color; });
   const txt=document.getElementById('fb-status-text'); if(txt) txt.textContent=text;
   const dtl=document.getElementById('fb-status-detail'); if(dtl) dtl.textContent=detail||'';
   const stxt=document.getElementById('sync-text'); if(stxt) stxt.textContent=state==='connected'?'Online':state==='syncing'?'ซิงค์...':'Offline';
@@ -2055,12 +2608,13 @@ window.pullFromFirebase=async function(silent=false){
     const ehSnap=await getDoc(doc(db,'data','examhistory'));
     const slSnap=await getDoc(doc(db,'data','studentlist'));
     if(allQs.length){ window._setQBank(allQs); }
-    if(esSnap.exists()&&esSnap.data().data){ window._setExamSets(esSnap.data().data); }
-    if(ehSnap.exists()&&ehSnap.data().data){ window._setExamHistory(ehSnap.data().data); }
+    if(esSnap.exists()&&esSnap.data().data?.length){ window._setExamSets(esSnap.data().data); }
+    if(ehSnap.exists()&&ehSnap.data().data?.length){ window._setExamHistory(ehSnap.data().data); }
     if(slSnap.exists()&&slSnap.data().data?.length){ window._setStudentList(slSnap.data().data); }
-    renderBank(); renderExamSets(); renderHistory(); renderDashboard(); renderStudentSidebar(); updateStats();
-    setSyncStatus('connected','ดาวน์โหลดสำเร็จ ✅',`${questionBank.length} ข้อ | ${new Date().toLocaleTimeString('th-TH')}`);
-    if(!silent) toast(`⬇️ โหลด ${questionBank.length} ข้อ`,'success');
+    renderBank(); renderExamSets(); renderHistory(); renderDashboard(); renderStudentSidebar(); updateStats(); renderOMRSelects();
+    const qLen = window._getQBank().length;
+    setSyncStatus('connected','ดาวน์โหลดสำเร็จ ✅',`${qLen} ข้อ | ${new Date().toLocaleTimeString('th-TH')}`);
+    if(!silent) toast(`⬇️ โหลด ${qLen} ข้อ`,'success');
   }catch(e){ setSyncStatus('error','ดาวน์โหลดไม่สำเร็จ',e.message); }
 };
 </script>
