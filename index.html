@@ -854,8 +854,9 @@ textarea { resize:vertical; min-height:80px; }
 // ============================================================
 // VERSION
 // ============================================================
-const APP_VERSION = 'v2.1';
+const APP_VERSION = 'v2.2';
 const APP_CHANGELOG = [
+  { v:'v2.2', date:'2026-03-11', note:'🐛 แก้บัก: ประวัติคะแนนหายหลัง import ข้อสอบ — เปลี่ยน Firebase pull ให้ merge แทน replace' },
   { v:'v2.1', date:'2026-03-11', note:'เปลี่ยนชื่อเป็น ระบบจัดการสอบบ้านคำไผ่ + เพิ่มระบบ Version' },
   { v:'v2.0', date:'2026-03-11', note:'แก้ localStorage persistence, เพิ่ม OMR สแกนกระดาษคำตอบ, Backup/Restore' },
   { v:'v1.0', date:'2026-03-10', note:'เวอร์ชันแรก — AI สร้างข้อสอบ, ทำข้อสอบออนไลน์, Firebase sync' },
@@ -2598,19 +2599,67 @@ window.pullFromFirebase=async function(silent=false){
   try{
     const db=window._fb.db;
     const snap0=await getDoc(doc(db,'data','qbank_0'));
-    let allQs=[];
+    let fbQs=[];
     if(snap0.exists()){
-      allQs=snap0.data().questions||[];
+      fbQs=snap0.data().questions||[];
       const total=snap0.data().total||1;
-      for(let i=1;i<total;i++){ const s=await getDoc(doc(db,'data',`qbank_${i}`)); if(s.exists()) allQs=allQs.concat(s.data().questions||[]); }
+      for(let i=1;i<total;i++){ const s=await getDoc(doc(db,'data',`qbank_${i}`)); if(s.exists()) fbQs=fbQs.concat(s.data().questions||[]); }
     }
     const esSnap=await getDoc(doc(db,'data','examsets'));
     const ehSnap=await getDoc(doc(db,'data','examhistory'));
     const slSnap=await getDoc(doc(db,'data','studentlist'));
-    if(allQs.length){ window._setQBank(allQs); }
-    if(esSnap.exists()&&esSnap.data().data?.length){ window._setExamSets(esSnap.data().data); }
-    if(ehSnap.exists()&&ehSnap.data().data?.length){ window._setExamHistory(ehSnap.data().data); }
-    if(slSnap.exists()&&slSnap.data().data?.length){ window._setStudentList(slSnap.data().data); }
+
+    // ── MERGE ไม่ Replace ── ป้องกันข้อมูล local หาย ──────────────
+    // questionBank: merge by question text (dedup)
+    if(fbQs.length){
+      const localQs  = window._getQBank();
+      const localKeys = new Set(localQs.map(q=>q.question||q.q));
+      const newQs    = fbQs.filter(q=>!(localKeys.has(q.question||q.q)));
+      if(newQs.length || fbQs.length > localQs.length){
+        // ถ้า Firebase มีมากกว่า local ให้ใช้ Firebase เป็นหลัก + รวม local ที่ไม่ซ้ำ
+        const fbKeys  = new Set(fbQs.map(q=>q.question||q.q));
+        const onlyLocal = localQs.filter(q=>!(fbKeys.has(q.question||q.q)));
+        window._setQBank([...fbQs, ...onlyLocal]);
+      }
+    }
+
+    // examSets: merge by id
+    if(esSnap.exists()&&esSnap.data().data?.length){
+      const fbES    = esSnap.data().data;
+      const localES = window._getExamSets();
+      const fbESIds = new Set(fbES.map(s=>String(s.id)));
+      const onlyLocalES = localES.filter(s=>!(fbESIds.has(String(s.id))));
+      window._setExamSets([...fbES, ...onlyLocalES]);
+    }
+
+    // examHistory: merge by id — ห้าม replace เด็ดขาด เพราะทำให้คะแนนหาย
+    if(ehSnap.exists()&&ehSnap.data().data?.length){
+      const fbEH    = ehSnap.data().data;
+      const localEH = window._getExamHistory();
+      const localEHIds = new Set(localEH.map(h=>String(h.id)));
+      const newEH   = fbEH.filter(h=>!(localEHIds.has(String(h.id))));
+      if(newEH.length){
+        // เรียงจากใหม่สุดไปเก่าสุด
+        const merged = [...localEH, ...newEH].sort((a,b)=>Number(b.id)-Number(a.id));
+        window._setExamHistory(merged);
+      }
+      // ถ้าไม่มีของใหม่จาก Firebase → ไม่แตะ local เลย
+    }
+
+    // studentList: merge by id
+    if(slSnap.exists()&&slSnap.data().data?.length){
+      const fbSL    = slSnap.data().data;
+      const localSL = window._getStudentList();
+      const localSLIds = new Set(localSL.map(s=>String(s.id)));
+      const newSL   = fbSL.filter(s=>!(localSLIds.has(String(s.id))));
+      if(newSL.length || fbSL.length > localSL.length){
+        const fbSLIds = new Set(fbSL.map(s=>String(s.id)));
+        const onlyLocalSL = localSL.filter(s=>!(fbSLIds.has(String(s.id))));
+        window._setStudentList([...fbSL, ...onlyLocalSL]);
+      }
+    }
+    // ─────────────────────────────────────────────────────────────────
+
     renderBank(); renderExamSets(); renderHistory(); renderDashboard(); renderStudentSidebar(); updateStats(); renderOMRSelects();
     const qLen = window._getQBank().length;
     setSyncStatus('connected','ดาวน์โหลดสำเร็จ ✅',`${qLen} ข้อ | ${new Date().toLocaleTimeString('th-TH')}`);
