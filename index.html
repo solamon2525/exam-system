@@ -321,8 +321,35 @@ textarea { resize:vertical; min-height:80px; }
       </div>
 
       <!-- AI Generate -->
-      <div class="card">
-        <div class="card-title">🤖 AI ช่วยสร้างข้อสอบ <span class="badge badge-gold">Claude AI</span></div>
+      <div class="card" id="ai-generate-card">
+        <div class="card-title">🤖 AI ช่วยสร้างข้อสอบ <span class="badge badge-gold" id="ai-provider-badge">Claude AI</span>
+          <button onclick="toggleCard('ai-advanced-panel')" id="ai-adv-toggle-btn" style="margin-left:auto;padding:5px 14px;border-radius:8px;border:1.5px solid #c4b5fd;background:#faf5ff;color:#7c3aed;font-family:Sarabun,sans-serif;font-size:0.82rem;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:5px">⚙️ ตั้งค่าขั้นสูง</button>
+        </div>
+
+        <!-- AI Provider Selector -->
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;padding:12px 16px;background:linear-gradient(135deg,#f8faff,#fefce8);border:1.5px solid #e2e8f0;border-radius:12px;flex-wrap:wrap">
+          <span style="font-size:0.82rem;font-weight:700;color:var(--muted);white-space:nowrap">🔌 เลือก AI:</span>
+          <button onclick="switchAIProvider('claude',this)" id="provider-btn-claude" class="provider-chip provider-chip-active">
+            <span style="font-size:1rem">🟣</span> Claude <span style="font-size:0.72rem;opacity:0.8">(ค่าเริ่มต้น)</span>
+          </button>
+          <button onclick="switchAIProvider('gemini',this)" id="provider-btn-gemini" class="provider-chip">
+            <span style="font-size:1rem">🔵</span> Gemini <span style="font-size:0.72rem;opacity:0.8">(Google AI)</span>
+          </button>
+          <div id="gemini-model-wrap" style="display:none;align-items:center;gap:6px">
+            <span style="font-size:0.75rem;color:var(--muted)">รุ่น:</span>
+            <select id="gemini-model" style="padding:4px 8px;border-radius:7px;border:1.5px solid #93c5fd;font-family:Sarabun,sans-serif;font-size:0.8rem;background:#eff6ff;color:#1e40af">
+              <option value="gemini-2.0-flash">Gemini 2.0 Flash ⚡ (เร็ว)</option>
+              <option value="gemini-2.0-flash-thinking-exp">Gemini 2.0 Flash Thinking 🧠</option>
+              <option value="gemini-1.5-pro">Gemini 1.5 Pro 💎 (ละเอียด)</option>
+              <option value="gemini-1.5-flash">Gemini 1.5 Flash ⚡</option>
+            </select>
+          </div>
+          <div id="ai-provider-status" style="margin-left:auto;font-size:0.75rem;color:var(--green);font-weight:600;display:flex;align-items:center;gap:4px">
+            <span style="width:7px;height:7px;border-radius:50%;background:var(--green);display:inline-block"></span> พร้อมใช้งาน
+          </div>
+        </div>
+
+        <!-- Row 1: Basic -->
         <div class="form-row">
           <div class="form-group">
             <label>วิชา</label>
@@ -349,26 +376,146 @@ textarea { resize:vertical; min-height:80px; }
           <div class="form-group">
             <label>ความยาก</label>
             <select id="ai-difficulty">
-              <option>ง่าย</option><option selected>ปานกลาง</option><option>ยาก</option>
+              <option>ง่าย</option><option selected>ปานกลาง</option><option>ยาก</option><option>ผสมหลายระดับ</option>
             </select>
           </div>
         </div>
+
+        <!-- Row 2: Topic + Style -->
         <div class="form-row">
+          <div class="form-group" style="flex:3">
+            <label>หัวข้อ / บทเรียน (ไม่บังคับ)</label>
+            <input type="text" id="ai-topic" placeholder="เช่น การบวกลบเลขสองหลัก, ระบบสุริยะ, สงครามโลก...">
+          </div>
           <div class="form-group" style="flex:2">
-            <label>หัวข้อ (ไม่บังคับ)</label>
-            <input type="text" id="ai-topic" placeholder="เช่น การบวกลบเลขสองหลัก, สิ่งแวดล้อม...">
+            <label>รูปแบบคำถาม</label>
+            <select id="ai-qtype">
+              <option value="mixed">🔀 ผสมหลายรูปแบบ</option>
+              <option value="knowledge">💡 ความรู้ความจำ</option>
+              <option value="comprehension">🧠 ความเข้าใจ</option>
+              <option value="application">⚙️ การประยุกต์ใช้</option>
+              <option value="analysis">🔍 การวิเคราะห์</option>
+              <option value="situation">📖 สถานการณ์/โจทย์ปัญหา</option>
+              <option value="compute">🔢 คำนวณ (คณิต/วิทย์)</option>
+            </select>
           </div>
         </div>
+
+        <!-- ADVANCED PANEL -->
+        <div id="ai-advanced-panel" style="display:none;margin-top:4px;margin-bottom:16px;background:linear-gradient(135deg,#faf5ff,#eff6ff);border:1.5px solid #c4b5fd;border-radius:14px;padding:18px">
+          <div style="font-family:Mitr,sans-serif;font-weight:700;color:#5b21b6;margin-bottom:14px;font-size:0.95rem;display:flex;align-items:center;gap:8px">⚙️ ตั้งค่า AI ขั้นสูง <span style="background:#ede9fe;color:#6d28d9;font-size:0.7rem;padding:2px 8px;border-radius:20px;font-family:Sarabun,sans-serif">ควบคุมความฉลาดของ AI</span></div>
+          <div class="form-row" style="margin-bottom:14px">
+            <div class="form-group">
+              <label style="color:#5b21b6">🎓 ระดับ Bloom's Taxonomy</label>
+              <select id="ai-bloom" style="border-color:#c4b5fd">
+                <option value="auto">🤖 AI เลือกอัตโนมัติ</option>
+                <option value="L1">L1 — จำ (Remember)</option>
+                <option value="L2">L2 — เข้าใจ (Understand)</option>
+                <option value="L3">L3 — นำไปใช้ (Apply)</option>
+                <option value="L4">L4 — วิเคราะห์ (Analyze)</option>
+                <option value="L5">L5 — ประเมิน (Evaluate)</option>
+                <option value="L6">L6 — สร้างสรรค์ (Create)</option>
+                <option value="mixed">ผสม L1–L4</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label style="color:#5b21b6">🪤 คุณภาพตัวลวง (Distractors)</label>
+              <select id="ai-distractor" style="border-color:#c4b5fd">
+                <option value="standard">มาตรฐาน</option>
+                <option value="tricky">ยั่วใจ — ใกล้เคียงคำตอบ</option>
+                <option value="misconception">ล่อแนวคิดผิด (Misconception)</option>
+                <option value="easy">ง่าย — เห็นชัดว่าผิด</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label style="color:#5b21b6">📍 บริบทหลักสูตร</label>
+              <select id="ai-curriculum" style="border-color:#c4b5fd">
+                <option value="thai2551">หลักสูตรแกนกลาง 2551</option>
+                <option value="thai2560">หลักสูตรแกนกลาง 2560</option>
+                <option value="onet">เน้น O-NET</option>
+                <option value="local">บูรณาการท้องถิ่น</option>
+                <option value="general">ทั่วไป</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-row" style="margin-bottom:14px">
+            <div class="form-group">
+              <label style="color:#5b21b6">✍️ ลีลาภาษาคำถาม</label>
+              <select id="ai-langstyle" style="border-color:#c4b5fd">
+                <option value="formal">ทางการ (ข้อสอบทั่วไป)</option>
+                <option value="simple">เข้าใจง่าย (เหมาะ ป.1-3)</option>
+                <option value="story">เล่าเรื่อง/นิทาน</option>
+                <option value="real">สถานการณ์จริงในชีวิต</option>
+                <option value="news">โจทย์เชิงข่าว/เหตุการณ์</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label style="color:#5b21b6">🔁 หลีกเลี่ยงซ้ำกับคลัง</label>
+              <select id="ai-avoid-repeat" style="border-color:#c4b5fd">
+                <option value="yes">✅ ใช่ — ดึงหัวข้อที่มีอยู่มาหลีกเลี่ยง</option>
+                <option value="no">❌ ไม่ — สร้างอิสระ</option>
+              </select>
+            </div>
+            <div class="form-group" style="flex:2">
+              <label style="color:#5b21b6">📝 คำสั่งพิเศษให้ AI (ไม่บังคับ)</label>
+              <input type="text" id="ai-extra-instruction" placeholder="เช่น เน้นเรื่องน้ำ, ห้ามใช้ชื่อคน, ให้มีโจทย์กราฟ..." style="border-color:#c4b5fd">
+            </div>
+          </div>
+          <div style="background:white;border-radius:10px;padding:14px;border:1px solid #ddd8f8">
+            <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;flex-wrap:wrap">
+              <span style="font-size:0.82rem;font-weight:700;color:#5b21b6">🧠 ความละเอียด AI (Max Tokens)</span>
+              <span id="ai-tokens-val" style="background:#7c3aed;color:white;padding:2px 12px;border-radius:20px;font-weight:700;font-size:0.82rem">2000</span>
+              <span style="font-size:0.75rem;color:var(--muted)" id="ai-tokens-hint">ปานกลาง — เหมาะกับ 10-15 ข้อ</span>
+            </div>
+            <input type="range" id="ai-tokens-slider" min="800" max="8000" step="200" value="2000"
+              style="width:100%;accent-color:#7c3aed" oninput="updateTokensLabel(this.value)">
+            <div style="display:flex;justify-content:space-between;font-size:0.72rem;color:var(--muted);margin-top:4px">
+              <span>800 (เร็ว/ประหยัด)</span><span>4000 (แนะนำ)</span><span>8000 (ละเอียดสูงสุด)</span>
+            </div>
+          </div>
+          <div style="margin-top:14px">
+            <button onclick="toggleCard('ai-prompt-preview')" style="background:none;border:none;color:#7c3aed;font-family:Sarabun,sans-serif;font-size:0.82rem;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:5px">👁️ ดู System Prompt ที่ส่งให้ AI</button>
+            <div id="ai-prompt-preview" style="display:none;margin-top:10px">
+              <textarea id="ai-prompt-display" readonly style="width:100%;min-height:140px;padding:10px;border:1px solid #c4b5fd;border-radius:8px;font-family:monospace;font-size:0.75rem;background:#faf5ff;color:#4c1d95;resize:vertical"></textarea>
+              <div style="margin-top:6px;display:flex;gap:8px">
+                <button onclick="refreshPromptPreview()" class="btn btn-sm" style="background:#7c3aed;color:white;border:none">🔄 อัปเดต Preview</button>
+                <button onclick="copyPrompt()" class="btn btn-sm btn-outline">📋 คัดลอก</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
         <div id="ai-loading" style="display:none" class="ai-loading">
           <div class="spinner"></div>
-          <span>AI กำลังสร้างข้อสอบ...</span>
+          <span id="ai-loading-text">AI กำลังสร้างข้อสอบ...</span>
         </div>
+
+        <!-- AI Mode chips -->
+        <div style="display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap" id="ai-mode-chips">
+          <div style="font-size:0.78rem;font-weight:600;color:var(--muted);align-self:center">โหมด:</div>
+          <button onclick="setAIMode('standard',this)" class="ai-mode-chip active-chip">⚡ มาตรฐาน</button>
+          <button onclick="setAIMode('creative',this)" class="ai-mode-chip">🎨 สร้างสรรค์</button>
+          <button onclick="setAIMode('strict',this)" class="ai-mode-chip">📐 เคร่งครัด</button>
+          <button onclick="setAIMode('onet',this)" class="ai-mode-chip">🏆 O-NET Style</button>
+          <button onclick="setAIMode('story',this)" class="ai-mode-chip">📖 เล่าเรื่อง</button>
+        </div>
+
         <div class="flex-row">
-          <button class="btn btn-gold" onclick="generateWithAI()">🤖 สร้างด้วย AI</button>
+          <button class="btn btn-gold" onclick="generateWithAI()" id="ai-generate-btn">🟣 สร้างด้วย Claude</button>
           <button class="btn btn-outline" onclick="toggleCard('manual-add-card')">✍️ เพิ่มเอง</button>
           <button class="btn btn-outline" onclick="toggleCard('import-card')">📥 Import</button>
         </div>
       </div>
+
+      <style>
+      .ai-mode-chip { padding:5px 14px;border-radius:20px;border:1.5px solid var(--border);background:white;font-family:Sarabun,sans-serif;font-size:0.8rem;font-weight:600;cursor:pointer;color:var(--muted);transition:all 0.18s; }
+      .ai-mode-chip:hover { border-color:var(--gold);color:#92400e; }
+      .ai-mode-chip.active-chip { background:var(--gold);border-color:var(--gold);color:var(--navy);font-weight:700; }
+      .provider-chip { padding:6px 16px;border-radius:20px;border:1.5px solid var(--border);background:white;font-family:Sarabun,sans-serif;font-size:0.82rem;font-weight:600;cursor:pointer;color:var(--muted);transition:all 0.2s;display:flex;align-items:center;gap:6px; }
+      .provider-chip:hover { border-color:var(--sky); color:var(--blue); }
+      .provider-chip-active { background:var(--navy);border-color:var(--navy);color:white!important;font-weight:700; }
+      .provider-chip-active:hover { background:var(--blue)!important;border-color:var(--blue)!important; }
+      </style>
 
       <!-- AI Preview -->
       <div class="card" id="ai-preview-panel" style="display:none"></div>
@@ -854,9 +1001,12 @@ textarea { resize:vertical; min-height:80px; }
 // ============================================================
 // VERSION
 // ============================================================
-const APP_VERSION = 'v2.2';
+const APP_VERSION = 'v2.5';
 const APP_CHANGELOG = [
-  { v:'v2.2', date:'2026-03-11', note:'🐛 แก้บัก: ประวัติคะแนนหายหลัง import ข้อสอบ — เปลี่ยน Firebase pull ให้ merge แทน replace' },
+  { v:'v2.5', date:'2026-03-11', note:'🔀 รวมทุกฟีเจอร์: เพิ่ม Gemini AI provider, Advanced AI (Bloom\'s, Distractor, หลักสูตร, โหมด 5 แบบ), แก้การ์ดวิชาแสดงว่างผิด (normalize subject), ปุ่มกรอกคะแนน% แสดงถาวรบนทุกการ์ด' },
+  { v:'v2.4', date:'2026-03-11', note:'🔵 เพิ่ม Gemini AI เป็น provider ทางเลือก — รองรับ Gemini 2.0 Flash, 2.0 Flash Thinking, 1.5 Pro, 1.5 Flash' },
+  { v:'v2.3', date:'2026-03-11', note:'🤖 AI ฉลาดขึ้น: Bloom\'s Taxonomy, ตัวลวงคุณภาพสูง, หลักสูตร, ลีลาภาษา, โหมด AI 5 แบบ, ดู System Prompt' },
+  { v:'v2.2', date:'2026-03-11', note:'🐛 แก้บัก: ประวัติคะแนนหายหลัง import — Firebase pull เปลี่ยนเป็น merge แทน replace' },
   { v:'v2.1', date:'2026-03-11', note:'เปลี่ยนชื่อเป็น ระบบจัดการสอบบ้านคำไผ่ + เพิ่มระบบ Version' },
   { v:'v2.0', date:'2026-03-11', note:'แก้ localStorage persistence, เพิ่ม OMR สแกนกระดาษคำตอบ, Backup/Restore' },
   { v:'v1.0', date:'2026-03-10', note:'เวอร์ชันแรก — AI สร้างข้อสอบ, ทำข้อสอบออนไลน์, Firebase sync' },
@@ -1065,53 +1215,175 @@ function extractJSON(raw) {
   return JSON.parse(text.substring(start, end + 1));
 }
 
+// ============================================================
+// AI PROVIDER SYSTEM (v2.5)
+// ============================================================
+let currentAIProvider = 'claude';
+const GEMINI_API_KEY = 'AIzaSyCsxMZYnRMne29x52Eyg4VCYGZCBRJ8POw';
+
+function switchAIProvider(provider, btn) {
+  currentAIProvider = provider;
+  document.querySelectorAll('.provider-chip').forEach(b => b.classList.remove('provider-chip-active'));
+  if (btn) btn.classList.add('provider-chip-active');
+  const geminiWrap = document.getElementById('gemini-model-wrap');
+  if (geminiWrap) geminiWrap.style.display = provider === 'gemini' ? 'flex' : 'none';
+  const badge = document.getElementById('ai-provider-badge');
+  const genBtn = document.getElementById('ai-generate-btn');
+  const status = document.getElementById('ai-provider-status');
+  if (provider === 'claude') {
+    if (badge) { badge.textContent = 'Claude AI'; badge.style.background='#ede9fe'; badge.style.color='#5b21b6'; }
+    if (genBtn) genBtn.innerHTML = '🟣 สร้างด้วย Claude';
+    if (status) status.innerHTML = '<span style="width:7px;height:7px;border-radius:50%;background:var(--green);display:inline-block"></span> Claude พร้อมใช้งาน';
+  } else {
+    if (badge) { badge.textContent = 'Gemini AI'; badge.style.background='#dbeafe'; badge.style.color='#1e40af'; }
+    if (genBtn) genBtn.innerHTML = '🔵 สร้างด้วย Gemini';
+    if (status) status.innerHTML = '<span style="width:7px;height:7px;border-radius:50%;background:#3b82f6;display:inline-block"></span> Gemini เชื่อมต่อแล้ว';
+  }
+  toast(`เปลี่ยนเป็น ${provider === 'claude' ? '🟣 Claude AI' : '🔵 Gemini AI'}`, 'success');
+}
+
+async function callGemini(systemPrompt, userPrompt, maxTokens=2000) {
+  const modelEl = document.getElementById('gemini-model');
+  const model = modelEl ? modelEl.value : 'gemini-2.0-flash';
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${GEMINI_API_KEY}`;
+  const body = {
+    contents: [{ role: 'user', parts: [{ text: systemPrompt + '\n\n' + userPrompt }] }],
+    generationConfig: { maxOutputTokens: Math.max(1000, Math.min(8192, maxTokens)), temperature: 0.7, topP: 0.9 }
+  };
+  const res = await fetch(url, { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body) });
+  if (!res.ok) {
+    let errMsg = 'Gemini HTTP ' + res.status;
+    try { const e = await res.json(); errMsg = e.error?.message || errMsg; } catch(_){}
+    throw new Error(errMsg);
+  }
+  const data = await res.json();
+  const text = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+  return text.replace(/```json\s*/gi,'').replace(/```\s*/g,'').trim();
+}
+
+// ── AI Modes ────────────────────────────────────────────────
+let currentAIMode = 'standard';
+
+function setAIMode(mode, btn) {
+  currentAIMode = mode;
+  document.querySelectorAll('.ai-mode-chip').forEach(b => b.classList.remove('active-chip'));
+  if (btn) btn.classList.add('active-chip');
+  const bloom=document.getElementById('ai-bloom'), distractor=document.getElementById('ai-distractor');
+  const langstyle=document.getElementById('ai-langstyle'), curriculum=document.getElementById('ai-curriculum');
+  const slider=document.getElementById('ai-tokens-slider');
+  const presets = {
+    standard: { bloom:'auto', distractor:'standard',      langstyle:'formal', curriculum:'thai2551', tokens:2000 },
+    creative:  { bloom:'L6',  distractor:'tricky',        langstyle:'story',  curriculum:'general',  tokens:3200 },
+    strict:    { bloom:'L4',  distractor:'misconception', langstyle:'formal', curriculum:'onet',     tokens:2400 },
+    onet:      { bloom:'mixed',distractor:'tricky',       langstyle:'formal', curriculum:'onet',     tokens:3600 },
+    story:     { bloom:'L2',  distractor:'standard',      langstyle:'story',  curriculum:'thai2560', tokens:2800 },
+  };
+  const p = presets[mode] || presets.standard;
+  if (bloom) bloom.value = p.bloom;
+  if (distractor) distractor.value = p.distractor;
+  if (langstyle) langstyle.value = p.langstyle;
+  if (curriculum) curriculum.value = p.curriculum;
+  if (slider) { slider.value = p.tokens; updateTokensLabel(p.tokens); }
+  const labels = { standard:'⚡ มาตรฐาน', creative:'🎨 สร้างสรรค์', strict:'📐 เคร่งครัด', onet:'🏆 O-NET Style', story:'📖 เล่าเรื่อง' };
+  toast(`โหมด AI: ${labels[mode]||mode}`, 'success');
+}
+
+function updateTokensLabel(val) {
+  val = parseInt(val);
+  const el = document.getElementById('ai-tokens-val'), hint = document.getElementById('ai-tokens-hint');
+  if (el) el.textContent = val.toLocaleString();
+  if (hint) {
+    if (val<=1200)      hint.textContent = 'เร็ว/ประหยัด — เหมาะ 5 ข้อ';
+    else if (val<=2400) hint.textContent = 'ปานกลาง — เหมาะ 10-15 ข้อ';
+    else if (val<=4000) hint.textContent = 'ละเอียด — แนะนำ 20-30 ข้อ';
+    else                hint.textContent = 'สูงสุด — ข้อสอบซับซ้อน/ยาวมาก';
+  }
+}
+
+function buildSmartPrompts() {
+  const subject    = document.getElementById('ai-subject')?.value || 'คณิตศาสตร์';
+  const grade      = document.getElementById('ai-grade')?.value || 'ป.5';
+  const count      = parseInt(document.getElementById('ai-count')?.value) || 10;
+  const diff       = document.getElementById('ai-difficulty')?.value || 'ปานกลาง';
+  const topic      = document.getElementById('ai-topic')?.value?.trim() || '';
+  const qtype      = document.getElementById('ai-qtype')?.value || 'mixed';
+  const bloom      = document.getElementById('ai-bloom')?.value || 'auto';
+  const distractor = document.getElementById('ai-distractor')?.value || 'standard';
+  const curriculum = document.getElementById('ai-curriculum')?.value || 'thai2551';
+  const langstyle  = document.getElementById('ai-langstyle')?.value || 'formal';
+  const extraInstr = document.getElementById('ai-extra-instruction')?.value?.trim() || '';
+  const avoidRepeat= document.getElementById('ai-avoid-repeat')?.value || 'yes';
+  const bloomMap = { auto:'เลือกระดับพุทธิพิสัยที่เหมาะสมกับวิชาและระดับชั้น', L1:'L1 ความจำ (Remember)', L2:'L2 ความเข้าใจ (Understand)', L3:'L3 การนำไปใช้ (Apply)', L4:'L4 การวิเคราะห์ (Analyze)', L5:'L5 การประเมิน (Evaluate)', L6:'L6 การสร้างสรรค์ (Create)', mixed:'ผสม L1-L4' };
+  const distractorMap = { standard:'ตัวลวงสมเหตุสมผล', tricky:'ยั่วใจ ใกล้เคียงคำตอบที่ถูก', misconception:'สะท้อนความเข้าใจผิดของนักเรียน', easy:'เห็นชัดว่าผิด เหมาะนักเรียนระดับต้น' };
+  const curriculumMap = { thai2551:'หลักสูตรแกนกลาง 2551', thai2560:'หลักสูตรแกนกลาง 2560', onet:'มาตรฐาน O-NET', local:'บูรณาการท้องถิ่น', general:'ทั่วไป' };
+  const langMap = { formal:'ทางการ', simple:'เข้าใจง่าย ป.1-3', story:'เล่าเรื่อง/นิทาน', real:'สถานการณ์จริง', news:'โจทย์เชิงข่าว' };
+  const qtypeMap = { mixed:'ผสม', knowledge:'ความรู้ความจำ', comprehension:'ความเข้าใจ', application:'การนำไปใช้', analysis:'การวิเคราะห์', situation:'สถานการณ์/โจทย์ปัญหา', compute:'โจทย์คำนวณ' };
+  let avoidTxt = '';
+  if (avoidRepeat==='yes' && questionBank.length>0) {
+    const existing = questionBank.filter(q=>q.subject===subject).slice(0,15).map(q=>q.question?.substring(0,40)).filter(Boolean);
+    if (existing.length) avoidTxt = `\nหลีกเลี่ยงซ้ำกับ:\n${existing.map((t,i)=>`${i+1}. ${t}`).join('\n')}`;
+  }
+  const systemPrompt = `คุณคือผู้เชี่ยวชาญออกข้อสอบภาษาไทยระดับประถมศึกษา
+• ระดับ Bloom: ${bloomMap[bloom]||bloomMap.auto}
+• ตัวลวง: ${distractorMap[distractor]||distractorMap.standard}
+• อ้างอิง: ${curriculumMap[curriculum]||'ทั่วไป'}
+• ภาษา: ${langMap[langstyle]||'ทางการ'}
+• รูปแบบ: ${qtypeMap[qtype]||'ผสม'}
+กฎ: ตอบ JSON array เท่านั้น ห้าม markdown, รูปแบบ: [{"q":"...","options":["...","...","...","..."],"answer":0}], answer=index 0-3, ห้ามขึ้นต้นตัวเลือกด้วย ก. ข. ค. ง.`;
+  const userPrompt = `ออกข้อสอบ ${count} ข้อ วิชา${subject} ชั้น${grade} ความยาก:${diff}${topic?` หัวข้อ:${topic}`:''}${extraInstr?` คำสั่ง:${extraInstr}`:''}${avoidTxt}\nตอบ JSON array:`;
+  return { systemPrompt, userPrompt, subject, grade, diff, topic, tokens: parseInt(document.getElementById('ai-tokens-slider')?.value)||2000 };
+}
+
+function refreshPromptPreview() {
+  const { systemPrompt, userPrompt } = buildSmartPrompts();
+  const el = document.getElementById('ai-prompt-display');
+  if (el) el.value = `=== SYSTEM ===\n${systemPrompt}\n\n=== USER ===\n${userPrompt}`;
+  const panel = document.getElementById('ai-prompt-preview');
+  if (panel) panel.style.display = '';
+}
+
+function copyPrompt() {
+  const el = document.getElementById('ai-prompt-display');
+  if (!el) return;
+  navigator.clipboard?.writeText(el.value).then(() => toast('📋 คัดลอก prompt แล้ว','success'));
+}
+
 async function generateWithAI() {
-  const subject = document.getElementById('ai-subject').value;
-  const grade   = document.getElementById('ai-grade').value;
-  const count   = parseInt(document.getElementById('ai-count').value);
-  const diff    = document.getElementById('ai-difficulty').value;
-  const topic   = document.getElementById('ai-topic').value;
-  const topicTxt = topic ? ` เรื่อง: ${topic}` : '';
-
-  const systemPrompt = `คุณคือผู้ออกข้อสอบภาษาไทยระดับประถมศึกษา
-ตอบด้วย JSON array เท่านั้น ห้ามมีข้อความอื่นก่อนหรือหลัง JSON
-ห้ามใช้ markdown code block
-รูปแบบ: [{"q":"คำถาม","options":["ตัวเลือก1","ตัวเลือก2","ตัวเลือก3","ตัวเลือก4"],"answer":0}]
-โดย answer คือ index 0-3 ของตัวเลือกที่ถูก`;
-
-  const userPrompt = `สร้างข้อสอบปรนัย 4 ตัวเลือก
-วิชา: ${subject}
-ระดับชั้น: ${grade}
-จำนวน: ${count} ข้อ
-ความยาก: ${diff}${topicTxt}
-
-ออกข้อสอบตามหลักสูตรประถมศึกษาไทย เหมาะกับระดับ${grade}
-ตอบ JSON array เท่านั้น ห้ามมีข้อความอื่น`;
-
-  document.getElementById('ai-loading').style.display = 'flex';
+  const { systemPrompt, userPrompt, subject, grade, diff, topic, tokens } = buildSmartPrompts();
+  const count = parseInt(document.getElementById('ai-count')?.value)||10;
+  const providerName = currentAIProvider==='gemini'?'Gemini':'Claude';
+  const loadEl = document.getElementById('ai-loading');
+  const loadTxt = document.getElementById('ai-loading-text');
+  if (loadEl) loadEl.style.display = 'flex';
+  if (loadTxt) {
+    loadTxt.textContent = `${currentAIProvider==='gemini'?'🔵':'🟣'} ${providerName} กำลังคิด...`;
+    setTimeout(()=>{ if(loadTxt) loadTxt.textContent=`กำลังออกข้อสอบ ${count} ข้อ...`; },1500);
+    setTimeout(()=>{ if(loadTxt) loadTxt.textContent=`${providerName} กำลังตรวจสอบ...`; },3500);
+  }
   try {
-    const raw = await callAI(systemPrompt, userPrompt, 4000);
+    let raw;
+    if (currentAIProvider==='gemini') raw = await callGemini(systemPrompt, userPrompt, tokens);
+    else raw = await callAI(systemPrompt, userPrompt, tokens);
     let qs;
     try { qs = extractJSON(raw); }
-    catch(parseErr) { throw new Error('AI ตอบผิดรูปแบบ — ลองกดสร้างใหม่อีกครั้ง'); }
-    if (!Array.isArray(qs) || qs.length === 0) throw new Error('ไม่พบข้อสอบในผลลัพธ์');
+    catch(_) { throw new Error(`${providerName} ตอบผิดรูปแบบ — ลองกดสร้างใหม่`); }
+    if (!Array.isArray(qs)||!qs.length) throw new Error('ไม่พบข้อสอบในผลลัพธ์');
     aiPreviewQuestions = qs
-      .filter(q => (q.q || q.question) && Array.isArray(q.options) && q.options.length >= 4)
-      .map(q => ({
-        id: Date.now() + Math.random(),
-        subject, grade, difficulty: diff,
-        question: q.q || q.question,
-        options: q.options.map((o, i) => LABELS[i] + String(o).replace(/^[กขคง][.)]\s*/u, '').trim()),
-        answer: Math.min(Math.max(parseInt(q.answer) || 0, 0), 3),
-        selected: true
+      .filter(q=>(q.q||q.question)&&Array.isArray(q.options)&&q.options.length>=4)
+      .map(q=>({
+        id:Date.now()+Math.random(), subject, grade, difficulty:diff,
+        question:q.q||q.question,
+        options:q.options.map((o,i)=>LABELS[i]+String(o).replace(/^[กขคง][.)]\s*/u,'').trim()),
+        answer:Math.min(Math.max(parseInt(q.answer)||0,0),3),
+        selected:true, generatedBy:providerName
       }));
     if (!aiPreviewQuestions.length) throw new Error('ไม่พบข้อสอบที่ถูกรูปแบบ');
     renderAIPreview(subject, grade, diff, topic);
-    toast(`✅ AI สร้าง ${aiPreviewQuestions.length} ข้อ`, 'success');
+    toast(`✅ ${providerName} สร้าง ${aiPreviewQuestions.length} ข้อ`,'success');
   } catch(e) {
-    toast('❌ ' + e.message, 'error');
+    toast(`❌ ${providerName}: `+e.message,'error');
   } finally {
-    document.getElementById('ai-loading').style.display = 'none';
+    if (loadEl) loadEl.style.display = 'none';
   }
 }
 
@@ -1739,47 +2011,325 @@ function renderStudentDashboard() {
   if (!name) { el.innerHTML=`<div class="empty-state"><div class="empty-icon">🎓</div><h3>เลือกชื่อนักเรียนด้านบน</h3></div>`; return; }
   const info = studentList.find(s=>s.name===name);
   const records = examHistory.filter(h=>h.studentName===name);
-  const allSubjects = ['คณิตศาสตร์','ภาษาไทย','สังคมศึกษา','วิทยาศาสตร์','ภาษาอังกฤษ','ประวัติศาสตร์','สุขศึกษา','ศิลปะ','การงานอาชีพ','ด้านทุจริต'];
-  const totalA=records.length, passed2=records.filter(r=>r.pass).length;
-  const avgPct=totalA?Math.round(records.reduce((s,r)=>s+r.pct,0)/totalA):0;
-  const subjectsDone=[...new Set(records.map(r=>r.subject))];
-  const best={};
-  records.forEach(r=>{ if(!best[r.subject]||r.pct>best[r.subject].pct) best[r.subject]=r; });
-  el.innerHTML=`
-    <div style="background:linear-gradient(135deg,var(--navy),var(--blue));border-radius:14px;padding:20px;color:white;margin-bottom:16px;display:flex;align-items:center;gap:16px">
+  const ALL_SUBJECTS = ['คณิตศาสตร์','ภาษาไทย','สังคมศึกษา','วิทยาศาสตร์','ภาษาอังกฤษ','ประวัติศาสตร์','สุขศึกษา','ศิลปะ','การงานอาชีพ','ด้านทุจริต'];
+
+  // ── Subject normalizer ────────────────────────────────────────
+  // ป้องกันกรณี subject มีช่องว่าง, encoding ต่าง, หรือตัวอักษรพิเศษ
+  const SUBJ_NORM = {};
+  ALL_SUBJECTS.forEach(s => {
+    SUBJ_NORM[s.trim()] = s;
+    // alias สั้น
+    SUBJ_NORM['ไทย'] = 'ภาษาไทย';
+    SUBJ_NORM['คณิต'] = 'คณิตศาสตร์';
+    SUBJ_NORM['สังคม'] = 'สังคมศึกษา';
+    SUBJ_NORM['วิทย์'] = 'วิทยาศาสตร์';
+    SUBJ_NORM['อังกฤษ'] = 'ภาษาอังกฤษ';
+    SUBJ_NORM['ประวัติ'] = 'ประวัติศาสตร์';
+    SUBJ_NORM['สุขฯ'] = 'สุขศึกษา';
+    SUBJ_NORM['การงาน'] = 'การงานอาชีพ';
+    SUBJ_NORM['ทุจริต'] = 'ด้านทุจริต';
+  });
+  function normalizeSubject(s){
+    if(!s) return null;
+    const t = s.trim();
+    if(SUBJ_NORM[t]) return SUBJ_NORM[t];
+    // fuzzy: หาว่า ALL_SUBJECTS ตัวไหน include ใน t หรือ t include ใน subject
+    const found = ALL_SUBJECTS.find(a => t.includes(a) || a.includes(t));
+    return found || null;
+  }
+
+  // ── Build best-score map per subject ──────────────────────────
+  const best = {};
+  records.forEach(r => {
+    // sanitize pct ให้เป็น number เสมอ
+    const pct = isNaN(Number(r.pct)) ? Math.round((r.score/r.total)*100) : Number(r.pct);
+    const rSafe = { ...r, pct };
+    const subj = normalizeSubject(r.subject);
+    if (subj && ALL_SUBJECTS.includes(subj)) {
+      if (!best[subj] || rSafe.pct > best[subj].pct) best[subj] = { ...rSafe, subject: subj };
+    } else {
+      // ชุดรวมหลายวิชา → หาวิชาจริงจาก examSet
+      const examSet = examSets.find(s => s.title === r.examTitle || String(s.id) === String(r.examSetId));
+      if (examSet?.questions?.length) {
+        const subjsInSet = [...new Set(examSet.questions.map(q=>normalizeSubject(q.subject)).filter(Boolean))];
+        subjsInSet.forEach(s => {
+          if (!best[s] || rSafe.pct > best[s].pct) best[s] = { ...rSafe, subject: s, _fromMixed: true };
+        });
+      }
+    }
+  });
+  // ─────────────────────────────────────────────────────────────
+
+  const totalA = records.length;
+  const passed2 = records.filter(r=>r.pass).length;
+  const subjectsDone = [...new Set(Object.keys(best))].length;
+  const avgPct = totalA ? Math.round(records.reduce((s,r)=>s+r.pct,0)/totalA) : 0;
+
+  el.innerHTML = `
+    <!-- Banner นักเรียน -->
+    <div style="background:linear-gradient(135deg,var(--navy),var(--blue));border-radius:14px;padding:20px;color:white;margin-bottom:16px;display:flex;align-items:center;gap:16px;flex-wrap:wrap">
       <div style="width:60px;height:60px;border-radius:50%;background:var(--gold);display:flex;align-items:center;justify-content:center;font-size:1.8rem;flex-shrink:0">🧑‍🎓</div>
-      <div style="flex:1">
+      <div style="flex:1;min-width:140px">
         <div style="font-family:Mitr,sans-serif;font-size:1.2rem;font-weight:700">${name}</div>
         <div style="font-size:0.85rem;opacity:0.85">${info?`${info.grade} เลขที่ ${info.no}`:'นักเรียน'}</div>
       </div>
       <div style="display:flex;gap:16px;text-align:center;flex-wrap:wrap">
         <div><div style="font-size:1.6rem;font-weight:800">${totalA}</div><div style="font-size:0.72rem;opacity:0.8">ครั้ง</div></div>
-        <div><div style="font-size:1.6rem;font-weight:800">${subjectsDone.length}</div><div style="font-size:0.72rem;opacity:0.8">วิชา</div></div>
+        <div><div style="font-size:1.6rem;font-weight:800">${subjectsDone}</div><div style="font-size:0.72rem;opacity:0.8">วิชา</div></div>
         <div><div style="font-size:1.6rem;font-weight:800">${avgPct}%</div><div style="font-size:0.72rem;opacity:0.8">เฉลี่ย</div></div>
         <div><div style="font-size:1.6rem;font-weight:800;color:#86efac">${passed2}</div><div style="font-size:0.72rem;opacity:0.8">ผ่าน</div></div>
       </div>
+      <button onclick="showAddScoreModal('${name.replace(/'/g,"\\'")}','${info?.grade||'ป.5'}',${info?.no||1})"
+        style="background:var(--gold);color:var(--navy);border:none;border-radius:10px;padding:9px 18px;font-family:Sarabun,sans-serif;font-weight:700;font-size:0.88rem;cursor:pointer;display:flex;align-items:center;gap:6px;flex-shrink:0">
+        ✏️ กรอกคะแนน
+      </button>
     </div>
-    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px;margin-bottom:16px">
-      ${allSubjects.map(s=>{
-        const b=best[s], icon=SUBJECT_ICONS[s]||'📖';
-        if(!b) return `<div style="background:#f8fafc;border:1.5px dashed #e2e8f0;border-radius:12px;padding:14px;text-align:center;opacity:0.5"><div style="font-size:1.4rem">${icon}</div><div style="font-size:0.78rem;font-weight:600;color:#94a3b8;margin-top:4px">${s}</div><div style="font-size:0.72rem;color:#cbd5e1">ยังไม่สอบ</div></div>`;
-        const bg=b.pct>=80?'#f0fdf4':b.pct>=50?'#fefce8':'#fff1f2';
-        const border=b.pct>=80?'#86efac':b.pct>=50?'#fde047':'#fca5a5';
-        const col=b.pct>=80?'#15803d':b.pct>=50?'#92400e':'#b91c1c';
-        return `<div style="background:${bg};border:1.5px solid ${border};border-radius:12px;padding:14px;text-align:center">
-          <div style="font-size:1.4rem">${icon}</div>
-          <div style="font-size:0.78rem;font-weight:700;color:var(--navy);margin-top:4px">${s}</div>
-          <div style="font-size:1.5rem;font-weight:800;color:${col}">${b.pct}%</div>
-          <div style="font-size:0.7rem;color:#64748b">${b.score}/${b.total}</div>
-          <div style="margin-top:6px;font-size:0.75rem;background:${b.pass?'var(--green)':'var(--red)'};color:white;border-radius:20px;padding:2px 8px;display:inline-block">${b.pass?'✅ ผ่าน':'❌ ไม่ผ่าน'}</div>
-        </div>`;
+
+    <!-- การ์ดวิชา -->
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(148px,1fr));gap:10px;margin-bottom:16px">
+      ${ALL_SUBJECTS.map(s=>{
+        const b = best[s];
+        const icon = SUBJECT_ICONS[s]||'📖';
+        const encodedName = name.replace(/'/g,"\\'");
+        const encodedGrade = (info?.grade||'ป.5').replace(/'/g,"\\'");
+        if (!b) return `
+          <div style="background:#f8fafc;border:1.5px dashed #e2e8f0;border-radius:12px;padding:12px;text-align:center">
+            <div style="font-size:1.4rem">${icon}</div>
+            <div style="font-size:0.78rem;font-weight:600;color:#94a3b8;margin-top:4px">${s}</div>
+            <div style="font-size:0.7rem;color:#cbd5e1;margin-top:2px">ยังไม่สอบ</div>
+            <button
+              onclick="showAddScoreModal('${encodedName}','${encodedGrade}',${info?.no||1},'${s}')"
+              style="margin-top:8px;width:100%;padding:5px 4px;background:var(--blue);color:white;border:none;border-radius:7px;font-family:Sarabun,sans-serif;font-size:0.75rem;cursor:pointer;font-weight:600">
+              + กรอกคะแนน
+            </button>
+          </div>`;
+        const bg     = b.pct>=80?'#f0fdf4':b.pct>=50?'#fefce8':'#fff1f2';
+        const border = b.pct>=80?'#86efac':b.pct>=50?'#fde047':'#fca5a5';
+        const col    = b.pct>=80?'#15803d':b.pct>=50?'#92400e':'#b91c1c';
+        const tag    = b._fromMixed ? `<div style="font-size:0.65rem;color:#94a3b8;margin-top:2px">📊 ชุดรวม</div>` : '';
+        return `
+          <div style="background:${bg};border:1.5px solid ${border};border-radius:12px;padding:12px;text-align:center">
+            <div style="font-size:1.4rem">${icon}</div>
+            <div style="font-size:0.78rem;font-weight:700;color:var(--navy);margin-top:4px">${s}</div>
+            <div style="font-size:1.5rem;font-weight:800;color:${col}">${b.pct}%</div>
+            <div style="font-size:0.7rem;color:#64748b">${b.score}/${b.total}</div>
+            ${tag}
+            <div style="margin-top:6px;font-size:0.72rem;background:${b.pass?'var(--green)':'var(--red)'};color:white;border-radius:20px;padding:2px 8px;display:inline-block">${b.pass?'✅ ผ่าน':'❌ ไม่ผ่าน'}</div>
+            <button
+              onclick="showAddScoreModal('${encodedName}','${encodedGrade}',${info?.no||1},'${s}')"
+              style="margin-top:8px;width:100%;padding:5px 4px;background:rgba(26,63,160,0.12);color:var(--blue);border:1px solid rgba(26,63,160,0.2);border-radius:7px;font-family:Sarabun,sans-serif;font-size:0.72rem;cursor:pointer;font-weight:600">
+              ✏️ แก้ไขคะแนน
+            </button>
+          </div>`;
       }).join('')}
     </div>
-    ${totalA?`<div style="overflow-x:auto"><table class="history-table"><thead><tr><th>#</th><th>วิชา</th><th>คะแนน</th><th>%</th><th>ผล</th><th>วันที่</th></tr></thead>
-      <tbody>${records.map((h,i)=>`<tr><td>${i+1}</td><td>${SUBJECT_ICONS[h.subject]||'📖'} ${h.subject}</td><td>${h.score}/${h.total}</td>
-        <td><span style="padding:2px 10px;border-radius:20px;font-weight:700;font-size:0.82rem;background:${h.pct>=80?'#dcfce7':h.pct>=50?'#fef9c3':'#fee2e2'};color:${h.pct>=80?'#15803d':h.pct>=50?'#92400e':'#b91c1c'}">${h.pct}%</span></td>
-        <td class="${h.pass?'pass-tag':'fail-tag'}">${h.pass?'✅':'❌'}</td><td style="font-size:0.78rem">${h.date}</td></tr>`).join('')}
-      </tbody></table></div>`:'<div class="empty-state" style="padding:30px"><div class="empty-icon">📝</div><h3>ยังไม่มีประวัติ</h3></div>'}`;
+
+    <!-- ตารางประวัติ -->
+    ${totalA ? `
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+      <div style="font-family:Mitr,sans-serif;font-weight:600;color:var(--navy)">📋 ประวัติการสอบทั้งหมด</div>
+      <button onclick="showAddScoreModal('${name.replace(/'/g,"\\'")}','${(info?.grade||'ป.5').replace(/'/g,"\\'")}',${info?.no||1})"
+        style="background:var(--green);color:white;border:none;border-radius:8px;padding:6px 14px;font-family:Sarabun,sans-serif;font-size:0.82rem;font-weight:600;cursor:pointer">
+        + เพิ่มคะแนน
+      </button>
+    </div>
+    <div style="overflow-x:auto">
+      <table class="history-table">
+        <thead><tr><th>#</th><th>วิชา</th><th>คะแนน</th><th>%</th><th>ผล</th><th>วันที่</th><th>แก้ไข</th></tr></thead>
+        <tbody>
+          ${records.map((h,i)=>`
+          <tr>
+            <td>${i+1}</td>
+            <td>${SUBJECT_ICONS[h.subject]||'📖'} ${h.subject}${h.source==='manual'?'<span style="font-size:0.65rem;background:#fef9c3;color:#92400e;padding:1px 5px;border-radius:4px;margin-left:4px">กรอกเอง</span>':''}</td>
+            <td>${h.score}/${h.total}</td>
+            <td><span style="padding:2px 10px;border-radius:20px;font-weight:700;font-size:0.82rem;background:${h.pct>=80?'#dcfce7':h.pct>=50?'#fef9c3':'#fee2e2'};color:${h.pct>=80?'#15803d':h.pct>=50?'#92400e':'#b91c1c'}">${h.pct}%</span></td>
+            <td class="${h.pass?'pass-tag':'fail-tag'}">${h.pass?'✅':'❌'}</td>
+            <td style="font-size:0.78rem">${h.date}</td>
+            <td>
+              <button onclick="deleteHistoryRecord('${h.id}')" style="background:none;border:none;cursor:pointer;color:#fca5a5;font-size:1rem" title="ลบรายการนี้">🗑️</button>
+            </td>
+          </tr>`).join('')}
+        </tbody>
+      </table>
+    </div>` :
+    '<div class="empty-state" style="padding:30px"><div class="empty-icon">📝</div><h3>ยังไม่มีประวัติ</h3><p>กดปุ่ม "กรอกคะแนน" เพื่อเพิ่มข้อมูล</p></div>'}`;
+}
+
+// ── Modal กรอกคะแนนด้วยมือ ────────────────────────────────────
+function showAddScoreModal(studentName, studentGrade, studentNo, preSubject='') {
+  const modal = document.createElement('div');
+  modal.id = 'add-score-modal';
+  modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.55);z-index:9999;display:flex;align-items:center;justify-content:center;padding:16px';
+  const ALL_SUBJECTS = ['คณิตศาสตร์','ภาษาไทย','สังคมศึกษา','วิทยาศาสตร์','ภาษาอังกฤษ','ประวัติศาสตร์','สุขศึกษา','ศิลปะ','การงานอาชีพ','ด้านทุจริต'];
+  modal.innerHTML = `
+    <div style="background:white;border-radius:18px;padding:26px;max-width:440px;width:100%;box-shadow:0 20px 60px rgba(0,0,0,0.3)">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px">
+        <div style="font-family:Mitr,sans-serif;font-weight:700;font-size:1.1rem;color:var(--navy)">✏️ กรอกคะแนนนักเรียน</div>
+        <button onclick="document.getElementById('add-score-modal').remove()" style="background:none;border:none;font-size:1.4rem;cursor:pointer;color:#888">✕</button>
+      </div>
+      <!-- ชื่อนักเรียน (แสดง readonly) -->
+      <div style="background:#f0f4ff;border-radius:10px;padding:12px 16px;margin-bottom:16px;display:flex;align-items:center;gap:10px">
+        <span style="font-size:1.5rem">🧑‍🎓</span>
+        <div>
+          <div style="font-weight:700;color:var(--navy)">${studentName}</div>
+          <div style="font-size:0.8rem;color:var(--muted)">${studentGrade} เลขที่ ${studentNo}</div>
+        </div>
+      </div>
+      <!-- วิชา -->
+      <div class="form-group" style="margin-bottom:14px">
+        <label>วิชา</label>
+        <select id="ascore-subject" style="padding:9px 12px;border:1.5px solid var(--border);border-radius:8px;font-family:Sarabun,sans-serif;font-size:0.9rem;width:100%">
+          ${ALL_SUBJECTS.map(s=>`<option value="${s}" ${s===preSubject?'selected':''}>${SUBJECT_ICONS[s]||'📖'} ${s}</option>`).join('')}
+        </select>
+      </div>
+      <!-- โหมดกรอก -->
+      <div style="display:flex;gap:8px;margin-bottom:14px">
+        <button id="mode-pct-btn" onclick="switchScoreMode('pct')"
+          style="flex:1;padding:9px;border-radius:8px;border:2px solid var(--blue);background:var(--blue);color:white;font-family:Sarabun,sans-serif;font-weight:600;cursor:pointer;font-size:0.85rem">
+          📊 กรอกเป็น %
+        </button>
+        <button id="mode-raw-btn" onclick="switchScoreMode('raw')"
+          style="flex:1;padding:9px;border-radius:8px;border:2px solid var(--border);background:white;color:var(--muted);font-family:Sarabun,sans-serif;font-weight:600;cursor:pointer;font-size:0.85rem">
+          🔢 กรอกคะแนน/รวม
+        </button>
+      </div>
+      <!-- กรอกเป็น % -->
+      <div id="input-pct-area" style="margin-bottom:14px">
+        <label style="font-size:0.82rem;font-weight:600;color:var(--muted);display:block;margin-bottom:6px">คะแนน (%)</label>
+        <div style="display:flex;align-items:center;gap:10px">
+          <input type="range" id="ascore-pct-slider" min="0" max="100" step="1" value="70"
+            oninput="document.getElementById('ascore-pct-num').value=this.value;updateAddScorePreview()"
+            style="flex:1;accent-color:var(--blue)">
+          <input type="number" id="ascore-pct-num" min="0" max="100" value="70"
+            oninput="document.getElementById('ascore-pct-slider').value=this.value;updateAddScorePreview()"
+            style="width:72px;padding:7px 10px;border:1.5px solid var(--border);border-radius:8px;font-family:Sarabun,sans-serif;font-size:1rem;font-weight:700;text-align:center">
+          <span style="font-size:1.2rem;font-weight:700;color:var(--blue)">%</span>
+        </div>
+        <div style="font-size:0.78rem;color:var(--muted);margin-top:4px">ระบบจะบันทึกเป็น คะแนน/100</div>
+      </div>
+      <!-- กรอกคะแนน/รวม -->
+      <div id="input-raw-area" style="display:none;margin-bottom:14px">
+        <div style="display:flex;gap:10px;align-items:center">
+          <div class="form-group" style="flex:1">
+            <label>คะแนนที่ได้</label>
+            <input type="number" id="ascore-raw-score" min="0" value="21"
+              oninput="updateAddScorePreview()"
+              style="padding:9px 12px;border:1.5px solid var(--border);border-radius:8px;font-family:Sarabun,sans-serif;font-size:0.95rem;width:100%">
+          </div>
+          <div style="font-size:1.5rem;margin-top:20px;color:var(--muted)">/</div>
+          <div class="form-group" style="flex:1">
+            <label>คะแนนเต็ม</label>
+            <input type="number" id="ascore-raw-total" min="1" value="30"
+              oninput="updateAddScorePreview()"
+              style="padding:9px 12px;border:1.5px solid var(--border);border-radius:8px;font-family:Sarabun,sans-serif;font-size:0.95rem;width:100%">
+          </div>
+        </div>
+      </div>
+      <!-- Preview -->
+      <div id="ascore-preview" style="background:#f8faff;border:1.5px solid var(--border);border-radius:10px;padding:12px;margin-bottom:16px;text-align:center">
+        <span id="ascore-preview-pct" style="font-family:Mitr,sans-serif;font-size:2rem;font-weight:800;color:var(--blue)">70%</span>
+        <span id="ascore-preview-pass" style="margin-left:10px;font-size:0.9rem;font-weight:600;color:var(--green)">✅ ผ่าน</span>
+        <div id="ascore-preview-raw" style="font-size:0.8rem;color:var(--muted);margin-top:4px">70/100</div>
+      </div>
+      <!-- วันที่ -->
+      <div class="form-group" style="margin-bottom:16px">
+        <label>วันที่สอบ (ไม่บังคับ)</label>
+        <input type="date" id="ascore-date" value="${new Date().toISOString().slice(0,10)}"
+          style="padding:9px 12px;border:1.5px solid var(--border);border-radius:8px;font-family:Sarabun,sans-serif;font-size:0.9rem;width:100%">
+      </div>
+      <!-- บันทึก -->
+      <div style="display:flex;gap:10px">
+        <button onclick="saveManualScore('${studentName.replace(/'/g,"\\'")}','${studentGrade.replace(/'/g,"\\'")}',${studentNo})"
+          style="flex:1;padding:11px;background:var(--green);color:white;border:none;border-radius:10px;font-family:Sarabun,sans-serif;font-weight:700;font-size:0.95rem;cursor:pointer">
+          💾 บันทึกคะแนน
+        </button>
+        <button onclick="document.getElementById('add-score-modal').remove()"
+          style="padding:11px 20px;background:white;border:1.5px solid var(--border);border-radius:10px;font-family:Sarabun,sans-serif;cursor:pointer">
+          ยกเลิก
+        </button>
+      </div>
+    </div>`;
+  document.body.appendChild(modal);
+  window._scoreMode = 'pct';
+  updateAddScorePreview();
+}
+
+function switchScoreMode(mode) {
+  window._scoreMode = mode;
+  const isPct = mode === 'pct';
+  document.getElementById('input-pct-area').style.display = isPct ? '' : 'none';
+  document.getElementById('input-raw-area').style.display = isPct ? 'none' : '';
+  const pctBtn = document.getElementById('mode-pct-btn');
+  const rawBtn = document.getElementById('mode-raw-btn');
+  if (pctBtn) { pctBtn.style.background = isPct?'var(--blue)':'white'; pctBtn.style.color = isPct?'white':'var(--muted)'; pctBtn.style.borderColor = isPct?'var(--blue)':'var(--border)'; }
+  if (rawBtn) { rawBtn.style.background = isPct?'white':'var(--blue)'; rawBtn.style.color = isPct?'var(--muted)':'white'; rawBtn.style.borderColor = isPct?'var(--border)':'var(--blue)'; }
+  updateAddScorePreview();
+}
+
+function updateAddScorePreview() {
+  let pct, score, total;
+  if (window._scoreMode === 'pct') {
+    pct = parseInt(document.getElementById('ascore-pct-num')?.value||70);
+    pct = Math.min(100, Math.max(0, pct||0));
+    score = pct; total = 100;
+  } else {
+    score = parseInt(document.getElementById('ascore-raw-score')?.value||0);
+    total = parseInt(document.getElementById('ascore-raw-total')?.value||100)||100;
+    score = Math.min(total, Math.max(0, score||0));
+    pct = Math.round(score/total*100);
+  }
+  const pass = pct >= passThreshold;
+  const col = pct>=80?'var(--green)':pct>=50?'#f59e0b':'var(--red)';
+  const pctEl = document.getElementById('ascore-preview-pct');
+  const passEl = document.getElementById('ascore-preview-pass');
+  const rawEl  = document.getElementById('ascore-preview-raw');
+  if (pctEl) { pctEl.textContent = pct+'%'; pctEl.style.color = col; }
+  if (passEl) { passEl.textContent = pass?'✅ ผ่าน':'❌ ไม่ผ่าน'; passEl.style.color = pass?'var(--green)':'var(--red)'; }
+  if (rawEl) rawEl.textContent = `${score}/${total}`;
+}
+
+function saveManualScore(studentName, studentGrade, studentNo) {
+  const subject = document.getElementById('ascore-subject')?.value;
+  const dateVal = document.getElementById('ascore-date')?.value;
+  let pct, score, total;
+  if (window._scoreMode === 'pct') {
+    pct   = Math.min(100, Math.max(0, parseInt(document.getElementById('ascore-pct-num')?.value)||0));
+    score = pct; total = 100;
+  } else {
+    score = parseInt(document.getElementById('ascore-raw-score')?.value||0);
+    total = parseInt(document.getElementById('ascore-raw-total')?.value||100)||100;
+    score = Math.min(total, Math.max(0, score));
+    pct   = Math.round(score/total*100);
+  }
+  if (!subject) { toast('กรุณาเลือกวิชา','error'); return; }
+  const pass = pct >= passThreshold;
+  const dateStr = dateVal
+    ? new Date(dateVal).toLocaleDateString('th-TH',{year:'numeric',month:'short',day:'numeric'})
+    : new Date().toLocaleString('th-TH');
+  const info = studentList.find(s=>s.name===studentName);
+  examHistory.unshift({
+    id: Date.now(),
+    studentName, studentClass: info?.grade||studentGrade, studentNo: info?.no||studentNo,
+    examTitle: `[กรอกเอง] ${subject}`, subject,
+    score, total, pct, pass,
+    timeUsed: 'กรอกเอง', date: dateStr,
+    source: 'manual'
+  });
+  saveToLS();
+  if(window._fb?.connected) window.pushToFirebase(true);
+  document.getElementById('add-score-modal')?.remove();
+  populateStudentDashSelect();
+  renderStudentDashboard();
+  toast(`✅ บันทึกคะแนน ${subject}: ${pct}%`, pass?'success':'');
+}
+
+function deleteHistoryRecord(id) {
+  examHistory = examHistory.filter(h=>String(h.id)!==String(id));
+  saveToLS();
+  if(window._fb?.connected) window.pushToFirebase(true);
+  renderStudentDashboard();
+  renderHistory();
+  toast('ลบรายการแล้ว');
 }
 
 // ============================================================
