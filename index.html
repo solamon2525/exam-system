@@ -103,28 +103,6 @@ textarea { resize:vertical; min-height:80px; }
 .q-option.correct { border-color:var(--green); background:#dcfce7; color:#15803d; font-weight:600; }
 .q-actions { position:absolute; top:12px; right:12px; display:flex; gap:6px; }
 
-/* MATCHING QUESTION */
-.match-table { display:grid; grid-template-columns:1fr 1fr; gap:8px; padding-left:36px; margin-top:6px; }
-.match-col { display:flex; flex-direction:column; gap:6px; }
-.match-left-item { padding:8px 12px; border-radius:8px; border:1.5px solid var(--border); background:white; font-size:0.85rem; cursor:pointer; display:flex; align-items:center; gap:8px; transition:all 0.15s; user-select:none; }
-.match-left-item .match-num { width:22px; height:22px; border-radius:50%; background:var(--blue); color:white; font-size:0.72rem; font-weight:700; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
-.match-left-item.selected { border-color:var(--blue); background:#eff6ff; font-weight:600; }
-.match-left-item.connected { border-color:var(--green); background:#dcfce7; color:#15803d; }
-.match-left-item.wrong-match { border-color:var(--red); background:#fee2e2; color:#991b1b; }
-.match-right-item { padding:8px 12px; border-radius:8px; border:1.5px solid #e2e8f0; background:#f8faff; font-size:0.85rem; cursor:pointer; display:flex; align-items:center; gap:8px; transition:all 0.15s; user-select:none; }
-.match-right-item .match-letter { width:22px; height:22px; border-radius:50%; background:#64748b; color:white; font-size:0.72rem; font-weight:700; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
-.match-right-item.used { background:#f0fdf4; border-color:var(--green); color:#15803d; }
-.match-right-item.used .match-letter { background:var(--green); }
-.match-right-item:hover:not(.used) { border-color:var(--blue); background:#eff6ff; }
-.match-badge { display:inline-flex; align-items:center; justify-content:center; width:20px; height:20px; border-radius:50%; background:var(--green); color:white; font-size:0.65rem; font-weight:700; margin-left:auto; flex-shrink:0; }
-/* print matching */
-@media print {
-  .match-left-item, .match-right-item { cursor:default; }
-  .match-print-col { display:flex; flex-direction:column; gap:4px; }
-  .match-print-left { display:flex; align-items:center; gap:8px; padding:4px 0; font-size:0.88rem; }
-  .match-print-right { padding:4px 0; font-size:0.88rem; }
-}
-
 /* AI LOADING */
 .ai-loading { display:flex; align-items:center; gap:12px; padding:20px; background:#eef2ff; border-radius:12px; color:var(--blue); font-weight:500; }
 .spinner { width:22px; height:22px; border:3px solid #c7d2fe; border-top-color:var(--blue); border-radius:50%; animation:spin 0.8s linear infinite; }
@@ -427,8 +405,6 @@ textarea { resize:vertical; min-height:80px; }
               <option value="analysis">🔍 การวิเคราะห์</option>
               <option value="situation">📖 สถานการณ์/โจทย์ปัญหา</option>
               <option value="compute">🔢 คำนวณ (คณิต/วิทย์)</option>
-              <option value="matching">🔗 จับคู่/โยงเส้น</option>
-              <option value="mixed_matching">🔀+🔗 ผสมปรนัย+จับคู่</option>
             </select>
           </div>
         </div>
@@ -535,7 +511,6 @@ textarea { resize:vertical; min-height:80px; }
         <div class="flex-row">
           <button class="btn btn-gold" onclick="generateWithAI()" id="ai-generate-btn">🟣 สร้างด้วย Claude</button>
           <button class="btn btn-outline" onclick="toggleCard('manual-add-card')">✍️ เพิ่มเอง</button>
-          <button class="btn btn-outline" onclick="showMatchingCreator()" style="border-color:#f59e0b;color:#92400e;background:#fffbeb">🔗 เพิ่มจับคู่</button>
           <button class="btn btn-outline" onclick="toggleCard('import-card')">📥 Import</button>
         </div>
       </div>
@@ -625,7 +600,6 @@ textarea { resize:vertical; min-height:80px; }
           <div class="ml-auto flex-row" style="gap:8px;flex-wrap:wrap">
             <button class="btn btn-primary btn-sm" onclick="showExportModal()">📤 Export</button>
             <button class="btn btn-outline btn-sm" onclick="showImportPaste()">📋 Import วาง</button>
-            <button class="btn btn-outline btn-sm" onclick="showExternalAIGuide()" style="background:linear-gradient(135deg,#faf5ff,#eff6ff);border-color:#a78bfa;color:#6d28d9">🤖 สร้างด้วย AI ภายนอก</button>
             <label class="btn btn-outline btn-sm" style="cursor:pointer;margin:0">📥 Import ไฟล์<input type="file" id="import-all-file" accept=".json" style="display:none" onchange="importAllQuestions(event)"></label>
             <select id="filter-subject" style="padding:6px 10px;border-radius:7px;border:1.5px solid var(--border);font-family:Sarabun,sans-serif;font-size:0.82rem" onchange="renderBank()">
               <option value="">ทุกวิชา</option>
@@ -640,7 +614,6 @@ textarea { resize:vertical; min-height:80px; }
           <span style="font-size:0.85rem;font-weight:700;color:#92400e">เลือกแล้ว: <span id="bulk-selected-count">0</span> ข้อ</span>
           <button onclick="bulkSelectAll(true)" style="padding:5px 12px;border-radius:7px;border:1.5px solid #f59e0b;background:white;font-family:Sarabun,sans-serif;font-size:0.82rem;cursor:pointer;font-weight:600">เลือกทั้งหมด</button>
           <button onclick="bulkSelectAll(false)" style="padding:5px 12px;border-radius:7px;border:1.5px solid var(--border);background:white;font-family:Sarabun,sans-serif;font-size:0.82rem;cursor:pointer">ยกเลิก</button>
-          <button onclick="createExamFromSelected()" style="padding:5px 12px;border-radius:7px;border:1.5px solid var(--green);background:#f0fdf4;color:#15803d;font-family:Sarabun,sans-serif;font-size:0.82rem;cursor:pointer;font-weight:700">📋 ออกข้อสอบจากที่เลือก</button>
           <button onclick="showExportModal(true)" style="padding:5px 12px;border-radius:7px;border:1.5px solid var(--blue);background:#eff6ff;color:var(--blue);font-family:Sarabun,sans-serif;font-size:0.82rem;cursor:pointer;font-weight:600">📤 Export ที่เลือก</button>
           <button onclick="bulkDelete()" style="padding:5px 12px;border-radius:7px;border:none;background:var(--red);color:white;font-family:Sarabun,sans-serif;font-size:0.82rem;cursor:pointer;font-weight:700;margin-left:auto">🗑️ ลบที่เลือก</button>
           <button onclick="toggleBulkMode()" style="padding:5px 10px;border-radius:7px;border:1.5px solid var(--border);background:white;font-family:Sarabun,sans-serif;font-size:0.82rem;cursor:pointer">✕ ออก</button>
@@ -652,17 +625,10 @@ textarea { resize:vertical; min-height:80px; }
 
       <!-- Create Exam Set -->
       <div class="card no-print" id="create-exam-card" style="display:none">
-        <div class="card-title">📋 สร้างชุดข้อสอบ & พิมพ์
-          <span id="exam-from-selected-badge" style="display:none;background:#dcfce7;color:#15803d;font-size:0.72rem;padding:2px 10px;border-radius:20px;font-weight:700;margin-left:8px">📌 จากที่เลือก <span id="exam-from-selected-count">0</span> ข้อ</span>
-        </div>
-        <div id="exam-from-selected-preview" style="display:none;background:#f0fdf4;border:1.5px solid #86efac;border-radius:10px;padding:10px 14px;margin-bottom:12px;font-size:0.83rem;color:#15803d">
-          <div style="font-weight:700;margin-bottom:4px">📌 ข้อที่เลือกไว้ (จะใช้ทั้งหมดไม่สุ่ม):</div>
-          <div id="exam-from-selected-list" style="color:#166534;line-height:1.8"></div>
-          <button onclick="clearSelectedForExam()" style="margin-top:8px;padding:3px 12px;border-radius:6px;border:1.5px solid #86efac;background:white;color:#15803d;font-family:Sarabun,sans-serif;font-size:0.8rem;cursor:pointer">✕ ล้าง ใช้สุ่มแทน</button>
-        </div>
+        <div class="card-title">📋 สร้างชุดข้อสอบ & พิมพ์</div>
         <div class="form-row">
           <div class="form-group"><label>ชื่อชุดข้อสอบ</label><input type="text" id="exam-title" placeholder="เช่น ข้อสอบปลายภาค ป.5"></div>
-          <div class="form-group" style="max-width:160px" id="exam-count-wrap"><label>จำนวนข้อ (สุ่มจากคลัง)</label><input type="number" id="exam-count" value="10" min="1"></div>
+          <div class="form-group" style="max-width:160px"><label>จำนวนข้อ</label><input type="number" id="exam-count" value="10" min="1"></div>
         </div>
         <div class="flex-row">
           <button class="btn btn-primary" onclick="createExamSet()">📋 สร้างชุดข้อสอบ</button>
@@ -1053,10 +1019,8 @@ textarea { resize:vertical; min-height:80px; }
 // ============================================================
 // VERSION
 // ============================================================
-const APP_VERSION = 'v2.9.3';
+const APP_VERSION = 'v2.7';
 const APP_CHANGELOG = [
-  { v:'v2.9', date:'2026-03-12', note:'🔗 ข้อสอบจับคู่/โยงเส้น: สร้างด้วยปุ่ม เพิ่มจับคู่, ผสมกับปรนัยในชุดเดียวกันได้, คะแนนแบบ partial credit, พิมพ์แบบ 2 คอลัมน์พร้อมเส้นโยง' },
-  { v:'v2.8', date:'2026-03-12', note:'🤖 สร้างด้วย AI ภายนอก: ปุ่ม Prompt Generator + แก้บัก subject snap (คณิต→คณิตศาสตร์, english→ภาษาอังกฤษ) ให้ Import แล้วเข้าวิชาเดิมไม่สร้างใหม่' },
   { v:'v2.7', date:'2026-03-12', note:'✨ Export หลาย format: JSON, CSV/Excel, TXT, PDF, Export Code; เลือกหลายข้อด้วย Checkbox; ลบเป็นกลุ่ม; Export เฉพาะที่เลือก' },
   { v:'v2.6', date:'2026-03-12', note:'🔧 แก้บัก: Token อัตโนมัติตามจำนวนข้อ — เลือก 15/20/25/30 ข้อ slider ปรับเองทันที, มีเตือนสีแดงถ้า token น้อยเกินไป, buildSmartPrompts คำนวณ floor token ป้องกัน JSON ถูกตัดกลางคัน' },
   { v:'v2.5', date:'2026-03-11', note:'🔀 รวมทุกฟีเจอร์: Gemini AI provider, Advanced AI (Bloom\'s, Distractor, หลักสูตร, โหมด 5 แบบ), แก้การ์ดวิชาว่าง, กรอกคะแนน%, เลือกรุ่น Claude/Gemini ได้' },
@@ -1414,47 +1378,20 @@ function buildSmartPrompts() {
   const distractorMap = { standard:'ตัวลวงสมเหตุสมผล', tricky:'ยั่วใจ ใกล้เคียงคำตอบที่ถูก', misconception:'สะท้อนความเข้าใจผิดของนักเรียน', easy:'เห็นชัดว่าผิด เหมาะนักเรียนระดับต้น' };
   const curriculumMap = { thai2551:'หลักสูตรแกนกลาง 2551', thai2560:'หลักสูตรแกนกลาง 2560', onet:'มาตรฐาน O-NET', local:'บูรณาการท้องถิ่น', general:'ทั่วไป' };
   const langMap = { formal:'ทางการ', simple:'เข้าใจง่าย ป.1-3', story:'เล่าเรื่อง/นิทาน', real:'สถานการณ์จริง', news:'โจทย์เชิงข่าว' };
-  const qtypeMap = { mixed:'ผสม', knowledge:'ความรู้ความจำ', comprehension:'ความเข้าใจ', application:'การนำไปใช้', analysis:'การวิเคราะห์', situation:'สถานการณ์/โจทย์ปัญหา', compute:'โจทย์คำนวณ', matching:'จับคู่/โยงเส้น', mixed_matching:'ผสมปรนัย+จับคู่' };
+  const qtypeMap = { mixed:'ผสม', knowledge:'ความรู้ความจำ', comprehension:'ความเข้าใจ', application:'การนำไปใช้', analysis:'การวิเคราะห์', situation:'สถานการณ์/โจทย์ปัญหา', compute:'โจทย์คำนวณ' };
   let avoidTxt = '';
   if (avoidRepeat==='yes' && questionBank.length>0) {
     const existing = questionBank.filter(q=>q.subject===subject).slice(0,15).map(q=>q.question?.substring(0,40)).filter(Boolean);
     if (existing.length) avoidTxt = `\nหลีกเลี่ยงซ้ำกับ:\n${existing.map((t,i)=>`${i+1}. ${t}`).join('\n')}`;
   }
-
-  let systemPrompt, userPrompt;
-
-  if (qtype === 'matching') {
-    systemPrompt = `คุณคือผู้เชี่ยวชาญออกข้อสอบจับคู่ภาษาไทยระดับประถมศึกษา
-• อ้างอิง: ${curriculumMap[curriculum]||'ทั่วไป'}
-• ภาษา: ${langMap[langstyle]||'ทางการ'}
-กฎ: ตอบ JSON array เท่านั้น ห้าม markdown
-รูปแบบ: [{"type":"matching","question":"จับคู่สิ่งต่อไปนี้ให้ถูกต้อง","pairs":[{"left":"...","right":"..."},{"left":"...","right":"..."},{"left":"...","right":"..."},{"left":"...","right":"..."}]}]
-- "pairs" ต้องมี 4-6 คู่ต่อข้อ ห้ามซ้ำกัน
-- "left" คือโจทย์ "right" คือคำตอบที่ถูกต้อง ต้องสัมพันธ์กัน 1:1`;
-    userPrompt = `ออกข้อสอบจับคู่ ${count} ข้อ วิชา${subject} ชั้น${grade} ความยาก:${diff}${topic?` หัวข้อ:${topic}`:''}${extraInstr?` คำสั่ง:${extraInstr}`:''}${avoidTxt}\nตอบ JSON array:`;
-  } else if (qtype === 'mixed_matching') {
-    const mcqCount = Math.ceil(count * 0.7);
-    const matchCount = count - mcqCount;
-    systemPrompt = `คุณคือผู้เชี่ยวชาญออกข้อสอบภาษาไทยระดับประถมศึกษา ออกได้ทั้งปรนัยและจับคู่
-• ระดับ Bloom: ${bloomMap[bloom]||bloomMap.auto}
-• อ้างอิง: ${curriculumMap[curriculum]||'ทั่วไป'}
-• ภาษา: ${langMap[langstyle]||'ทางการ'}
-กฎ: ตอบ JSON array เท่านั้น ห้าม markdown
-รูปแบบปรนัย: {"type":"mcq","question":"...","options":["...","...","...","..."],"answer":0}
-รูปแบบจับคู่: {"type":"matching","question":"จับคู่...","pairs":[{"left":"...","right":"..."},{"left":"...","right":"..."},{"left":"...","right":"..."},{"left":"...","right":"..."}]}
-- "answer" คือ index 0-3 ห้ามขึ้นต้นตัวเลือกด้วย ก. ข. ค. ง.
-- "pairs" ต้องมี 4-6 คู่`;
-    userPrompt = `ออกข้อสอบวิชา${subject} ชั้น${grade} ความยาก:${diff}${topic?` หัวข้อ:${topic}`:''}${extraInstr?` คำสั่ง:${extraInstr}`:''} รวม ${count} ข้อ (ปรนัย ${mcqCount} ข้อ + จับคู่ ${matchCount} ข้อ)${avoidTxt}\nตอบ JSON array:`;
-  } else {
-    systemPrompt = `คุณคือผู้เชี่ยวชาญออกข้อสอบภาษาไทยระดับประถมศึกษา
+  const systemPrompt = `คุณคือผู้เชี่ยวชาญออกข้อสอบภาษาไทยระดับประถมศึกษา
 • ระดับ Bloom: ${bloomMap[bloom]||bloomMap.auto}
 • ตัวลวง: ${distractorMap[distractor]||distractorMap.standard}
 • อ้างอิง: ${curriculumMap[curriculum]||'ทั่วไป'}
 • ภาษา: ${langMap[langstyle]||'ทางการ'}
 • รูปแบบ: ${qtypeMap[qtype]||'ผสม'}
 กฎ: ตอบ JSON array เท่านั้น ห้าม markdown, รูปแบบ: [{"q":"...","options":["...","...","...","..."],"answer":0}], answer=index 0-3, ห้ามขึ้นต้นตัวเลือกด้วย ก. ข. ค. ง.`;
-    userPrompt = `ออกข้อสอบ ${count} ข้อ วิชา${subject} ชั้น${grade} ความยาก:${diff}${topic?` หัวข้อ:${topic}`:''}${extraInstr?` คำสั่ง:${extraInstr}`:''}${avoidTxt}\nตอบ JSON array:`;
-  }
+  const userPrompt = `ออกข้อสอบ ${count} ข้อ วิชา${subject} ชั้น${grade} ความยาก:${diff}${topic?` หัวข้อ:${topic}`:''}${extraInstr?` คำสั่ง:${extraInstr}`:''}${avoidTxt}\nตอบ JSON array:`;
   return { systemPrompt, userPrompt, subject, grade, diff, topic,
            tokens: Math.max(calcMinTokens(count), parseInt(document.getElementById('ai-tokens-slider')?.value)||2000) };
 }
@@ -1493,30 +1430,15 @@ async function generateWithAI() {
     try { qs = extractJSON(raw); }
     catch(_) { throw new Error(`${providerName} ตอบผิดรูปแบบ — ลองกดสร้างใหม่`); }
     if (!Array.isArray(qs)||!qs.length) throw new Error('ไม่พบข้อสอบในผลลัพธ์');
-    const qtype = document.getElementById('ai-qtype')?.value || 'mixed';
-    aiPreviewQuestions = qs.map(q=>{
-      // matching type
-      if (q.type==='matching' && Array.isArray(q.pairs) && q.pairs.length>=2) {
-        return {
-          id:Date.now()+Math.random(), subject, grade, difficulty:diff,
-          type:'matching', question:q.question||'จับคู่สิ่งต่อไปนี้',
-          pairs: q.pairs.filter(p=>p.left&&p.right),
-          options: (q.pairs||[]).map(p=>p.left), answer:0,
-          selected:true, generatedBy:providerName
-        };
-      }
-      // MCQ (default)
-      if ((q.q||q.question)&&Array.isArray(q.options)&&q.options.length>=4) {
-        return {
-          id:Date.now()+Math.random(), subject, grade, difficulty:diff,
-          question:q.q||q.question,
-          options:q.options.map((o,i)=>LABELS[i]+String(o).replace(/^[กขคง][.)]\s*/u,'').trim()),
-          answer:Math.min(Math.max(parseInt(q.answer)||0,0),3),
-          selected:true, generatedBy:providerName
-        };
-      }
-      return null;
-    }).filter(Boolean);
+    aiPreviewQuestions = qs
+      .filter(q=>(q.q||q.question)&&Array.isArray(q.options)&&q.options.length>=4)
+      .map(q=>({
+        id:Date.now()+Math.random(), subject, grade, difficulty:diff,
+        question:q.q||q.question,
+        options:q.options.map((o,i)=>LABELS[i]+String(o).replace(/^[กขคง][.)]\s*/u,'').trim()),
+        answer:Math.min(Math.max(parseInt(q.answer)||0,0),3),
+        selected:true, generatedBy:providerName
+      }));
     if (!aiPreviewQuestions.length) throw new Error('ไม่พบข้อสอบที่ถูกรูปแบบ');
     renderAIPreview(subject, grade, diff, topic);
     toast(`✅ ${providerName} สร้าง ${aiPreviewQuestions.length} ข้อ`,'success');
@@ -1551,14 +1473,6 @@ function renderAIPreview(subject, grade, diff, topic) {
 }
 
 function renderPreviewItem(q,i) {
-  const body = q.type==='matching'
-    ? `<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:6px">
-        <div>${(q.pairs||[]).map((p,pi)=>`<div style="padding:4px 8px;border-radius:6px;font-size:0.82rem;border:1.5px solid var(--border);background:white;margin-bottom:4px"><span style="font-weight:700;color:var(--blue)">${pi+1}.</span> ${p.left}</div>`).join('')}</div>
-        <div>${(q.pairs||[]).map((p,pi)=>`<div style="padding:4px 8px;border-radius:6px;font-size:0.82rem;border:1.5px solid #dcfce7;background:#f0fdf4;margin-bottom:4px"><span style="font-weight:700;color:var(--green)">${String.fromCharCode(65+pi)}.</span> ${p.right}</div>`).join('')}</div>
-       </div>`
-    : `<div style="display:grid;grid-template-columns:1fr 1fr;gap:5px">
-        ${q.options.map((opt,oi)=>`<div style="padding:5px 9px;border-radius:7px;font-size:0.83rem;border:1.5px solid ${oi===q.answer?'var(--green)':'var(--border)'};background:${oi===q.answer?'#dcfce7':'white'};color:${oi===q.answer?'var(--green)':'inherit'};font-weight:${oi===q.answer?'600':'400'}">${opt}</div>`).join('')}
-       </div>`;
   return `<div id="preview-item-${i}" style="border:2px solid ${q.selected?'var(--blue)':'var(--border)'};border-radius:12px;padding:14px;background:${q.selected?'#f0f4ff':'white'};transition:all 0.2s">
     <div style="display:flex;align-items:flex-start;gap:10px">
       <div onclick="togglePreviewSelect(${i})" style="cursor:pointer;width:22px;height:22px;border-radius:6px;border:2px solid ${q.selected?'var(--blue)':'var(--border)'};background:${q.selected?'var(--blue)':'white'};display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:2px">
@@ -1566,8 +1480,10 @@ function renderPreviewItem(q,i) {
       </div>
       <span style="width:26px;height:26px;border-radius:50%;background:${q.selected?'var(--blue)':'var(--muted)'};color:white;display:flex;align-items:center;justify-content:center;font-size:0.78rem;font-weight:700;flex-shrink:0">${i+1}</span>
       <div style="flex:1">
-        <div style="font-weight:600;font-size:0.93rem;margin-bottom:8px">${q.question}${q.type==='matching'?' <span style="font-size:0.7rem;background:#fef3c7;color:#92400e;padding:1px 8px;border-radius:10px;font-weight:700">🔗 จับคู่</span>':''}</div>
-        ${body}
+        <div style="font-weight:600;font-size:0.93rem;margin-bottom:8px">${q.question}</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:5px">
+          ${q.options.map((opt,oi)=>`<div style="padding:5px 9px;border-radius:7px;font-size:0.83rem;border:1.5px solid ${oi===q.answer?'var(--green)':'var(--border)'};background:${oi===q.answer?'#dcfce7':'white'};color:${oi===q.answer?'var(--green)':'inherit'};font-weight:${oi===q.answer?'600':'400'}">${opt}</div>`).join('')}
+        </div>
       </div>
     </div>
   </div>`;
@@ -1631,132 +1547,6 @@ function addManualQuestion() {
   toast('✅ เพิ่มข้อสอบแล้ว','success');
   ['manual-q','opt-a','opt-b','opt-c','opt-d'].forEach(id=>document.getElementById(id).value='');
   document.getElementById('create-exam-card').style.display = '';
-}
-
-// ============================================================
-// MATCHING QUESTION CREATOR
-// ============================================================
-function showMatchingCreator(editData=null) {
-  const isEdit = !!editData;
-  const defPairs = isEdit ? editData.pairs : [{left:'',right:''},{left:'',right:''},{left:'',right:''},{left:'',right:''}];
-  const modal = document.createElement('div');
-  modal.id = 'matching-creator-modal';
-  modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.65);z-index:9999;display:flex;align-items:center;justify-content:center;padding:16px;overflow-y:auto';
-  modal.innerHTML = `
-  <div style="background:white;border-radius:18px;padding:26px;max-width:640px;width:100%;display:flex;flex-direction:column;gap:16px;max-height:92vh;overflow-y:auto">
-    <div style="display:flex;justify-content:space-between;align-items:center">
-      <div style="font-family:Mitr,sans-serif;font-weight:700;font-size:1.1rem;color:var(--navy)">🔗 ${isEdit?'แก้ไข':'สร้าง'}ข้อสอบจับคู่</div>
-      <button onclick="document.getElementById('matching-creator-modal').remove()" style="background:none;border:none;font-size:1.5rem;cursor:pointer;color:#888">✕</button>
-    </div>
-    <div style="display:flex;gap:10px;flex-wrap:wrap">
-      <div class="form-group" style="flex:2;margin:0">
-        <label>วิชา</label>
-        <select id="mc-subject" style="width:100%;padding:7px;border-radius:8px;border:1.5px solid var(--border);font-family:Sarabun,sans-serif">
-          ${VALID_SUBJECTS.map(s=>`<option ${isEdit&&editData.subject===s?'selected':''}>${s}</option>`).join('')}
-        </select>
-      </div>
-      <div class="form-group" style="flex:1;margin:0">
-        <label>ชั้น</label>
-        <select id="mc-grade" style="width:100%;padding:7px;border-radius:8px;border:1.5px solid var(--border);font-family:Sarabun,sans-serif">
-          ${['ป.1','ป.2','ป.3','ป.4','ป.5','ป.6','ม.1','ม.2','ม.3'].map(g=>`<option ${isEdit&&editData.grade===g?'selected':''}>${g}</option>`).join('')}
-        </select>
-      </div>
-    </div>
-    <div class="form-group" style="margin:0">
-      <label>คำถาม / คำสั่ง</label>
-      <input type="text" id="mc-question" value="${isEdit?editData.question:'จับคู่สิ่งต่อไปนี้ให้ถูกต้อง'}" style="width:100%;padding:9px;border-radius:8px;border:1.5px solid var(--border);font-family:Sarabun,sans-serif;box-sizing:border-box">
-    </div>
-
-    <div style="background:#f8faff;border:1.5px solid #dde4f5;border-radius:12px;padding:16px">
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:10px">
-        <div style="font-size:0.8rem;font-weight:700;color:var(--muted);text-align:center">คอลัมน์ซ้าย (โจทย์)</div>
-        <div style="font-size:0.8rem;font-weight:700;color:var(--muted);text-align:center">คอลัมน์ขวา (คำตอบ)</div>
-      </div>
-      <div id="mc-pairs-container" style="display:flex;flex-direction:column;gap:8px">
-        ${defPairs.map((p,i)=>`
-        <div style="display:grid;grid-template-columns:28px 1fr 1fr 28px;gap:6px;align-items:center" id="mc-pair-${i}">
-          <span style="width:24px;height:24px;border-radius:50%;background:var(--blue);color:white;font-size:0.72rem;font-weight:700;display:flex;align-items:center;justify-content:center">${i+1}</span>
-          <input type="text" placeholder="ซ้าย ${i+1}" value="${p.left}" style="padding:8px;border-radius:7px;border:1.5px solid var(--border);font-family:Sarabun,sans-serif;font-size:0.88rem" class="mc-left" data-idx="${i}">
-          <input type="text" placeholder="ขวา ${i+1}" value="${p.right}" style="padding:8px;border-radius:7px;border:1.5px solid var(--border);font-family:Sarabun,sans-serif;font-size:0.88rem" class="mc-right" data-idx="${i}">
-          <button onclick="removeMCPair(${i})" style="width:24px;height:24px;border-radius:50%;border:none;background:#fee2e2;color:var(--red);cursor:pointer;font-size:0.9rem;display:flex;align-items:center;justify-content:center">✕</button>
-        </div>`).join('')}
-      </div>
-      <button onclick="addMCPair()" style="margin-top:10px;width:100%;padding:8px;border:1.5px dashed #93c5fd;border-radius:8px;background:#f0f7ff;color:var(--blue);font-family:Sarabun,sans-serif;font-size:0.88rem;font-weight:600;cursor:pointer">+ เพิ่มคู่</button>
-    </div>
-
-    <div style="background:#fffbeb;border:1.5px solid #fcd34d;border-radius:10px;padding:12px;font-size:0.82rem;color:#92400e;line-height:1.7">
-      💡 <strong>เคล็ดลับ:</strong> ระบบจะ<strong>สับเปลี่ยนลำดับคอลัมน์ขวาอัตโนมัติ</strong>ให้นักเรียนในตอนทำข้อสอบ ไม่ต้องสับเอง<br>
-      แต่ละ 1 คู่จะคิดเป็น 1 คะแนนย่อย รวมคะแนนนับเป็น 1 ข้อในชุดข้อสอบ
-    </div>
-
-    <div style="display:flex;gap:10px">
-      <button onclick="saveMatchingQuestion(${isEdit?`'${editData.id}'`:'null'})" style="flex:1;padding:12px;background:var(--gold);color:#451a03;border:none;border-radius:10px;font-family:Sarabun,sans-serif;font-size:0.95rem;font-weight:700;cursor:pointer">
-        ${isEdit?'💾 บันทึกการแก้ไข':'➕ เพิ่มข้อจับคู่'}
-      </button>
-      <button onclick="document.getElementById('matching-creator-modal').remove()" style="padding:12px 20px;background:white;border:1.5px solid var(--border);border-radius:10px;font-family:Sarabun,sans-serif;cursor:pointer">ปิด</button>
-    </div>
-  </div>`;
-  document.body.appendChild(modal);
-}
-
-function addMCPair() {
-  const container = document.getElementById('mc-pairs-container');
-  const idx = container.children.length;
-  const row = document.createElement('div');
-  row.style.cssText = 'display:grid;grid-template-columns:28px 1fr 1fr 28px;gap:6px;align-items:center';
-  row.id = `mc-pair-${idx}`;
-  row.innerHTML = `
-    <span style="width:24px;height:24px;border-radius:50%;background:var(--blue);color:white;font-size:0.72rem;font-weight:700;display:flex;align-items:center;justify-content:center">${idx+1}</span>
-    <input type="text" placeholder="ซ้าย ${idx+1}" style="padding:8px;border-radius:7px;border:1.5px solid var(--border);font-family:Sarabun,sans-serif;font-size:0.88rem" class="mc-left" data-idx="${idx}">
-    <input type="text" placeholder="ขวา ${idx+1}" style="padding:8px;border-radius:7px;border:1.5px solid var(--border);font-family:Sarabun,sans-serif;font-size:0.88rem" class="mc-right" data-idx="${idx}">
-    <button onclick="removeMCPair(${idx})" style="width:24px;height:24px;border-radius:50%;border:none;background:#fee2e2;color:var(--red);cursor:pointer;font-size:0.9rem;display:flex;align-items:center;justify-content:center">✕</button>`;
-  container.appendChild(row);
-}
-
-function removeMCPair(idx) {
-  const row = document.getElementById(`mc-pair-${idx}`);
-  if (row) row.remove();
-  // renumber
-  const container = document.getElementById('mc-pairs-container');
-  [...container.children].forEach((row,i) => {
-    const num = row.querySelector('span');
-    if (num) num.textContent = i+1;
-  });
-}
-
-function saveMatchingQuestion(editId=null) {
-  const question = document.getElementById('mc-question')?.value.trim();
-  const subject = document.getElementById('mc-subject')?.value;
-  const grade = document.getElementById('mc-grade')?.value;
-  if (!question) { toast('กรอกคำถามก่อน','error'); return; }
-
-  const lefts  = [...document.querySelectorAll('.mc-left')].map(el=>el.value.trim());
-  const rights = [...document.querySelectorAll('.mc-right')].map(el=>el.value.trim());
-  const pairs  = lefts.map((l,i)=>({left:l, right:rights[i]})).filter(p=>p.left&&p.right);
-
-  if (pairs.length < 2) { toast('ต้องมีอย่างน้อย 2 คู่','error'); return; }
-
-  const qObj = {
-    id: editId || Date.now(),
-    type: 'matching',
-    question, subject, grade,
-    pairs,
-    // compat fields (ไม่ใช้จริง แต่ป้องกัน filter crash)
-    options: pairs.map(p=>p.left),
-    answer: 0,
-    difficulty: 'ปานกลาง'
-  };
-
-  if (editId) {
-    const idx = questionBank.findIndex(q=>String(q.id)===String(editId));
-    if (idx>=0) questionBank[idx] = qObj;
-  } else {
-    questionBank.push(qObj);
-  }
-  saveBank(); renderBank(); updateStats();
-  document.getElementById('matching-creator-modal')?.remove();
-  document.getElementById('create-exam-card').style.display = '';
-  toast(`✅ ${editId?'แก้ไข':'เพิ่ม'}ข้อจับคู่แล้ว (${pairs.length} คู่)`, 'success');
 }
 
 // ============================================================
@@ -1837,19 +1627,16 @@ function renderBank() {
       <div class="q-header">
         ${cbHtml}
         <span class="q-number">${i+1}</span>
-        <span class="q-text">${q.question}${q.type==='matching'?` <span style="font-size:0.7rem;padding:2px 8px;background:#fef3c7;color:#92400e;border-radius:10px;margin-left:6px;font-weight:700">🔗 จับคู่ (${q.pairs?.length||0} คู่)</span>`:''}</span>
+        <span class="q-text">${q.question}</span>
         <div class="q-actions">
           <span style="font-size:0.75rem;padding:2px 8px;background:#f1f5f9;border-radius:6px;color:var(--muted)">${q.subject} ${q.grade||''}</span>
           ${!bulkMode ? `<button class="btn btn-outline btn-sm" onclick="event.stopPropagation();editQuestion('${sid}')">✏️</button>
           <button class="btn btn-outline btn-sm" onclick="event.stopPropagation();deleteQuestion('${sid}')">🗑️</button>` : ''}
         </div>
       </div>
-      ${q.type==='matching' ? `<div class="match-table" style="pointer-events:none">
-        <div class="match-col">${(q.pairs||[]).map((p,pi)=>`<div class="match-left-item" style="cursor:default"><span class="match-num">${pi+1}</span>${p.left}</div>`).join('')}</div>
-        <div class="match-col">${(q.pairs||[]).map((p,pi)=>`<div class="match-right-item" style="cursor:default"><span class="match-letter">${String.fromCharCode(65+pi)}</span>${p.right}</div>`).join('')}</div>
-      </div>` : `<div class="q-options">
+      <div class="q-options">
         ${q.options.map((opt,oi)=>`<div class="q-option ${oi===q.answer?'correct':''}">${opt}</div>`).join('')}
-      </div>`}
+      </div>
     </div>`;
   }).join('');
 }
@@ -1857,7 +1644,6 @@ function renderBank() {
 function editQuestion(id) {
   const q = questionBank.find(x=>String(x.id)===String(id));
   if (!q) return;
-  if (q.type === 'matching') { showMatchingCreator(q); return; }
   const opts = q.options.map(o=>String(o).replace(/^[กขคง][.)]\s*/u,'').trim());
   const modal = document.createElement('div');
   modal.id = 'edit-q-modal';
@@ -1923,7 +1709,6 @@ async function clearBank() {
   if(window._fb?.connected) window.pushToFirebase(true);
   renderBank(); renderExamSets(); updateStats();
   renderOMRSelects();
-  clearSelectedForExam();
   document.getElementById('create-exam-card').style.display='none';
   toast('ล้างคลังแล้ว');
 }
@@ -1931,103 +1716,35 @@ async function clearBank() {
 // ============================================================
 // EXAM SET
 // ============================================================
-let pinnedForExam = []; // ids ของข้อสอบที่ pin ไว้สำหรับออกข้อสอบ
-
-function createExamFromSelected() {
-  if (!bulkSelected.size) { toast('กรุณาเลือกข้อสอบก่อน','error'); return; }
-  pinnedForExam = [...bulkSelected];
-  // show create-exam-card with preview
-  document.getElementById('create-exam-card').style.display = '';
-  document.getElementById('exam-from-selected-badge').style.display = 'inline-flex';
-  document.getElementById('exam-from-selected-count').textContent = pinnedForExam.length;
-  document.getElementById('exam-from-selected-preview').style.display = 'block';
-  document.getElementById('exam-count-wrap').style.display = 'none'; // hide random count
-  // list selected questions
-  const qs = questionBank.filter(q => pinnedForExam.includes(String(q.id)));
-  document.getElementById('exam-from-selected-list').innerHTML =
-    qs.map((q,i) => `<div>${i+1}. ${q.type==='matching'?'🔗 ':''}${q.question.substring(0,50)}${q.question.length>50?'…':''} <span style="opacity:0.6">[${q.subject}]</span></div>`).join('');
-  // exit bulk mode, scroll to card
-  toggleBulkMode();
-  setTimeout(() => document.getElementById('create-exam-card').scrollIntoView({behavior:'smooth', block:'center'}), 200);
-  toast(`📌 Pin ${qs.length} ข้อแล้ว — ตั้งชื่อแล้วกดสร้าง`, 'success');
-}
-
-function clearSelectedForExam() {
-  pinnedForExam = [];
-  const badge = document.getElementById('exam-from-selected-badge');
-  const preview = document.getElementById('exam-from-selected-preview');
-  const wrap = document.getElementById('exam-count-wrap');
-  if (badge) badge.style.display = 'none';
-  if (preview) preview.style.display = 'none';
-  if (wrap) wrap.style.display = '';
-}
-
 function createExamSet() {
   const title = document.getElementById('exam-title').value.trim() || 'ชุดข้อสอบ';
-  let selected;
-  if (pinnedForExam.length) {
-    // use pinned questions in their original order
-    selected = questionBank.filter(q => pinnedForExam.includes(String(q.id)));
-    if (!selected.length) { toast('ไม่พบข้อสอบที่เลือก','error'); return; }
-  } else {
-    const count = parseInt(document.getElementById('exam-count').value) || 10;
-    const filterSubject = document.getElementById('filter-subject').value;
-    let pool = filterSubject ? questionBank.filter(q=>q.subject===filterSubject) : questionBank;
-    if (!pool.length) { toast('ไม่มีข้อสอบในคลัง','error'); return; }
-    selected = [...pool].sort(()=>Math.random()-0.5).slice(0, Math.min(count, pool.length));
-  }
-  const subjects = [...new Set(selected.map(q=>q.subject))];
-  const examSet = { id:Date.now(), title, subject:subjects.length===1?subjects[0]:'รวมทุกวิชา', questions:selected, createdAt:new Date().toLocaleDateString('th-TH') };
+  const count = parseInt(document.getElementById('exam-count').value) || 10;
+  const filterSubject = document.getElementById('filter-subject').value;
+  let pool = filterSubject ? questionBank.filter(q=>q.subject===filterSubject) : questionBank;
+  if (!pool.length) { toast('ไม่มีข้อสอบในคลัง','error'); return; }
+  const selected = [...pool].sort(()=>Math.random()-0.5).slice(0,Math.min(count,pool.length));
+  const examSet = { id:Date.now(), title, subject:filterSubject||'รวมทุกวิชา', questions:selected, createdAt:new Date().toLocaleDateString('th-TH') };
   examSets.push(examSet);
   saveToLS();
   if(window._fb?.connected) window.pushToFirebase(true);
-  clearSelectedForExam();
-  document.getElementById('exam-title').value = '';
   updateStats(); renderExamSets(); renderOMRSelects(); renderPrintArea(examSet);
-  toast(`✅ สร้างชุดข้อสอบ ${selected.length} ข้อแล้ว`,'success');
+  toast('✅ สร้างชุดข้อสอบแล้ว','success');
 }
 
 function renderPrintArea(examSet) {
-  const matchingCount = examSet.questions.filter(q=>q.type==='matching').reduce((s,q)=>s+(q.pairs?.length||0),0);
-  const mcqCount = examSet.questions.filter(q=>q.type!=='matching').length;
-  const totalScore = mcqCount + matchingCount;
   const html = `<div style="padding:20px;font-family:Sarabun,sans-serif">
     <div style="text-align:center;margin-bottom:20px">
       <h2 style="font-size:1.3rem;font-weight:700">${examSet.title}</h2>
       <p style="color:#666;margin-top:4px">วิชา: ${examSet.subject} | ${examSet.questions.length} ข้อ | ${examSet.createdAt}</p>
       <div style="display:flex;gap:40px;justify-content:center;margin-top:12px;font-size:0.9rem">
-        <span>ชื่อ: ________________________</span><span>ชั้น: ________</span><span>คะแนน: ______/${totalScore}</span>
+        <span>ชื่อ: ________________________</span><span>ชั้น: ________</span><span>คะแนน: ______/${examSet.questions.length}</span>
       </div><hr style="margin-top:16px">
     </div>
-    ${examSet.questions.map((q,i)=>{
-      if (q.type === 'matching') {
-        // shuffle right for print
-        const shuffled = [...q.pairs.map((_,pi)=>pi)].sort(()=>Math.random()-0.5);
-        return `<div style="margin-bottom:22px;page-break-inside:avoid">
-          <p style="font-weight:600;margin-bottom:8px">${i+1}. ${q.question} <span style="font-size:0.75rem;color:#92400e;background:#fef3c7;padding:1px 8px;border-radius:10px">${q.pairs.length} คะแนน</span></p>
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;padding-left:20px">
-            <div>
-              ${q.pairs.map((p,pi)=>`<div style="display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid #f1f5f9">
-                <span style="min-width:22px;font-weight:700;color:#1a3fa0">${pi+1}.</span>
-                <span>${p.left}</span>
-                <span style="margin-left:auto;min-width:50px;border-bottom:1px solid #666;display:inline-block">&nbsp;&nbsp;&nbsp;&nbsp;</span>
-              </div>`).join('')}
-            </div>
-            <div>
-              ${shuffled.map((origIdx,si)=>`<div style="display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid #f1f5f9">
-                <span style="min-width:22px;font-weight:700;color:#15803d">${String.fromCharCode(65+si)}.</span>
-                <span>${q.pairs[origIdx].right}</span>
-              </div>`).join('')}
-            </div>
-          </div>
-        </div>`;
-      }
-      return `<div style="margin-bottom:18px">
-        <p style="font-weight:600;margin-bottom:8px">${i+1}. ${q.question}</p>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px;padding-left:20px">
-          ${q.options.map(opt=>`<div style="padding:3px 0">${opt}</div>`).join('')}
-        </div></div>`;
-    }).join('')}
+    ${examSet.questions.map((q,i)=>`<div style="margin-bottom:18px">
+      <p style="font-weight:600;margin-bottom:8px">${i+1}. ${q.question}</p>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px;padding-left:20px">
+        ${q.options.map(opt=>`<div style="padding:3px 0">${opt}</div>`).join('')}
+      </div></div>`).join('')}
   </div>`;
   const el = document.getElementById('print-area');
   el.innerHTML = html; el.style.display = '';
@@ -2108,55 +1825,8 @@ function startExam(id) {
   if (submitBtn) submitBtn.disabled=true;
   document.getElementById('submit-hint').textContent = 'ต้องตอบทุกข้อก่อนส่ง';
   renderStudentSidebar();
-  document.getElementById('exam-questions-area').innerHTML = currentExamSet.questions.map((q,i)=>{
-    if (q.type === 'matching') {
-      const shuffled = [...q.pairs.map((_,pi)=>pi)].sort(()=>Math.random()-0.5);
-      q._shuffled = shuffled;
-      return `<div class="question-item" style="margin-bottom:16px" id="qitem-exam-${i}">
-        <div class="q-header">
-          <span class="q-number">${i+1}</span>
-          <span class="q-text">${q.question} <span style="font-size:0.72rem;padding:2px 8px;background:#fef3c7;color:#92400e;border-radius:10px;margin-left:6px;font-weight:700">🔗 จับคู่</span></span>
-        </div>
-        <!-- layout: left rows + right answer column side by side -->
-        <div style="display:grid;grid-template-columns:1fr auto;gap:12px;padding-left:36px;margin-top:8px;align-items:start">
-          <!-- LEFT: clickable rows, each has inline letter picker -->
-          <div style="display:flex;flex-direction:column;gap:6px" id="match-left-col-${i}">
-            ${q.pairs.map((p,pi)=>`
-            <div id="mleft-wrap-${i}-${pi}">
-              <div class="match-left-item" id="mleft-${i}-${pi}" onclick="openMatchPicker(${i},${pi})">
-                <span class="match-num">${pi+1}</span>
-                <span style="flex:1">${p.left}</span>
-                <span id="mleft-pill-${i}-${pi}" style="min-width:28px;height:28px;border-radius:50%;background:#e2e8f0;color:#64748b;font-weight:700;font-size:0.8rem;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all 0.2s">?</span>
-              </div>
-              <!-- inline picker: hidden by default -->
-              <div id="mpicker-${i}-${pi}" style="display:none;padding:8px 10px;background:#f0f7ff;border:1.5px solid var(--sky);border-radius:10px;margin-top:4px;flex-wrap:wrap;gap:6px">
-                <div style="font-size:0.75rem;color:var(--muted);margin-bottom:6px;width:100%">เลือกคำตอบสำหรับ <strong>${p.left}</strong>:</div>
-                <div style="display:flex;flex-wrap:wrap;gap:6px">
-                  ${shuffled.map((origIdx,si)=>`
-                  <button id="mpick-btn-${i}-${pi}-${si}" onclick="assignMatch(${i},${pi},${si},${origIdx})"
-                    style="padding:6px 14px;border-radius:20px;border:1.5px solid #93c5fd;background:white;font-family:Sarabun,sans-serif;font-size:0.85rem;font-weight:600;cursor:pointer;color:var(--blue);transition:all 0.15s;display:flex;align-items:center;gap:6px">
-                    <span style="width:20px;height:20px;border-radius:50%;background:var(--blue);color:white;font-size:0.7rem;display:flex;align-items:center;justify-content:center">${String.fromCharCode(65+si)}</span>
-                    ${q.pairs[origIdx].right}
-                  </button>`).join('')}
-                  <button onclick="clearMatchPair(${i},${pi})" style="padding:6px 10px;border-radius:20px;border:1.5px solid #fca5a5;background:#fff1f2;font-family:Sarabun,sans-serif;font-size:0.8rem;color:var(--red);cursor:pointer">✕ ล้าง</button>
-                </div>
-              </div>
-            </div>`).join('')}
-          </div>
-          <!-- RIGHT: answer column, fixed -->
-          <div style="display:flex;flex-direction:column;gap:6px;min-width:180px">
-            <div style="font-size:0.75rem;font-weight:700;color:var(--muted);text-align:center;padding:4px">คำตอบ</div>
-            ${shuffled.map((origIdx,si)=>`
-            <div id="mright-${i}-${si}" style="padding:8px 12px;border-radius:8px;border:1.5px solid #e2e8f0;background:#f8faff;font-size:0.85rem;display:flex;align-items:center;gap:8px;min-height:40px">
-              <span style="width:22px;height:22px;border-radius:50%;background:#64748b;color:white;font-size:0.72rem;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0">${String.fromCharCode(65+si)}</span>
-              <span>${q.pairs[origIdx].right}</span>
-            </div>`).join('')}
-          </div>
-        </div>
-        <div id="match-hint-${i}" style="padding-left:36px;margin-top:8px;font-size:0.78rem;color:var(--muted)">👆 คลิกที่แถวซ้ายเพื่อเลือกคำตอบ</div>
-      </div>`;
-    }
-    return `<div class="question-item" style="margin-bottom:16px" id="qitem-exam-${i}">
+  document.getElementById('exam-questions-area').innerHTML = currentExamSet.questions.map((q,i)=>`
+    <div class="question-item" style="margin-bottom:16px" id="qitem-exam-${i}">
       <div class="q-header">
         <span class="q-number">${i+1}</span>
         <span class="q-text">${q.question}</span>
@@ -2164,22 +1834,14 @@ function startExam(id) {
       <div class="q-options">
         ${q.options.map((opt,oi)=>`<div class="q-option" id="qopt-${i}-${oi}" onclick="selectOption(${i},${oi})" style="cursor:pointer;transition:all 0.15s">${opt}</div>`).join('')}
       </div>
-    </div>`;
-  }).join('');
-  document.getElementById('answer-sheet-grid').innerHTML = currentExamSet.questions.map((q,i)=>{
-    if (q.type === 'matching') {
-      return `<div class="answer-row" id="ans-row-${i}">
-        <span class="ans-num">${i+1}.</span>
-        <div style="font-size:0.75rem;color:var(--muted);padding:2px 6px">🔗 จับคู่ <span id="ans-match-prog-${i}">0/${q.pairs.length} คู่</span></div>
-      </div>`;
-    }
-    return `<div class="answer-row" id="ans-row-${i}">
+    </div>`).join('');
+  document.getElementById('answer-sheet-grid').innerHTML = currentExamSet.questions.map((_,i)=>`
+    <div class="answer-row" id="ans-row-${i}">
       <span class="ans-num">${i+1}.</span>
       <div class="ans-options">
         ${['ก','ข','ค','ง'].map((l,oi)=>`<div class="ans-opt" id="ans-${i}-${oi}" onclick="selectAnswer(${i},${oi})">${l}</div>`).join('')}
       </div>
-    </div>`;
-  }).join('');
+    </div>`).join('');
   document.getElementById('exam-area').scrollIntoView({behavior:'smooth'});
 }
 
@@ -2214,123 +1876,6 @@ function fillStudentFromList() {
   checkStudentReady();
 }
 
-// Matching interaction state
-let matchSelectedLeft = {}; // kept for clearAnswers compat
-
-function openMatchPicker(qIdx, leftIdx) {
-  const q = currentExamSet?.questions[qIdx];
-  if (!q) return;
-  const isOpen = document.getElementById(`mpicker-${qIdx}-${leftIdx}`)?.style.display !== 'none';
-  // close all other pickers for this question
-  q.pairs.forEach((_,pi) => {
-    const p = document.getElementById(`mpicker-${qIdx}-${pi}`);
-    if (p) p.style.display = 'none';
-    const l = document.getElementById(`mleft-${qIdx}-${pi}`);
-    if (l && !l.classList.contains('connected')) l.classList.remove('selected');
-  });
-  if (isOpen) return; // toggle off
-  const picker = document.getElementById(`mpicker-${qIdx}-${leftIdx}`);
-  const leftEl = document.getElementById(`mleft-${qIdx}-${leftIdx}`);
-  if (picker) picker.style.display = 'block';
-  if (leftEl) leftEl.classList.add('selected');
-  // dim already-used buttons
-  q._shuffled.forEach((origIdx,si) => {
-    const usedBy = Array.isArray(userAnswers[qIdx]) ? userAnswers[qIdx].indexOf(origIdx) : -1;
-    const btn = document.getElementById(`mpick-btn-${qIdx}-${leftIdx}-${si}`);
-    if (!btn) return;
-    if (usedBy >= 0 && usedBy !== leftIdx) {
-      btn.style.opacity = '0.4';
-      btn.style.background = '#f1f5f9';
-      btn.title = `ใช้ไปแล้วโดยข้อ ${usedBy+1}`;
-    } else {
-      btn.style.opacity = '1';
-      btn.style.background = usedBy === leftIdx ? '#dcfce7' : 'white';
-      btn.style.borderColor = usedBy === leftIdx ? 'var(--green)' : '#93c5fd';
-    }
-  });
-}
-
-function assignMatch(qIdx, leftIdx, shuffledIdx, origIdx) {
-  const q = currentExamSet?.questions[qIdx];
-  if (!q) return;
-  if (!Array.isArray(userAnswers[qIdx])) userAnswers[qIdx] = new Array(q.pairs.length).fill(null);
-
-  // if this right was already taken by another left, unassign it
-  const prev = userAnswers[qIdx].indexOf(origIdx);
-  if (prev >= 0 && prev !== leftIdx) {
-    userAnswers[qIdx][prev] = null;
-    const prevPill = document.getElementById(`mleft-pill-${qIdx}-${prev}`);
-    if (prevPill) { prevPill.textContent='?'; prevPill.style.background='#e2e8f0'; prevPill.style.color='#64748b'; }
-    const prevLeft = document.getElementById(`mleft-${qIdx}-${prev}`);
-    if (prevLeft) { prevLeft.classList.remove('connected'); }
-  }
-
-  userAnswers[qIdx][leftIdx] = origIdx;
-
-  // update pill on left row
-  const pill = document.getElementById(`mleft-pill-${qIdx}-${leftIdx}`);
-  if (pill) { pill.textContent = String.fromCharCode(65+shuffledIdx); pill.style.background='var(--blue)'; pill.style.color='white'; }
-
-  // mark left row as connected
-  const leftEl = document.getElementById(`mleft-${qIdx}-${leftIdx}`);
-  if (leftEl) { leftEl.classList.remove('selected'); leftEl.classList.add('connected'); }
-
-  // highlight right item
-  q._shuffled.forEach((oi,si) => {
-    const rightEl = document.getElementById(`mright-${qIdx}-${si}`);
-    if (!rightEl) return;
-    const usedBy = userAnswers[qIdx].indexOf(oi);
-    if (usedBy >= 0) {
-      rightEl.style.background = '#f0fdf4'; rightEl.style.borderColor = 'var(--green)';
-      const badge = rightEl.querySelector('.right-used-badge');
-      if (badge) badge.textContent = `← ${usedBy+1}`;
-    } else {
-      rightEl.style.background = '#f8faff'; rightEl.style.borderColor = '#e2e8f0';
-    }
-  });
-
-  // close picker
-  const picker = document.getElementById(`mpicker-${qIdx}-${leftIdx}`);
-  if (picker) picker.style.display = 'none';
-
-  // update answer sheet progress
-  const filled = userAnswers[qIdx].filter(v=>v!==null).length;
-  const prog = document.getElementById(`ans-match-prog-${qIdx}`);
-  if (prog) prog.textContent = `${filled}/${q.pairs.length} คู่`;
-
-  const hint = document.getElementById(`match-hint-${qIdx}`);
-  if (hint) hint.textContent = filled === q.pairs.length ? '✅ จับคู่ครบแล้ว!' : `เหลืออีก ${q.pairs.length-filled} คู่ — คลิกแถวที่ยังมี ?`;
-
-  updateProgress();
-}
-
-function clearMatchPair(qIdx, leftIdx) {
-  const q = currentExamSet?.questions[qIdx];
-  if (!q || !Array.isArray(userAnswers[qIdx])) return;
-  const origIdx = userAnswers[qIdx][leftIdx];
-  userAnswers[qIdx][leftIdx] = null;
-
-  const pill = document.getElementById(`mleft-pill-${qIdx}-${leftIdx}`);
-  if (pill) { pill.textContent='?'; pill.style.background='#e2e8f0'; pill.style.color='#64748b'; }
-  const leftEl = document.getElementById(`mleft-${qIdx}-${leftIdx}`);
-  if (leftEl) { leftEl.classList.remove('connected','selected'); }
-
-  // un-highlight right
-  if (origIdx !== null) {
-    const si = q._shuffled.indexOf(origIdx);
-    const rightEl = document.getElementById(`mright-${qIdx}-${si}`);
-    if (rightEl) { rightEl.style.background='#f8faff'; rightEl.style.borderColor='#e2e8f0'; }
-  }
-
-  const picker = document.getElementById(`mpicker-${qIdx}-${leftIdx}`);
-  if (picker) picker.style.display = 'none';
-
-  const filled = userAnswers[qIdx].filter(v=>v!==null).length;
-  const prog = document.getElementById(`ans-match-prog-${qIdx}`);
-  if (prog) prog.textContent = `${filled}/${q.pairs.length} คู่`;
-  updateProgress();
-}
-
 function selectOption(qIdx, optIdx) {
   userAnswers[qIdx] = optIdx;
   for(let o=0;o<4;o++){
@@ -2360,15 +1905,7 @@ function syncAnswerSheet(qIdx, optIdx) {
 
 function updateProgress() {
   if (!currentExamSet) return;
-  const total = currentExamSet.questions.length;
-  let answered = 0;
-  currentExamSet.questions.forEach((q,i) => {
-    if (q.type === 'matching') {
-      if (Array.isArray(userAnswers[i]) && userAnswers[i].filter(v=>v!==null).length === q.pairs.length) answered++;
-    } else {
-      if (userAnswers[i] !== undefined) answered++;
-    }
-  });
+  const total=currentExamSet.questions.length, answered=Object.keys(userAnswers).length;
   const pct=Math.round(answered/total*100);
   const bar=document.getElementById('answer-progress-bar');
   if(bar){ bar.style.width=pct+'%'; bar.style.background=answered===total?'var(--green)':answered>total*0.5?'#f59e0b':'var(--sky)'; }
@@ -2384,13 +1921,9 @@ function updateProgress() {
     if(hint){ hint.textContent=`เหลืออีก ${total-answered} ข้อ`; hint.style.color='var(--muted)'; }
   }
   for(let i=0;i<total;i++){
-    const q = currentExamSet.questions[i];
     const row=document.getElementById(`ans-row-${i}`);
     if(!row) continue;
-    const done = q.type==='matching'
-      ? Array.isArray(userAnswers[i]) && userAnswers[i].filter(v=>v!==null).length === q.pairs.length
-      : userAnswers[i]!==undefined;
-    if(done){ row.style.borderColor='var(--sky)'; row.style.background='#f0f7ff'; }
+    if(userAnswers[i]!==undefined){ row.style.borderColor='var(--sky)'; row.style.background='#f0f7ff'; }
     else { row.style.borderColor=''; row.style.background=''; }
   }
 }
@@ -2398,31 +1931,11 @@ function updateProgress() {
 function clearAnswers() {
   if (!currentExamSet) return;
   userAnswers={};
-  matchSelectedLeft={};
   document.querySelectorAll('.ans-opt').forEach(el=>el.className='ans-opt');
-  currentExamSet.questions.forEach((q,i)=>{
-    if (q.type === 'matching') {
-      q.pairs.forEach((_,pi) => {
-        const leftEl = document.getElementById(`mleft-${i}-${pi}`);
-        if (leftEl) { leftEl.classList.remove('connected','selected','wrong-match'); leftEl.style.pointerEvents=''; }
-        const pill = document.getElementById(`mleft-pill-${i}-${pi}`);
-        if (pill) { pill.textContent='?'; pill.style.background='#e2e8f0'; pill.style.color='#64748b'; }
-        const picker = document.getElementById(`mpicker-${i}-${pi}`);
-        if (picker) picker.style.display='none';
-      });
-      for (let si=0; si<q.pairs.length; si++) {
-        const rightEl = document.getElementById(`mright-${i}-${si}`);
-        if (rightEl) { rightEl.style.background='#f8faff'; rightEl.style.borderColor='#e2e8f0'; }
-      }
-      const prog = document.getElementById(`ans-match-prog-${i}`);
-      if (prog) { prog.textContent = `0/${q.pairs.length} คู่`; prog.style.color=''; }
-      const hint = document.getElementById(`match-hint-${i}`);
-      if (hint) hint.textContent = '👆 คลิกที่แถวซ้ายเพื่อเลือกคำตอบ';
-    } else {
-      for(let o=0;o<4;o++){
-        const el=document.getElementById(`qopt-${i}-${o}`);
-        if(el){ el.style.background=''; el.style.borderColor=''; el.style.fontWeight=''; el.style.cursor='pointer'; el.onclick=()=>selectOption(i,o); }
-      }
+  currentExamSet.questions.forEach((_,i)=>{
+    for(let o=0;o<4;o++){
+      const el=document.getElementById(`qopt-${i}-${o}`);
+      if(el){ el.style.background=''; el.style.borderColor=''; el.style.fontWeight=''; el.style.cursor='pointer'; el.onclick=()=>selectOption(i,o); }
     }
     const item=document.getElementById(`qitem-exam-${i}`);
     if(item){ item.style.borderColor=''; item.style.background=''; }
@@ -2437,16 +1950,10 @@ function clearAnswers() {
 function submitExam(forceSubmit=false) {
   if (!currentExamSet) return;
   const total=currentExamSet.questions.length;
-  // count answered correctly for both types
-  let answered=0;
-  const missing=[];
-  currentExamSet.questions.forEach((q,i)=>{
-    const done = q.type==='matching'
-      ? Array.isArray(userAnswers[i]) && userAnswers[i].filter(v=>v!==null).length===q.pairs.length
-      : userAnswers[i]!==undefined;
-    if (done) answered++; else missing.push(`ข้อ ${i+1}`);
-  });
+  const answered=Object.keys(userAnswers).length;
   if (!forceSubmit && answered<total) {
+    const missing=[];
+    for(let i=0;i<total;i++) if(userAnswers[i]===undefined) missing.push(`ข้อ ${i+1}`);
     document.getElementById('unanswered-warning').style.display='';
     document.getElementById('unanswered-list').textContent=missing.join(', ');
     document.getElementById('unanswered-warning')?.scrollIntoView({behavior:'smooth',block:'center'});
@@ -2456,70 +1963,30 @@ function submitExam(forceSubmit=false) {
   const timeUsedSec=examTimerTotal-examTimerSeconds;
   const timeUsedStr=`${Math.floor(timeUsedSec/60)} นาที ${timeUsedSec%60} วินาที`;
   stopExamTimer();
-  let correct=0, totalScore=0, maxScore=0;
+  let correct=0;
   currentExamSet.questions.forEach((q,i)=>{
-    if (q.type === 'matching') {
-      const pairCount = q.pairs.length;
-      maxScore += pairCount;
-      const ua = userAnswers[i] || [];
-      let pairsCorrect = 0;
-      q.pairs.forEach((_, pi) => { if (ua[pi] === pi) pairsCorrect++; });
-      correct += pairsCorrect; // partial credit
-      totalScore += pairsCorrect;
-      // highlight matching results
-      q.pairs.forEach((_, pi) => {
-        const leftEl = document.getElementById(`mleft-${i}-${pi}`);
-        if (leftEl) {
-          leftEl.classList.remove('connected','selected');
-          leftEl.classList.add(ua[pi]===pi ? 'connected' : 'wrong-match');
-          leftEl.style.pointerEvents = 'none';
-        }
-        // close picker, update pill
-        const picker = document.getElementById(`mpicker-${i}-${pi}`);
-        if (picker) picker.style.display='none';
-        const pill = document.getElementById(`mleft-pill-${i}-${pi}`);
-        if (pill) {
-          if (ua[pi] === pi) {
-            pill.textContent = '✓'; pill.style.background='var(--green)'; pill.style.color='white';
-          } else {
-            const correctSi = q._shuffled.indexOf(pi);
-            pill.textContent = String.fromCharCode(65+correctSi)+'✓';
-            pill.style.background = 'var(--red)'; pill.style.color='white';
-            pill.style.borderRadius = '12px'; pill.style.padding = '0 6px'; pill.style.width='auto'; pill.style.minWidth='auto';
-          }
-        }
-      });
-      const item = document.getElementById(`qitem-exam-${i}`);
-      if (item) { item.style.borderColor = pairsCorrect===pairCount?'var(--green)':pairsCorrect>0?'#f59e0b':'var(--red)'; item.style.background = pairsCorrect===pairCount?'#f0fdf4':pairsCorrect>0?'#fffbeb':'#fff1f2'; }
-      const row=document.getElementById(`ans-row-${i}`);
-      if(row){ row.className='answer-row '+(pairsCorrect===pairCount?'correct-ans':pairsCorrect>0?'':'wrong-ans'); }
-      const prog = document.getElementById(`ans-match-prog-${i}`);
-      if (prog) { prog.textContent = `${pairsCorrect}/${pairCount} ✓`; prog.style.color = pairsCorrect===pairCount?'var(--green)':'var(--red)'; }
-    } else {
-      maxScore++;
-      const ua=userAnswers[i], ok=ua===q.answer;
-      if(ok){ correct++; totalScore++; }
+    const ua=userAnswers[i], ok=ua===q.answer;
+    if(ok) correct++;
+    for(let o=0;o<4;o++){
+      const el=document.getElementById(`ans-${i}-${o}`);
+      if(el){ if(o===q.answer) el.className='ans-opt correct-sel'; else if(o===ua&&!ok) el.className='ans-opt wrong-sel'; }
+    }
+    const row=document.getElementById(`ans-row-${i}`);
+    if(row){ row.className='answer-row '+(ok?'correct-ans':'wrong-ans'); row.style.borderColor=''; row.style.background=''; }
+    const item=document.getElementById(`qitem-exam-${i}`);
+    if(item){
+      item.style.borderColor=ok?'var(--green)':'var(--red)';
+      item.style.background=ok?'#f0fdf4':'#fff1f2';
       for(let o=0;o<4;o++){
-        const el=document.getElementById(`ans-${i}-${o}`);
-        if(el){ if(o===q.answer) el.className='ans-opt correct-sel'; else if(o===ua&&!ok) el.className='ans-opt wrong-sel'; }
-      }
-      const row=document.getElementById(`ans-row-${i}`);
-      if(row){ row.className='answer-row '+(ok?'correct-ans':'wrong-ans'); row.style.borderColor=''; row.style.background=''; }
-      const item=document.getElementById(`qitem-exam-${i}`);
-      if(item){
-        item.style.borderColor=ok?'var(--green)':'var(--red)';
-        item.style.background=ok?'#f0fdf4':'#fff1f2';
-        for(let o=0;o<4;o++){
-          const optEl=document.getElementById(`qopt-${i}-${o}`);
-          if(!optEl) continue;
-          if(o===q.answer){ optEl.style.background='#dcfce7'; optEl.style.borderColor='var(--green)'; optEl.style.fontWeight='700'; }
-          else if(o===ua&&!ok){ optEl.style.background='#fee2e2'; optEl.style.borderColor='var(--red)'; }
-          optEl.style.cursor='default'; optEl.onclick=null;
-        }
+        const optEl=document.getElementById(`qopt-${i}-${o}`);
+        if(!optEl) continue;
+        if(o===q.answer){ optEl.style.background='#dcfce7'; optEl.style.borderColor='var(--green)'; optEl.style.fontWeight='700'; }
+        else if(o===ua&&!ok){ optEl.style.background='#fee2e2'; optEl.style.borderColor='var(--red)'; }
+        optEl.style.cursor='default'; optEl.onclick=null;
       }
     }
   });
-  const pct=Math.round(totalScore/maxScore*100);
+  const pct=Math.round(correct/total*100);
   const pass=pct>=passThreshold;
   const grade=pct>=80?'4 (ดีมาก)':pct>=70?'3 (ดี)':pct>=60?'2 (พอใช้)':pct>=passThreshold?'1 (ผ่าน)':'0 (ไม่ผ่าน)';
   const submitBtn=document.getElementById('submit-btn');
@@ -2528,7 +1995,7 @@ function submitExam(forceSubmit=false) {
   resultEl.style.display='';
   resultEl.innerHTML=`<div class="card">
     <div class="score-box ${pass?'pass':'fail'}">
-      <div class="score-num" style="color:${pass?'var(--green)':'var(--red)'}">${totalScore}/${maxScore}</div>
+      <div class="score-num" style="color:${pass?'var(--green)':'var(--red)'}">${correct}/${total}</div>
       <div class="score-label">คะแนนที่ได้</div>
       <div class="score-grade">${pct}% — ระดับ ${grade}</div>
       <div style="margin-top:6px;font-size:0.85rem;color:#64748b">⏱️ ${timeUsedStr}</div>
@@ -3298,18 +2765,9 @@ function exportFormat(fmt, pool) {
     out += `จำนวน ${pool.length} ข้อ | วิชา: ${subjects.join(', ')}\n`;
     out += '='.repeat(60) + '\n\n';
     pool.forEach((q, i) => {
-      if (q.type === 'matching') {
-        out += `ข้อ ${i+1}. [${q.subject} ${q.grade||''}] 🔗 จับคู่ — ${q.question}\n`;
-        out += `   คอลัมน์ซ้าย          | คอลัมน์ขวา (เฉลย)\n`;
-        q.pairs.forEach((p,pi) => {
-          out += `   ${pi+1}. ${p.left.padEnd(20)} | ${String.fromCharCode(65+pi)}. ${p.right}\n`;
-        });
-        out += `   เฉลย: ${q.pairs.map((_,pi)=>`${pi+1}→${String.fromCharCode(65+pi)}`).join(', ')}\n\n`;
-      } else {
-        out += `ข้อ ${i+1}. [${q.subject} ${q.grade||''}] ${q.question}\n`;
-        q.options.forEach(opt => { out += `   ${opt}\n`; });
-        out += `   ✅ เฉลย: ${q.options[q.answer]}\n\n`;
-      }
+      out += `ข้อ ${i+1}. [${q.subject} ${q.grade||''}] ${q.question}\n`;
+      q.options.forEach(opt => { out += `   ${opt}\n`; });
+      out += `   ✅ เฉลย: ${q.options[q.answer]}\n\n`;
     });
     dlFile(out, `${name}.txt`, 'text/plain;charset=utf-8;');
     toast('✅ Download TXT', 'success');
@@ -3332,31 +2790,17 @@ function exportFormat(fmt, pool) {
         .opt { padding:4px 8px; border:1px solid #dde4f5; border-radius:5px; font-size:0.88rem; }
         .correct { background:#dcfce7; border-color:#86efac; font-weight:600; color:#15803d; }
         .subj-tag { background:#eff6ff; color:#1d4ed8; padding:1px 8px; border-radius:20px; font-size:0.72rem; margin-left:8px; }
-        .match-grid { display:grid; grid-template-columns:1fr 1fr; gap:12px; padding-left:24px; margin-top:8px; }
-        .match-row { display:flex; align-items:center; gap:8px; padding:4px 0; border-bottom:1px solid #f1f5f9; font-size:0.88rem; }
-        .match-num { font-weight:700; color:#1a3fa0; min-width:20px; }
-        .match-letter { font-weight:700; color:#15803d; min-width:20px; }
         @media print { body { padding:16px; } }
       </style></head><body>
       <h1>📚 คลังข้อสอบ</h1>
       <div class="meta">วิชา: ${subjects.join(', ')} | ${pool.length} ข้อ | ${new Date().toLocaleDateString('th-TH')}</div>
-      ${pool.map((q,i)=>{
-        if (q.type === 'matching') {
-          return `<div class="q">
-            <div><span class="qnum">${i+1}.</span>🔗 ${q.question}<span class="subj-tag">${q.subject} ${q.grade||''}</span></div>
-            <div class="match-grid">
-              <div>${q.pairs.map((p,pi)=>`<div class="match-row"><span class="match-num">${pi+1}.</span>${p.left}</div>`).join('')}</div>
-              <div>${q.pairs.map((p,pi)=>`<div class="match-row"><span class="match-letter">${String.fromCharCode(65+pi)}.</span>${p.right} <span style="margin-left:auto;font-size:0.75rem;color:#64748b">(เฉลย: ${pi+1}→${String.fromCharCode(65+pi)})</span></div>`).join('')}</div>
-            </div>
-          </div>`;
-        }
-        return `<div class="q">
+      ${pool.map((q,i)=>`
+        <div class="q">
           <div><span class="qnum">${i+1}.</span>${q.question}<span class="subj-tag">${q.subject} ${q.grade||''}</span></div>
           <div class="opts">
             ${q.options.map((opt,oi)=>`<div class="opt ${oi===q.answer?'correct':''}">${opt}${oi===q.answer?' ✓':''}</div>`).join('')}
           </div>
-        </div>`;
-      }).join('')}
+        </div>`).join('')}
       <script>window.onload=()=>window.print();<\/script>
     </body></html>`);
     win.document.close();
@@ -3399,155 +2843,7 @@ function importAllQuestions(event) {
   const r=new FileReader(); r.onload=e=>{ processImportData(e.target.result); event.target.value=''; }; r.readAsText(file,'UTF-8');
 }
 
-function showExternalAIGuide() {
-  const PROMPT_TEMPLATE = (subject, count, grade) =>
-`สร้างข้อสอบปรนัย วิชา${subject} ระดับ${grade} จำนวน ${count} ข้อ
-ตอบกลับเป็น JSON array เท่านั้น ห้ามมีข้อความอื่นนอกจาก JSON
-
-รูปแบบ JSON ที่ต้องการ (ห้ามเปลี่ยนชื่อ field):
-[
-  {
-    "question": "คำถาม...",
-    "options": ["ตัวเลือก ก", "ตัวเลือก ข", "ตัวเลือก ค", "ตัวเลือก ง"],
-    "answer": 0,
-    "subject": "${subject}",
-    "grade": "${grade}"
-  }
-]
-
-กฎสำคัญ:
-- "answer" คือ index (0=ก, 1=ข, 2=ค, 3=ง)
-- "subject" ต้องเป็นชื่อวิชาภาษาไทยตรงๆ ห้ามย่อ
-- "options" ต้องมี 4 ตัวเลือกเสมอ ไม่ต้องใส่ ก. ข. ค. ง. นำหน้า
-- ตอบกลับ JSON array เท่านั้น ห้ามมี markdown หรือ code block`;
-
-  const modal = document.createElement('div');
-  modal.id = 'ext-ai-guide-modal';
-  modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.65);z-index:9999;display:flex;align-items:center;justify-content:center;padding:16px;overflow-y:auto';
-
-  const subjects = VALID_SUBJECTS;
-  modal.innerHTML = `
-  <div style="background:white;border-radius:18px;padding:26px;max-width:680px;width:100%;display:flex;flex-direction:column;gap:16px;max-height:92vh;overflow-y:auto">
-    <div style="display:flex;justify-content:space-between;align-items:center">
-      <div style="font-family:Mitr,sans-serif;font-weight:700;font-size:1.1rem;color:var(--navy)">🤖 สร้างข้อสอบด้วย AI ภายนอก</div>
-      <button onclick="document.getElementById('ext-ai-guide-modal').remove()" style="background:none;border:none;font-size:1.5rem;cursor:pointer;color:#888">✕</button>
-    </div>
-
-    <div style="background:#faf5ff;border:1.5px solid #ddd6fe;border-radius:12px;padding:14px;font-size:0.86rem;color:#4c1d95;line-height:1.7">
-      <strong>วิธีใช้:</strong> คัดลอก Prompt ด้านล่าง → วางใน ChatGPT / Gemini / Claude (เว็บ) → คัดลอก JSON ที่ได้ → กด <strong>"📋 Import วาง"</strong> วางเลย
-      <br>ระบบจะจับชื่อวิชาอัตโนมัติ แม้ AI เขียนชื่อวิชาไม่ตรงก็ snap เข้าวิชาที่ถูกต้องให้
-    </div>
-
-    <!-- ปรับแต่ง -->
-    <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end">
-      <div class="form-group" style="flex:2;min-width:140px;margin:0">
-        <label style="font-size:0.8rem;margin-bottom:4px;display:block;font-weight:600;color:var(--muted)">วิชา</label>
-        <select id="guide-subject" onchange="refreshGuidePrompt()" style="width:100%;padding:7px 10px;border-radius:8px;border:1.5px solid var(--border);font-family:Sarabun,sans-serif;font-size:0.85rem">
-          ${subjects.map(s=>`<option>${s}</option>`).join('')}
-        </select>
-      </div>
-      <div class="form-group" style="flex:1;min-width:80px;margin:0">
-        <label style="font-size:0.8rem;margin-bottom:4px;display:block;font-weight:600;color:var(--muted)">จำนวนข้อ</label>
-        <select id="guide-count" onchange="refreshGuidePrompt()" style="width:100%;padding:7px 10px;border-radius:8px;border:1.5px solid var(--border);font-family:Sarabun,sans-serif;font-size:0.85rem">
-          <option>5</option><option selected>10</option><option>15</option><option>20</option><option>25</option><option>30</option>
-        </select>
-      </div>
-      <div class="form-group" style="flex:1;min-width:100px;margin:0">
-        <label style="font-size:0.8rem;margin-bottom:4px;display:block;font-weight:600;color:var(--muted)">ชั้น</label>
-        <select id="guide-grade" onchange="refreshGuidePrompt()" style="width:100%;padding:7px 10px;border-radius:8px;border:1.5px solid var(--border);font-family:Sarabun,sans-serif;font-size:0.85rem">
-          <option>ป.1</option><option>ป.2</option><option>ป.3</option><option>ป.4</option><option selected>ป.5</option><option>ป.6</option><option>ม.1</option><option>ม.2</option><option>ม.3</option>
-        </select>
-      </div>
-    </div>
-
-    <!-- Prompt area -->
-    <div style="position:relative">
-      <div style="font-size:0.8rem;font-weight:700;color:var(--muted);margin-bottom:6px">📋 Prompt สำหรับสั่ง AI ภายนอก</div>
-      <textarea id="guide-prompt-area" readonly style="width:100%;min-height:260px;padding:12px;border:1.5px solid #ddd6fe;border-radius:10px;font-family:monospace;font-size:0.78rem;line-height:1.6;resize:vertical;background:#fafafa;box-sizing:border-box"></textarea>
-      <button id="guide-copy-btn" onclick="copyGuidePrompt()" style="margin-top:8px;width:100%;padding:11px;background:#7c3aed;color:white;border:none;border-radius:10px;font-family:Sarabun,sans-serif;font-size:0.95rem;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px">
-        📋 คัดลอก Prompt
-      </button>
-    </div>
-
-    <!-- รูปแบบ JSON ย่อ -->
-    <details style="border:1.5px solid #e2e8f0;border-radius:10px;padding:12px">
-      <summary style="font-weight:700;color:var(--navy);cursor:pointer;font-size:0.88rem">📐 ดูรูปแบบ JSON (Reference)</summary>
-      <pre style="margin-top:10px;background:#f8faff;padding:12px;border-radius:8px;font-size:0.75rem;overflow-x:auto;white-space:pre-wrap">[
-  {
-    "question": "2 + 3 เท่ากับเท่าไร",
-    "options": ["3", "4", "5", "6"],
-    "answer": 2,
-    "subject": "คณิตศาสตร์",
-    "grade": "ป.5"
-  },
-  {
-    "question": "ข้อที่สอง...",
-    "options": ["ก", "ข", "ค", "ง"],
-    "answer": 0,
-    "subject": "คณิตศาสตร์",
-    "grade": "ป.5"
-  }
-]</pre>
-      <div style="margin-top:8px;font-size:0.8rem;color:var(--muted);line-height:1.8">
-        <strong>ชื่อวิชาที่รองรับ (field: subject):</strong><br>
-        ${VALID_SUBJECTS.map(s=>`<code style="background:#f1f5f9;padding:1px 6px;border-radius:4px;margin:2px;display:inline-block">${s}</code>`).join(' ')}
-        <br><span style="color:#16a34a;margin-top:4px;display:block">✅ ระบบจะ snap อัตโนมัติ: "คณิต" → "คณิตศาสตร์", "english" → "ภาษาอังกฤษ" เป็นต้น</span>
-      </div>
-    </details>
-
-    <div style="display:flex;gap:10px">
-      <button onclick="document.getElementById('ext-ai-guide-modal').remove();setTimeout(showImportPaste,100)" style="flex:1;padding:11px;background:var(--blue);color:white;border:none;border-radius:10px;font-family:Sarabun,sans-serif;font-size:0.9rem;font-weight:700;cursor:pointer">
-        📥 ไปที่ Import วาง JSON
-      </button>
-      <button onclick="document.getElementById('ext-ai-guide-modal').remove()" style="padding:11px 18px;background:white;border:1.5px solid var(--border);border-radius:10px;font-family:Sarabun,sans-serif;font-size:0.9rem;cursor:pointer">
-        ปิด
-      </button>
-    </div>
-  </div>`;
-
-  document.body.appendChild(modal);
-  refreshGuidePrompt();
-}
-
-function refreshGuidePrompt() {
-  const subject = document.getElementById('guide-subject')?.value || 'คณิตศาสตร์';
-  const count   = document.getElementById('guide-count')?.value  || '10';
-  const grade   = document.getElementById('guide-grade')?.value  || 'ป.5';
-  const prompt  =
-`สร้างข้อสอบปรนัย วิชา${subject} ระดับ${grade} จำนวน ${count} ข้อ
-ตอบกลับเป็น JSON array เท่านั้น ห้ามมีข้อความอื่นนอกจาก JSON
-
-รูปแบบที่ต้องการ (ห้ามเปลี่ยนชื่อ field):
-[
-  {
-    "question": "คำถาม...",
-    "options": ["ตัวเลือก 1", "ตัวเลือก 2", "ตัวเลือก 3", "ตัวเลือก 4"],
-    "answer": 0,
-    "subject": "${subject}",
-    "grade": "${grade}"
-  }
-]
-
-กฎ:
-- "answer" = index คำตอบ (0=ข้อแรก, 1=ข้อสอง, 2=ข้อสาม, 3=ข้อสี่)
-- "options" มี 4 ตัวเลือกเสมอ ไม่ใส่ ก. ข. ค. ง. นำหน้า
-- "subject" = "${subject}" เท่านั้น
-- ตอบ JSON เปล่าๆ ห้ามมี markdown code block (\`\`\`json)`;
-  const ta = document.getElementById('guide-prompt-area');
-  if (ta) ta.value = prompt;
-}
-
-function copyGuidePrompt() {
-  const ta = document.getElementById('guide-prompt-area');
-  if (!ta) return;
-  navigator.clipboard.writeText(ta.value).then(() => {
-    const btn = document.getElementById('guide-copy-btn');
-    if (btn) { btn.textContent = '✅ คัดลอกแล้ว! นำไปวางใน ChatGPT / Gemini / Claude'; btn.style.background='var(--green)'; }
-    setTimeout(() => { if (btn) { btn.innerHTML='📋 คัดลอก Prompt'; btn.style.background='#7c3aed'; }}, 3000);
-  });
-}
-
-
+function showImportPaste() {
   const modal=document.createElement('div');
   modal.id='import-paste-modal';
   modal.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px';
@@ -3572,39 +2868,6 @@ function importFromPaste() {
   processImportData(text);
 }
 
-// รายชื่อวิชาที่รองรับ (canonical)
-const VALID_SUBJECTS = ['คณิตศาสตร์','ภาษาไทย','สังคมศึกษา','วิทยาศาสตร์','ภาษาอังกฤษ','ประวัติศาสตร์','สุขศึกษา','ศิลปะ','การงานอาชีพ','ด้านทุจริต'];
-
-// snap ชื่อวิชาจาก AI ภายนอกให้ตรงกับรายชื่อในระบบ
-function snapSubject(raw) {
-  if (!raw) return '';
-  const s = raw.trim().normalize('NFC');
-  // ตรงทั้งหมด
-  if (VALID_SUBJECTS.includes(s)) return s;
-  // keyword matching
-  const kw = [
-    ['คณิต',           'คณิตศาสตร์'],
-    ['ไทย',            'ภาษาไทย'],
-    ['สังคม',          'สังคมศึกษา'],
-    ['วิทย',           'วิทยาศาสตร์'],
-    ['science',        'วิทยาศาสตร์'],
-    ['อังกฤษ','english','ภาษาอังกฤษ'],
-    ['ประวัติ',        'ประวัติศาสตร์'],
-    ['สุขศึกษา','สุขภาพ','pe','health', 'สุขศึกษา'],
-    ['ศิลปะ','ศิลป์','art',             'ศิลปะ'],
-    ['การงาน','อาชีพ','tech',            'การงานอาชีพ'],
-    ['ทุจริต','คุณธรรม','integrity',     'ด้านทุจริต'],
-  ];
-  const lower = s.toLowerCase();
-  for (const row of kw) {
-    const target = row[row.length-1];
-    for (let i=0; i<row.length-1; i++) {
-      if (lower.includes(row[i].toLowerCase())) return target;
-    }
-  }
-  return s; // คืนค่าเดิมถ้า snap ไม่ได้
-}
-
 function processImportData(raw) {
   try {
     let text=raw.trim().replace(/^\uFEFF/,'');
@@ -3624,24 +2887,17 @@ function processImportData(raw) {
     const newOnly=valid.filter(q=>!existingTexts.has(q.question||q.q));
     const duplicates=valid.length-newOnly.length;
     if(!newOnly.length){ toast(`ทุกข้อมีอยู่แล้ว (${duplicates} ซ้ำ)`,'error'); return; }
-    const subjectWarnings = new Set();
     newOnly.forEach(q=>{
       q.id=q.id||(Date.now()+Math.random());
       q.question=q.question||q.q;
       q.options=q.options.map((opt,i)=>LABELS[i]+String(opt).replace(/^[กขคง][.)]\s*/u,'').trim());
       q.answer=Math.min(Math.max(parseInt(q.answer)||0,0),3);
-      // snap subject ให้ตรงกับวิชาในระบบ
-      const snapped = snapSubject(q.subject || '');
-      if (q.subject && snapped !== q.subject) subjectWarnings.add(`"${q.subject}" → "${snapped}"`);
-      q.subject = snapped || (VALID_SUBJECTS[0]);
       questionBank.push(q);
     });
     saveBank(); renderBank(); updateStats();
     document.getElementById('create-exam-card').style.display='';
     document.getElementById('import-card').style.display='none';
-    let msg = `✅ Import ${newOnly.length} ข้อ${duplicates?` | ข้าม ${duplicates} ซ้ำ`:''}`;
-    if (subjectWarnings.size) msg += ` | แก้วิชา: ${[...subjectWarnings].join(', ')}`;
-    toast(msg, 'success');
+    toast(`✅ Import ${newOnly.length} ข้อ${duplicates?` | ข้าม ${duplicates} ซ้ำ`:''}`, 'success');
   } catch(err) { toast('❌ '+err.message,'error'); console.error(err); }
 }
 
@@ -4057,7 +3313,6 @@ async function resetEverything() {
   }
   renderStudentSidebar(); renderBank(); renderExamSets(); renderHistory(); renderDashboard(); updateStats();
   renderOMRSelects();
-  clearSelectedForExam();
   document.getElementById('create-exam-card').style.display='none';
   document.getElementById('ai-preview-panel').style.display='none';
   document.getElementById('exam-area').style.display='none';
