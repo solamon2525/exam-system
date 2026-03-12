@@ -600,7 +600,6 @@ textarea { resize:vertical; min-height:80px; }
           <div class="ml-auto flex-row" style="gap:8px;flex-wrap:wrap">
             <button class="btn btn-primary btn-sm" onclick="showExportModal()">📤 Export</button>
             <button class="btn btn-outline btn-sm" onclick="showImportPaste()">📋 Import วาง</button>
-            <button class="btn btn-outline btn-sm" onclick="showExternalAIGuide()" style="background:linear-gradient(135deg,#faf5ff,#eff6ff);border-color:#a78bfa;color:#6d28d9">🤖 สร้างด้วย AI ภายนอก</button>
             <label class="btn btn-outline btn-sm" style="cursor:pointer;margin:0">📥 Import ไฟล์<input type="file" id="import-all-file" accept=".json" style="display:none" onchange="importAllQuestions(event)"></label>
             <select id="filter-subject" style="padding:6px 10px;border-radius:7px;border:1.5px solid var(--border);font-family:Sarabun,sans-serif;font-size:0.82rem" onchange="renderBank()">
               <option value="">ทุกวิชา</option>
@@ -1020,9 +1019,8 @@ textarea { resize:vertical; min-height:80px; }
 // ============================================================
 // VERSION
 // ============================================================
-const APP_VERSION = 'v2.8';
+const APP_VERSION = 'v2.7';
 const APP_CHANGELOG = [
-  { v:'v2.8', date:'2026-03-12', note:'🤖 สร้างด้วย AI ภายนอก: ปุ่ม Prompt Generator + แก้บัก subject snap (คณิต→คณิตศาสตร์, english→ภาษาอังกฤษ) ให้ Import แล้วเข้าวิชาเดิมไม่สร้างใหม่' },
   { v:'v2.7', date:'2026-03-12', note:'✨ Export หลาย format: JSON, CSV/Excel, TXT, PDF, Export Code; เลือกหลายข้อด้วย Checkbox; ลบเป็นกลุ่ม; Export เฉพาะที่เลือก' },
   { v:'v2.6', date:'2026-03-12', note:'🔧 แก้บัก: Token อัตโนมัติตามจำนวนข้อ — เลือก 15/20/25/30 ข้อ slider ปรับเองทันที, มีเตือนสีแดงถ้า token น้อยเกินไป, buildSmartPrompts คำนวณ floor token ป้องกัน JSON ถูกตัดกลางคัน' },
   { v:'v2.5', date:'2026-03-11', note:'🔀 รวมทุกฟีเจอร์: Gemini AI provider, Advanced AI (Bloom\'s, Distractor, หลักสูตร, โหมด 5 แบบ), แก้การ์ดวิชาว่าง, กรอกคะแนน%, เลือกรุ่น Claude/Gemini ได้' },
@@ -2845,155 +2843,7 @@ function importAllQuestions(event) {
   const r=new FileReader(); r.onload=e=>{ processImportData(e.target.result); event.target.value=''; }; r.readAsText(file,'UTF-8');
 }
 
-function showExternalAIGuide() {
-  const PROMPT_TEMPLATE = (subject, count, grade) =>
-`สร้างข้อสอบปรนัย วิชา${subject} ระดับ${grade} จำนวน ${count} ข้อ
-ตอบกลับเป็น JSON array เท่านั้น ห้ามมีข้อความอื่นนอกจาก JSON
-
-รูปแบบ JSON ที่ต้องการ (ห้ามเปลี่ยนชื่อ field):
-[
-  {
-    "question": "คำถาม...",
-    "options": ["ตัวเลือก ก", "ตัวเลือก ข", "ตัวเลือก ค", "ตัวเลือก ง"],
-    "answer": 0,
-    "subject": "${subject}",
-    "grade": "${grade}"
-  }
-]
-
-กฎสำคัญ:
-- "answer" คือ index (0=ก, 1=ข, 2=ค, 3=ง)
-- "subject" ต้องเป็นชื่อวิชาภาษาไทยตรงๆ ห้ามย่อ
-- "options" ต้องมี 4 ตัวเลือกเสมอ ไม่ต้องใส่ ก. ข. ค. ง. นำหน้า
-- ตอบกลับ JSON array เท่านั้น ห้ามมี markdown หรือ code block`;
-
-  const modal = document.createElement('div');
-  modal.id = 'ext-ai-guide-modal';
-  modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.65);z-index:9999;display:flex;align-items:center;justify-content:center;padding:16px;overflow-y:auto';
-
-  const subjects = VALID_SUBJECTS;
-  modal.innerHTML = `
-  <div style="background:white;border-radius:18px;padding:26px;max-width:680px;width:100%;display:flex;flex-direction:column;gap:16px;max-height:92vh;overflow-y:auto">
-    <div style="display:flex;justify-content:space-between;align-items:center">
-      <div style="font-family:Mitr,sans-serif;font-weight:700;font-size:1.1rem;color:var(--navy)">🤖 สร้างข้อสอบด้วย AI ภายนอก</div>
-      <button onclick="document.getElementById('ext-ai-guide-modal').remove()" style="background:none;border:none;font-size:1.5rem;cursor:pointer;color:#888">✕</button>
-    </div>
-
-    <div style="background:#faf5ff;border:1.5px solid #ddd6fe;border-radius:12px;padding:14px;font-size:0.86rem;color:#4c1d95;line-height:1.7">
-      <strong>วิธีใช้:</strong> คัดลอก Prompt ด้านล่าง → วางใน ChatGPT / Gemini / Claude (เว็บ) → คัดลอก JSON ที่ได้ → กด <strong>"📋 Import วาง"</strong> วางเลย
-      <br>ระบบจะจับชื่อวิชาอัตโนมัติ แม้ AI เขียนชื่อวิชาไม่ตรงก็ snap เข้าวิชาที่ถูกต้องให้
-    </div>
-
-    <!-- ปรับแต่ง -->
-    <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end">
-      <div class="form-group" style="flex:2;min-width:140px;margin:0">
-        <label style="font-size:0.8rem;margin-bottom:4px;display:block;font-weight:600;color:var(--muted)">วิชา</label>
-        <select id="guide-subject" onchange="refreshGuidePrompt()" style="width:100%;padding:7px 10px;border-radius:8px;border:1.5px solid var(--border);font-family:Sarabun,sans-serif;font-size:0.85rem">
-          ${subjects.map(s=>`<option>${s}</option>`).join('')}
-        </select>
-      </div>
-      <div class="form-group" style="flex:1;min-width:80px;margin:0">
-        <label style="font-size:0.8rem;margin-bottom:4px;display:block;font-weight:600;color:var(--muted)">จำนวนข้อ</label>
-        <select id="guide-count" onchange="refreshGuidePrompt()" style="width:100%;padding:7px 10px;border-radius:8px;border:1.5px solid var(--border);font-family:Sarabun,sans-serif;font-size:0.85rem">
-          <option>5</option><option selected>10</option><option>15</option><option>20</option><option>25</option><option>30</option>
-        </select>
-      </div>
-      <div class="form-group" style="flex:1;min-width:100px;margin:0">
-        <label style="font-size:0.8rem;margin-bottom:4px;display:block;font-weight:600;color:var(--muted)">ชั้น</label>
-        <select id="guide-grade" onchange="refreshGuidePrompt()" style="width:100%;padding:7px 10px;border-radius:8px;border:1.5px solid var(--border);font-family:Sarabun,sans-serif;font-size:0.85rem">
-          <option>ป.1</option><option>ป.2</option><option>ป.3</option><option>ป.4</option><option selected>ป.5</option><option>ป.6</option><option>ม.1</option><option>ม.2</option><option>ม.3</option>
-        </select>
-      </div>
-    </div>
-
-    <!-- Prompt area -->
-    <div style="position:relative">
-      <div style="font-size:0.8rem;font-weight:700;color:var(--muted);margin-bottom:6px">📋 Prompt สำหรับสั่ง AI ภายนอก</div>
-      <textarea id="guide-prompt-area" readonly style="width:100%;min-height:260px;padding:12px;border:1.5px solid #ddd6fe;border-radius:10px;font-family:monospace;font-size:0.78rem;line-height:1.6;resize:vertical;background:#fafafa;box-sizing:border-box"></textarea>
-      <button id="guide-copy-btn" onclick="copyGuidePrompt()" style="margin-top:8px;width:100%;padding:11px;background:#7c3aed;color:white;border:none;border-radius:10px;font-family:Sarabun,sans-serif;font-size:0.95rem;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px">
-        📋 คัดลอก Prompt
-      </button>
-    </div>
-
-    <!-- รูปแบบ JSON ย่อ -->
-    <details style="border:1.5px solid #e2e8f0;border-radius:10px;padding:12px">
-      <summary style="font-weight:700;color:var(--navy);cursor:pointer;font-size:0.88rem">📐 ดูรูปแบบ JSON (Reference)</summary>
-      <pre style="margin-top:10px;background:#f8faff;padding:12px;border-radius:8px;font-size:0.75rem;overflow-x:auto;white-space:pre-wrap">[
-  {
-    "question": "2 + 3 เท่ากับเท่าไร",
-    "options": ["3", "4", "5", "6"],
-    "answer": 2,
-    "subject": "คณิตศาสตร์",
-    "grade": "ป.5"
-  },
-  {
-    "question": "ข้อที่สอง...",
-    "options": ["ก", "ข", "ค", "ง"],
-    "answer": 0,
-    "subject": "คณิตศาสตร์",
-    "grade": "ป.5"
-  }
-]</pre>
-      <div style="margin-top:8px;font-size:0.8rem;color:var(--muted);line-height:1.8">
-        <strong>ชื่อวิชาที่รองรับ (field: subject):</strong><br>
-        ${VALID_SUBJECTS.map(s=>`<code style="background:#f1f5f9;padding:1px 6px;border-radius:4px;margin:2px;display:inline-block">${s}</code>`).join(' ')}
-        <br><span style="color:#16a34a;margin-top:4px;display:block">✅ ระบบจะ snap อัตโนมัติ: "คณิต" → "คณิตศาสตร์", "english" → "ภาษาอังกฤษ" เป็นต้น</span>
-      </div>
-    </details>
-
-    <div style="display:flex;gap:10px">
-      <button onclick="document.getElementById('ext-ai-guide-modal').remove();setTimeout(showImportPaste,100)" style="flex:1;padding:11px;background:var(--blue);color:white;border:none;border-radius:10px;font-family:Sarabun,sans-serif;font-size:0.9rem;font-weight:700;cursor:pointer">
-        📥 ไปที่ Import วาง JSON
-      </button>
-      <button onclick="document.getElementById('ext-ai-guide-modal').remove()" style="padding:11px 18px;background:white;border:1.5px solid var(--border);border-radius:10px;font-family:Sarabun,sans-serif;font-size:0.9rem;cursor:pointer">
-        ปิด
-      </button>
-    </div>
-  </div>`;
-
-  document.body.appendChild(modal);
-  refreshGuidePrompt();
-}
-
-function refreshGuidePrompt() {
-  const subject = document.getElementById('guide-subject')?.value || 'คณิตศาสตร์';
-  const count   = document.getElementById('guide-count')?.value  || '10';
-  const grade   = document.getElementById('guide-grade')?.value  || 'ป.5';
-  const prompt  =
-`สร้างข้อสอบปรนัย วิชา${subject} ระดับ${grade} จำนวน ${count} ข้อ
-ตอบกลับเป็น JSON array เท่านั้น ห้ามมีข้อความอื่นนอกจาก JSON
-
-รูปแบบที่ต้องการ (ห้ามเปลี่ยนชื่อ field):
-[
-  {
-    "question": "คำถาม...",
-    "options": ["ตัวเลือก 1", "ตัวเลือก 2", "ตัวเลือก 3", "ตัวเลือก 4"],
-    "answer": 0,
-    "subject": "${subject}",
-    "grade": "${grade}"
-  }
-]
-
-กฎ:
-- "answer" = index คำตอบ (0=ข้อแรก, 1=ข้อสอง, 2=ข้อสาม, 3=ข้อสี่)
-- "options" มี 4 ตัวเลือกเสมอ ไม่ใส่ ก. ข. ค. ง. นำหน้า
-- "subject" = "${subject}" เท่านั้น
-- ตอบ JSON เปล่าๆ ห้ามมี markdown code block (\`\`\`json)`;
-  const ta = document.getElementById('guide-prompt-area');
-  if (ta) ta.value = prompt;
-}
-
-function copyGuidePrompt() {
-  const ta = document.getElementById('guide-prompt-area');
-  if (!ta) return;
-  navigator.clipboard.writeText(ta.value).then(() => {
-    const btn = document.getElementById('guide-copy-btn');
-    if (btn) { btn.textContent = '✅ คัดลอกแล้ว! นำไปวางใน ChatGPT / Gemini / Claude'; btn.style.background='var(--green)'; }
-    setTimeout(() => { if (btn) { btn.innerHTML='📋 คัดลอก Prompt'; btn.style.background='#7c3aed'; }}, 3000);
-  });
-}
-
-
+function showImportPaste() {
   const modal=document.createElement('div');
   modal.id='import-paste-modal';
   modal.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px';
@@ -3018,39 +2868,6 @@ function importFromPaste() {
   processImportData(text);
 }
 
-// รายชื่อวิชาที่รองรับ (canonical)
-const VALID_SUBJECTS = ['คณิตศาสตร์','ภาษาไทย','สังคมศึกษา','วิทยาศาสตร์','ภาษาอังกฤษ','ประวัติศาสตร์','สุขศึกษา','ศิลปะ','การงานอาชีพ','ด้านทุจริต'];
-
-// snap ชื่อวิชาจาก AI ภายนอกให้ตรงกับรายชื่อในระบบ
-function snapSubject(raw) {
-  if (!raw) return '';
-  const s = raw.trim().normalize('NFC');
-  // ตรงทั้งหมด
-  if (VALID_SUBJECTS.includes(s)) return s;
-  // keyword matching
-  const kw = [
-    ['คณิต',           'คณิตศาสตร์'],
-    ['ไทย',            'ภาษาไทย'],
-    ['สังคม',          'สังคมศึกษา'],
-    ['วิทย',           'วิทยาศาสตร์'],
-    ['science',        'วิทยาศาสตร์'],
-    ['อังกฤษ','english','ภาษาอังกฤษ'],
-    ['ประวัติ',        'ประวัติศาสตร์'],
-    ['สุขศึกษา','สุขภาพ','pe','health', 'สุขศึกษา'],
-    ['ศิลปะ','ศิลป์','art',             'ศิลปะ'],
-    ['การงาน','อาชีพ','tech',            'การงานอาชีพ'],
-    ['ทุจริต','คุณธรรม','integrity',     'ด้านทุจริต'],
-  ];
-  const lower = s.toLowerCase();
-  for (const row of kw) {
-    const target = row[row.length-1];
-    for (let i=0; i<row.length-1; i++) {
-      if (lower.includes(row[i].toLowerCase())) return target;
-    }
-  }
-  return s; // คืนค่าเดิมถ้า snap ไม่ได้
-}
-
 function processImportData(raw) {
   try {
     let text=raw.trim().replace(/^\uFEFF/,'');
@@ -3070,24 +2887,17 @@ function processImportData(raw) {
     const newOnly=valid.filter(q=>!existingTexts.has(q.question||q.q));
     const duplicates=valid.length-newOnly.length;
     if(!newOnly.length){ toast(`ทุกข้อมีอยู่แล้ว (${duplicates} ซ้ำ)`,'error'); return; }
-    const subjectWarnings = new Set();
     newOnly.forEach(q=>{
       q.id=q.id||(Date.now()+Math.random());
       q.question=q.question||q.q;
       q.options=q.options.map((opt,i)=>LABELS[i]+String(opt).replace(/^[กขคง][.)]\s*/u,'').trim());
       q.answer=Math.min(Math.max(parseInt(q.answer)||0,0),3);
-      // snap subject ให้ตรงกับวิชาในระบบ
-      const snapped = snapSubject(q.subject || '');
-      if (q.subject && snapped !== q.subject) subjectWarnings.add(`"${q.subject}" → "${snapped}"`);
-      q.subject = snapped || (VALID_SUBJECTS[0]);
       questionBank.push(q);
     });
     saveBank(); renderBank(); updateStats();
     document.getElementById('create-exam-card').style.display='';
     document.getElementById('import-card').style.display='none';
-    let msg = `✅ Import ${newOnly.length} ข้อ${duplicates?` | ข้าม ${duplicates} ซ้ำ`:''}`;
-    if (subjectWarnings.size) msg += ` | แก้วิชา: ${[...subjectWarnings].join(', ')}`;
-    toast(msg, 'success');
+    toast(`✅ Import ${newOnly.length} ข้อ${duplicates?` | ข้าม ${duplicates} ซ้ำ`:''}`, 'success');
   } catch(err) { toast('❌ '+err.message,'error'); console.error(err); }
 }
 
