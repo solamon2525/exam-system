@@ -103,28 +103,6 @@ textarea { resize:vertical; min-height:80px; }
 .q-option.correct { border-color:var(--green); background:#dcfce7; color:#15803d; font-weight:600; }
 .q-actions { position:absolute; top:12px; right:12px; display:flex; gap:6px; }
 
-/* MATCHING QUESTION */
-.match-table { display:grid; grid-template-columns:1fr 1fr; gap:8px; padding-left:36px; margin-top:6px; }
-.match-col { display:flex; flex-direction:column; gap:6px; }
-.match-left-item { padding:8px 12px; border-radius:8px; border:1.5px solid var(--border); background:white; font-size:0.85rem; cursor:pointer; display:flex; align-items:center; gap:8px; transition:all 0.15s; user-select:none; }
-.match-left-item .match-num { width:22px; height:22px; border-radius:50%; background:var(--blue); color:white; font-size:0.72rem; font-weight:700; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
-.match-left-item.selected { border-color:var(--blue); background:#eff6ff; font-weight:600; }
-.match-left-item.connected { border-color:var(--green); background:#dcfce7; color:#15803d; }
-.match-left-item.wrong-match { border-color:var(--red); background:#fee2e2; color:#991b1b; }
-.match-right-item { padding:8px 12px; border-radius:8px; border:1.5px solid #e2e8f0; background:#f8faff; font-size:0.85rem; cursor:pointer; display:flex; align-items:center; gap:8px; transition:all 0.15s; user-select:none; }
-.match-right-item .match-letter { width:22px; height:22px; border-radius:50%; background:#64748b; color:white; font-size:0.72rem; font-weight:700; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
-.match-right-item.used { background:#f0fdf4; border-color:var(--green); color:#15803d; }
-.match-right-item.used .match-letter { background:var(--green); }
-.match-right-item:hover:not(.used) { border-color:var(--blue); background:#eff6ff; }
-.match-badge { display:inline-flex; align-items:center; justify-content:center; width:20px; height:20px; border-radius:50%; background:var(--green); color:white; font-size:0.65rem; font-weight:700; margin-left:auto; flex-shrink:0; }
-/* print matching */
-@media print {
-  .match-left-item, .match-right-item { cursor:default; }
-  .match-print-col { display:flex; flex-direction:column; gap:4px; }
-  .match-print-left { display:flex; align-items:center; gap:8px; padding:4px 0; font-size:0.88rem; }
-  .match-print-right { padding:4px 0; font-size:0.88rem; }
-}
-
 /* AI LOADING */
 .ai-loading { display:flex; align-items:center; gap:12px; padding:20px; background:#eef2ff; border-radius:12px; color:var(--blue); font-weight:500; }
 .spinner { width:22px; height:22px; border:3px solid #c7d2fe; border-top-color:var(--blue); border-radius:50%; animation:spin 0.8s linear infinite; }
@@ -533,7 +511,6 @@ textarea { resize:vertical; min-height:80px; }
         <div class="flex-row">
           <button class="btn btn-gold" onclick="generateWithAI()" id="ai-generate-btn">🟣 สร้างด้วย Claude</button>
           <button class="btn btn-outline" onclick="toggleCard('manual-add-card')">✍️ เพิ่มเอง</button>
-          <button class="btn btn-outline" onclick="showMatchingCreator()" style="border-color:#f59e0b;color:#92400e;background:#fffbeb">🔗 เพิ่มจับคู่</button>
           <button class="btn btn-outline" onclick="toggleCard('import-card')">📥 Import</button>
         </div>
       </div>
@@ -1043,9 +1020,8 @@ textarea { resize:vertical; min-height:80px; }
 // ============================================================
 // VERSION
 // ============================================================
-const APP_VERSION = 'v2.9';
+const APP_VERSION = 'v2.8';
 const APP_CHANGELOG = [
-  { v:'v2.9', date:'2026-03-12', note:'🔗 ข้อสอบจับคู่/โยงเส้น: สร้างด้วยปุ่ม เพิ่มจับคู่, ผสมกับปรนัยในชุดเดียวกันได้, คะแนนแบบ partial credit, พิมพ์แบบ 2 คอลัมน์พร้อมเส้นโยง' },
   { v:'v2.8', date:'2026-03-12', note:'🤖 สร้างด้วย AI ภายนอก: ปุ่ม Prompt Generator + แก้บัก subject snap (คณิต→คณิตศาสตร์, english→ภาษาอังกฤษ) ให้ Import แล้วเข้าวิชาเดิมไม่สร้างใหม่' },
   { v:'v2.7', date:'2026-03-12', note:'✨ Export หลาย format: JSON, CSV/Excel, TXT, PDF, Export Code; เลือกหลายข้อด้วย Checkbox; ลบเป็นกลุ่ม; Export เฉพาะที่เลือก' },
   { v:'v2.6', date:'2026-03-12', note:'🔧 แก้บัก: Token อัตโนมัติตามจำนวนข้อ — เลือก 15/20/25/30 ข้อ slider ปรับเองทันที, มีเตือนสีแดงถ้า token น้อยเกินไป, buildSmartPrompts คำนวณ floor token ป้องกัน JSON ถูกตัดกลางคัน' },
@@ -1576,132 +1552,6 @@ function addManualQuestion() {
 }
 
 // ============================================================
-// MATCHING QUESTION CREATOR
-// ============================================================
-function showMatchingCreator(editData=null) {
-  const isEdit = !!editData;
-  const defPairs = isEdit ? editData.pairs : [{left:'',right:''},{left:'',right:''},{left:'',right:''},{left:'',right:''}];
-  const modal = document.createElement('div');
-  modal.id = 'matching-creator-modal';
-  modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.65);z-index:9999;display:flex;align-items:center;justify-content:center;padding:16px;overflow-y:auto';
-  modal.innerHTML = `
-  <div style="background:white;border-radius:18px;padding:26px;max-width:640px;width:100%;display:flex;flex-direction:column;gap:16px;max-height:92vh;overflow-y:auto">
-    <div style="display:flex;justify-content:space-between;align-items:center">
-      <div style="font-family:Mitr,sans-serif;font-weight:700;font-size:1.1rem;color:var(--navy)">🔗 ${isEdit?'แก้ไข':'สร้าง'}ข้อสอบจับคู่</div>
-      <button onclick="document.getElementById('matching-creator-modal').remove()" style="background:none;border:none;font-size:1.5rem;cursor:pointer;color:#888">✕</button>
-    </div>
-    <div style="display:flex;gap:10px;flex-wrap:wrap">
-      <div class="form-group" style="flex:2;margin:0">
-        <label>วิชา</label>
-        <select id="mc-subject" style="width:100%;padding:7px;border-radius:8px;border:1.5px solid var(--border);font-family:Sarabun,sans-serif">
-          ${VALID_SUBJECTS.map(s=>`<option ${isEdit&&editData.subject===s?'selected':''}>${s}</option>`).join('')}
-        </select>
-      </div>
-      <div class="form-group" style="flex:1;margin:0">
-        <label>ชั้น</label>
-        <select id="mc-grade" style="width:100%;padding:7px;border-radius:8px;border:1.5px solid var(--border);font-family:Sarabun,sans-serif">
-          ${['ป.1','ป.2','ป.3','ป.4','ป.5','ป.6','ม.1','ม.2','ม.3'].map(g=>`<option ${isEdit&&editData.grade===g?'selected':''}>${g}</option>`).join('')}
-        </select>
-      </div>
-    </div>
-    <div class="form-group" style="margin:0">
-      <label>คำถาม / คำสั่ง</label>
-      <input type="text" id="mc-question" value="${isEdit?editData.question:'จับคู่สิ่งต่อไปนี้ให้ถูกต้อง'}" style="width:100%;padding:9px;border-radius:8px;border:1.5px solid var(--border);font-family:Sarabun,sans-serif;box-sizing:border-box">
-    </div>
-
-    <div style="background:#f8faff;border:1.5px solid #dde4f5;border-radius:12px;padding:16px">
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:10px">
-        <div style="font-size:0.8rem;font-weight:700;color:var(--muted);text-align:center">คอลัมน์ซ้าย (โจทย์)</div>
-        <div style="font-size:0.8rem;font-weight:700;color:var(--muted);text-align:center">คอลัมน์ขวา (คำตอบ)</div>
-      </div>
-      <div id="mc-pairs-container" style="display:flex;flex-direction:column;gap:8px">
-        ${defPairs.map((p,i)=>`
-        <div style="display:grid;grid-template-columns:28px 1fr 1fr 28px;gap:6px;align-items:center" id="mc-pair-${i}">
-          <span style="width:24px;height:24px;border-radius:50%;background:var(--blue);color:white;font-size:0.72rem;font-weight:700;display:flex;align-items:center;justify-content:center">${i+1}</span>
-          <input type="text" placeholder="ซ้าย ${i+1}" value="${p.left}" style="padding:8px;border-radius:7px;border:1.5px solid var(--border);font-family:Sarabun,sans-serif;font-size:0.88rem" class="mc-left" data-idx="${i}">
-          <input type="text" placeholder="ขวา ${i+1}" value="${p.right}" style="padding:8px;border-radius:7px;border:1.5px solid var(--border);font-family:Sarabun,sans-serif;font-size:0.88rem" class="mc-right" data-idx="${i}">
-          <button onclick="removeMCPair(${i})" style="width:24px;height:24px;border-radius:50%;border:none;background:#fee2e2;color:var(--red);cursor:pointer;font-size:0.9rem;display:flex;align-items:center;justify-content:center">✕</button>
-        </div>`).join('')}
-      </div>
-      <button onclick="addMCPair()" style="margin-top:10px;width:100%;padding:8px;border:1.5px dashed #93c5fd;border-radius:8px;background:#f0f7ff;color:var(--blue);font-family:Sarabun,sans-serif;font-size:0.88rem;font-weight:600;cursor:pointer">+ เพิ่มคู่</button>
-    </div>
-
-    <div style="background:#fffbeb;border:1.5px solid #fcd34d;border-radius:10px;padding:12px;font-size:0.82rem;color:#92400e;line-height:1.7">
-      💡 <strong>เคล็ดลับ:</strong> ระบบจะ<strong>สับเปลี่ยนลำดับคอลัมน์ขวาอัตโนมัติ</strong>ให้นักเรียนในตอนทำข้อสอบ ไม่ต้องสับเอง<br>
-      แต่ละ 1 คู่จะคิดเป็น 1 คะแนนย่อย รวมคะแนนนับเป็น 1 ข้อในชุดข้อสอบ
-    </div>
-
-    <div style="display:flex;gap:10px">
-      <button onclick="saveMatchingQuestion(${isEdit?`'${editData.id}'`:'null'})" style="flex:1;padding:12px;background:var(--gold);color:#451a03;border:none;border-radius:10px;font-family:Sarabun,sans-serif;font-size:0.95rem;font-weight:700;cursor:pointer">
-        ${isEdit?'💾 บันทึกการแก้ไข':'➕ เพิ่มข้อจับคู่'}
-      </button>
-      <button onclick="document.getElementById('matching-creator-modal').remove()" style="padding:12px 20px;background:white;border:1.5px solid var(--border);border-radius:10px;font-family:Sarabun,sans-serif;cursor:pointer">ปิด</button>
-    </div>
-  </div>`;
-  document.body.appendChild(modal);
-}
-
-function addMCPair() {
-  const container = document.getElementById('mc-pairs-container');
-  const idx = container.children.length;
-  const row = document.createElement('div');
-  row.style.cssText = 'display:grid;grid-template-columns:28px 1fr 1fr 28px;gap:6px;align-items:center';
-  row.id = `mc-pair-${idx}`;
-  row.innerHTML = `
-    <span style="width:24px;height:24px;border-radius:50%;background:var(--blue);color:white;font-size:0.72rem;font-weight:700;display:flex;align-items:center;justify-content:center">${idx+1}</span>
-    <input type="text" placeholder="ซ้าย ${idx+1}" style="padding:8px;border-radius:7px;border:1.5px solid var(--border);font-family:Sarabun,sans-serif;font-size:0.88rem" class="mc-left" data-idx="${idx}">
-    <input type="text" placeholder="ขวา ${idx+1}" style="padding:8px;border-radius:7px;border:1.5px solid var(--border);font-family:Sarabun,sans-serif;font-size:0.88rem" class="mc-right" data-idx="${idx}">
-    <button onclick="removeMCPair(${idx})" style="width:24px;height:24px;border-radius:50%;border:none;background:#fee2e2;color:var(--red);cursor:pointer;font-size:0.9rem;display:flex;align-items:center;justify-content:center">✕</button>`;
-  container.appendChild(row);
-}
-
-function removeMCPair(idx) {
-  const row = document.getElementById(`mc-pair-${idx}`);
-  if (row) row.remove();
-  // renumber
-  const container = document.getElementById('mc-pairs-container');
-  [...container.children].forEach((row,i) => {
-    const num = row.querySelector('span');
-    if (num) num.textContent = i+1;
-  });
-}
-
-function saveMatchingQuestion(editId=null) {
-  const question = document.getElementById('mc-question')?.value.trim();
-  const subject = document.getElementById('mc-subject')?.value;
-  const grade = document.getElementById('mc-grade')?.value;
-  if (!question) { toast('กรอกคำถามก่อน','error'); return; }
-
-  const lefts  = [...document.querySelectorAll('.mc-left')].map(el=>el.value.trim());
-  const rights = [...document.querySelectorAll('.mc-right')].map(el=>el.value.trim());
-  const pairs  = lefts.map((l,i)=>({left:l, right:rights[i]})).filter(p=>p.left&&p.right);
-
-  if (pairs.length < 2) { toast('ต้องมีอย่างน้อย 2 คู่','error'); return; }
-
-  const qObj = {
-    id: editId || Date.now(),
-    type: 'matching',
-    question, subject, grade,
-    pairs,
-    // compat fields (ไม่ใช้จริง แต่ป้องกัน filter crash)
-    options: pairs.map(p=>p.left),
-    answer: 0,
-    difficulty: 'ปานกลาง'
-  };
-
-  if (editId) {
-    const idx = questionBank.findIndex(q=>String(q.id)===String(editId));
-    if (idx>=0) questionBank[idx] = qObj;
-  } else {
-    questionBank.push(qObj);
-  }
-  saveBank(); renderBank(); updateStats();
-  document.getElementById('matching-creator-modal')?.remove();
-  document.getElementById('create-exam-card').style.display = '';
-  toast(`✅ ${editId?'แก้ไข':'เพิ่ม'}ข้อจับคู่แล้ว (${pairs.length} คู่)`, 'success');
-}
-
-// ============================================================
 // BANK — FIXED SAVE
 // ============================================================
 function saveBank() {
@@ -1779,19 +1629,16 @@ function renderBank() {
       <div class="q-header">
         ${cbHtml}
         <span class="q-number">${i+1}</span>
-        <span class="q-text">${q.question}${q.type==='matching'?` <span style="font-size:0.7rem;padding:2px 8px;background:#fef3c7;color:#92400e;border-radius:10px;margin-left:6px;font-weight:700">🔗 จับคู่ (${q.pairs?.length||0} คู่)</span>`:''}</span>
+        <span class="q-text">${q.question}</span>
         <div class="q-actions">
           <span style="font-size:0.75rem;padding:2px 8px;background:#f1f5f9;border-radius:6px;color:var(--muted)">${q.subject} ${q.grade||''}</span>
           ${!bulkMode ? `<button class="btn btn-outline btn-sm" onclick="event.stopPropagation();editQuestion('${sid}')">✏️</button>
           <button class="btn btn-outline btn-sm" onclick="event.stopPropagation();deleteQuestion('${sid}')">🗑️</button>` : ''}
         </div>
       </div>
-      ${q.type==='matching' ? `<div class="match-table" style="pointer-events:none">
-        <div class="match-col">${(q.pairs||[]).map((p,pi)=>`<div class="match-left-item" style="cursor:default"><span class="match-num">${pi+1}</span>${p.left}</div>`).join('')}</div>
-        <div class="match-col">${(q.pairs||[]).map((p,pi)=>`<div class="match-right-item" style="cursor:default"><span class="match-letter">${String.fromCharCode(65+pi)}</span>${p.right}</div>`).join('')}</div>
-      </div>` : `<div class="q-options">
+      <div class="q-options">
         ${q.options.map((opt,oi)=>`<div class="q-option ${oi===q.answer?'correct':''}">${opt}</div>`).join('')}
-      </div>`}
+      </div>
     </div>`;
   }).join('');
 }
@@ -1799,7 +1646,6 @@ function renderBank() {
 function editQuestion(id) {
   const q = questionBank.find(x=>String(x.id)===String(id));
   if (!q) return;
-  if (q.type === 'matching') { showMatchingCreator(q); return; }
   const opts = q.options.map(o=>String(o).replace(/^[กขคง][.)]\s*/u,'').trim());
   const modal = document.createElement('div');
   modal.id = 'edit-q-modal';
@@ -1888,46 +1734,19 @@ function createExamSet() {
 }
 
 function renderPrintArea(examSet) {
-  const matchingCount = examSet.questions.filter(q=>q.type==='matching').reduce((s,q)=>s+(q.pairs?.length||0),0);
-  const mcqCount = examSet.questions.filter(q=>q.type!=='matching').length;
-  const totalScore = mcqCount + matchingCount;
   const html = `<div style="padding:20px;font-family:Sarabun,sans-serif">
     <div style="text-align:center;margin-bottom:20px">
       <h2 style="font-size:1.3rem;font-weight:700">${examSet.title}</h2>
       <p style="color:#666;margin-top:4px">วิชา: ${examSet.subject} | ${examSet.questions.length} ข้อ | ${examSet.createdAt}</p>
       <div style="display:flex;gap:40px;justify-content:center;margin-top:12px;font-size:0.9rem">
-        <span>ชื่อ: ________________________</span><span>ชั้น: ________</span><span>คะแนน: ______/${totalScore}</span>
+        <span>ชื่อ: ________________________</span><span>ชั้น: ________</span><span>คะแนน: ______/${examSet.questions.length}</span>
       </div><hr style="margin-top:16px">
     </div>
-    ${examSet.questions.map((q,i)=>{
-      if (q.type === 'matching') {
-        // shuffle right for print
-        const shuffled = [...q.pairs.map((_,pi)=>pi)].sort(()=>Math.random()-0.5);
-        return `<div style="margin-bottom:22px;page-break-inside:avoid">
-          <p style="font-weight:600;margin-bottom:8px">${i+1}. ${q.question} <span style="font-size:0.75rem;color:#92400e;background:#fef3c7;padding:1px 8px;border-radius:10px">${q.pairs.length} คะแนน</span></p>
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;padding-left:20px">
-            <div>
-              ${q.pairs.map((p,pi)=>`<div style="display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid #f1f5f9">
-                <span style="min-width:22px;font-weight:700;color:#1a3fa0">${pi+1}.</span>
-                <span>${p.left}</span>
-                <span style="margin-left:auto;min-width:50px;border-bottom:1px solid #666;display:inline-block">&nbsp;&nbsp;&nbsp;&nbsp;</span>
-              </div>`).join('')}
-            </div>
-            <div>
-              ${shuffled.map((origIdx,si)=>`<div style="display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid #f1f5f9">
-                <span style="min-width:22px;font-weight:700;color:#15803d">${String.fromCharCode(65+si)}.</span>
-                <span>${q.pairs[origIdx].right}</span>
-              </div>`).join('')}
-            </div>
-          </div>
-        </div>`;
-      }
-      return `<div style="margin-bottom:18px">
-        <p style="font-weight:600;margin-bottom:8px">${i+1}. ${q.question}</p>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px;padding-left:20px">
-          ${q.options.map(opt=>`<div style="padding:3px 0">${opt}</div>`).join('')}
-        </div></div>`;
-    }).join('')}
+    ${examSet.questions.map((q,i)=>`<div style="margin-bottom:18px">
+      <p style="font-weight:600;margin-bottom:8px">${i+1}. ${q.question}</p>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px;padding-left:20px">
+        ${q.options.map(opt=>`<div style="padding:3px 0">${opt}</div>`).join('')}
+      </div></div>`).join('')}
   </div>`;
   const el = document.getElementById('print-area');
   el.innerHTML = html; el.style.display = '';
@@ -2008,35 +1827,8 @@ function startExam(id) {
   if (submitBtn) submitBtn.disabled=true;
   document.getElementById('submit-hint').textContent = 'ต้องตอบทุกข้อก่อนส่ง';
   renderStudentSidebar();
-  document.getElementById('exam-questions-area').innerHTML = currentExamSet.questions.map((q,i)=>{
-    if (q.type === 'matching') {
-      // shuffle right column for display
-      const shuffled = [...q.pairs.map((_,pi)=>pi)].sort(()=>Math.random()-0.5);
-      q._shuffled = shuffled; // store for scoring
-      return `<div class="question-item" style="margin-bottom:16px" id="qitem-exam-${i}">
-        <div class="q-header">
-          <span class="q-number">${i+1}</span>
-          <span class="q-text">${q.question} <span style="font-size:0.72rem;padding:2px 8px;background:#fef3c7;color:#92400e;border-radius:10px;margin-left:6px;font-weight:700">🔗 จับคู่</span></span>
-        </div>
-        <div class="match-table" id="match-table-${i}">
-          <div class="match-col" id="match-left-${i}">
-            ${q.pairs.map((p,pi)=>`<div class="match-left-item" id="mleft-${i}-${pi}" onclick="clickMatchLeft(${i},${pi})">
-              <span class="match-num">${pi+1}</span>
-              <span>${p.left}</span>
-              <span id="mleft-badge-${i}-${pi}" style="display:none" class="match-badge"></span>
-            </div>`).join('')}
-          </div>
-          <div class="match-col" id="match-right-${i}">
-            ${shuffled.map((origIdx,si)=>`<div class="match-right-item" id="mright-${i}-${si}" onclick="clickMatchRight(${i},${si},${origIdx})">
-              <span class="match-letter">${String.fromCharCode(65+si)}</span>
-              <span>${q.pairs[origIdx].right}</span>
-            </div>`).join('')}
-          </div>
-        </div>
-        <div id="match-hint-${i}" style="padding-left:36px;margin-top:6px;font-size:0.78rem;color:var(--muted)">👆 คลิกเลือกซ้าย แล้วคลิกขวาเพื่อจับคู่</div>
-      </div>`;
-    }
-    return `<div class="question-item" style="margin-bottom:16px" id="qitem-exam-${i}">
+  document.getElementById('exam-questions-area').innerHTML = currentExamSet.questions.map((q,i)=>`
+    <div class="question-item" style="margin-bottom:16px" id="qitem-exam-${i}">
       <div class="q-header">
         <span class="q-number">${i+1}</span>
         <span class="q-text">${q.question}</span>
@@ -2044,22 +1836,14 @@ function startExam(id) {
       <div class="q-options">
         ${q.options.map((opt,oi)=>`<div class="q-option" id="qopt-${i}-${oi}" onclick="selectOption(${i},${oi})" style="cursor:pointer;transition:all 0.15s">${opt}</div>`).join('')}
       </div>
-    </div>`;
-  }).join('');
-  document.getElementById('answer-sheet-grid').innerHTML = currentExamSet.questions.map((q,i)=>{
-    if (q.type === 'matching') {
-      return `<div class="answer-row" id="ans-row-${i}">
-        <span class="ans-num">${i+1}.</span>
-        <div style="font-size:0.75rem;color:var(--muted);padding:2px 6px">🔗 จับคู่ <span id="ans-match-prog-${i}">0/${q.pairs.length} คู่</span></div>
-      </div>`;
-    }
-    return `<div class="answer-row" id="ans-row-${i}">
+    </div>`).join('');
+  document.getElementById('answer-sheet-grid').innerHTML = currentExamSet.questions.map((_,i)=>`
+    <div class="answer-row" id="ans-row-${i}">
       <span class="ans-num">${i+1}.</span>
       <div class="ans-options">
         ${['ก','ข','ค','ง'].map((l,oi)=>`<div class="ans-opt" id="ans-${i}-${oi}" onclick="selectAnswer(${i},${oi})">${l}</div>`).join('')}
       </div>
-    </div>`;
-  }).join('');
+    </div>`).join('');
   document.getElementById('exam-area').scrollIntoView({behavior:'smooth'});
 }
 
@@ -2094,91 +1878,6 @@ function fillStudentFromList() {
   checkStudentReady();
 }
 
-// Matching interaction state
-let matchSelectedLeft = {}; // qIdx → leftIdx or null
-
-function clickMatchLeft(qIdx, leftIdx) {
-  const q = currentExamSet.questions[qIdx];
-  if (!q || q.type !== 'matching') return;
-  // toggle selection
-  if (matchSelectedLeft[qIdx] === leftIdx) {
-    matchSelectedLeft[qIdx] = null;
-    document.getElementById(`mleft-${qIdx}-${leftIdx}`)?.classList.remove('selected');
-    return;
-  }
-  // deselect previous
-  if (matchSelectedLeft[qIdx] !== null && matchSelectedLeft[qIdx] !== undefined) {
-    const prev = matchSelectedLeft[qIdx];
-    const prevEl = document.getElementById(`mleft-${qIdx}-${prev}`);
-    if (prevEl && !prevEl.classList.contains('connected')) prevEl.classList.remove('selected');
-  }
-  matchSelectedLeft[qIdx] = leftIdx;
-  const el = document.getElementById(`mleft-${qIdx}-${leftIdx}`);
-  if (el) el.classList.add('selected');
-  updateMatchHint(qIdx, 'เลือกแล้ว — คลิกคอลัมน์ขวาเพื่อจับคู่');
-}
-
-function clickMatchRight(qIdx, shuffledIdx, origIdx) {
-  const q = currentExamSet.questions[qIdx];
-  if (!q || q.type !== 'matching') return;
-  const leftIdx = matchSelectedLeft[qIdx];
-  if (leftIdx === null || leftIdx === undefined) {
-    updateMatchHint(qIdx, '⬅️ คลิกเลือกด้านซ้ายก่อน');
-    return;
-  }
-  // save answer: userAnswers[qIdx] = array[leftIdx] = origIdx (which right pair it maps to)
-  if (!Array.isArray(userAnswers[qIdx])) {
-    userAnswers[qIdx] = new Array(q.pairs.length).fill(null);
-  }
-  // if this right was already used by another left, remove that connection
-  const prev = userAnswers[qIdx].indexOf(origIdx);
-  if (prev >= 0 && prev !== leftIdx) {
-    userAnswers[qIdx][prev] = null;
-    const prevLeftEl = document.getElementById(`mleft-${qIdx}-${prev}`);
-    if (prevLeftEl) { prevLeftEl.classList.remove('connected','selected'); }
-    const prevBadge = document.getElementById(`mleft-badge-${qIdx}-${prev}`);
-    if (prevBadge) prevBadge.style.display = 'none';
-  }
-  // disconnect old right from this left
-  const oldOrigIdx = userAnswers[qIdx][leftIdx];
-  if (oldOrigIdx !== null && oldOrigIdx !== undefined) {
-    // find shuffled idx of that old right
-    const oldSi = q._shuffled.indexOf(oldOrigIdx);
-    const oldRightEl = document.getElementById(`mright-${qIdx}-${oldSi}`);
-    if (oldRightEl) oldRightEl.classList.remove('used');
-  }
-
-  userAnswers[qIdx][leftIdx] = origIdx;
-  matchSelectedLeft[qIdx] = null;
-
-  // update left item
-  const leftEl = document.getElementById(`mleft-${qIdx}-${leftIdx}`);
-  if (leftEl) { leftEl.classList.remove('selected'); leftEl.classList.add('connected'); }
-  const badge = document.getElementById(`mleft-badge-${qIdx}-${leftIdx}`);
-  if (badge) { badge.textContent = String.fromCharCode(65+shuffledIdx); badge.style.display='inline-flex'; }
-
-  // update right item
-  const rightEl = document.getElementById(`mright-${qIdx}-${shuffledIdx}`);
-  if (rightEl) rightEl.classList.add('used');
-
-  // update answer sheet progress
-  const filled = userAnswers[qIdx].filter(v=>v!==null).length;
-  const prog = document.getElementById(`ans-match-prog-${qIdx}`);
-  if (prog) prog.textContent = `${filled}/${q.pairs.length} คู่`;
-
-  if (filled === q.pairs.length) {
-    updateMatchHint(qIdx, '✅ จับคู่ครบแล้ว!');
-  } else {
-    updateMatchHint(qIdx, `เหลืออีก ${q.pairs.length-filled} คู่`);
-  }
-  updateProgress();
-}
-
-function updateMatchHint(qIdx, msg) {
-  const el = document.getElementById(`match-hint-${qIdx}`);
-  if (el) el.textContent = msg;
-}
-
 function selectOption(qIdx, optIdx) {
   userAnswers[qIdx] = optIdx;
   for(let o=0;o<4;o++){
@@ -2208,15 +1907,7 @@ function syncAnswerSheet(qIdx, optIdx) {
 
 function updateProgress() {
   if (!currentExamSet) return;
-  const total = currentExamSet.questions.length;
-  let answered = 0;
-  currentExamSet.questions.forEach((q,i) => {
-    if (q.type === 'matching') {
-      if (Array.isArray(userAnswers[i]) && userAnswers[i].filter(v=>v!==null).length === q.pairs.length) answered++;
-    } else {
-      if (userAnswers[i] !== undefined) answered++;
-    }
-  });
+  const total=currentExamSet.questions.length, answered=Object.keys(userAnswers).length;
   const pct=Math.round(answered/total*100);
   const bar=document.getElementById('answer-progress-bar');
   if(bar){ bar.style.width=pct+'%'; bar.style.background=answered===total?'var(--green)':answered>total*0.5?'#f59e0b':'var(--sky)'; }
@@ -2232,13 +1923,9 @@ function updateProgress() {
     if(hint){ hint.textContent=`เหลืออีก ${total-answered} ข้อ`; hint.style.color='var(--muted)'; }
   }
   for(let i=0;i<total;i++){
-    const q = currentExamSet.questions[i];
     const row=document.getElementById(`ans-row-${i}`);
     if(!row) continue;
-    const done = q.type==='matching'
-      ? Array.isArray(userAnswers[i]) && userAnswers[i].filter(v=>v!==null).length === q.pairs.length
-      : userAnswers[i]!==undefined;
-    if(done){ row.style.borderColor='var(--sky)'; row.style.background='#f0f7ff'; }
+    if(userAnswers[i]!==undefined){ row.style.borderColor='var(--sky)'; row.style.background='#f0f7ff'; }
     else { row.style.borderColor=''; row.style.background=''; }
   }
 }
@@ -2246,28 +1933,11 @@ function updateProgress() {
 function clearAnswers() {
   if (!currentExamSet) return;
   userAnswers={};
-  matchSelectedLeft={};
   document.querySelectorAll('.ans-opt').forEach(el=>el.className='ans-opt');
-  currentExamSet.questions.forEach((q,i)=>{
-    if (q.type === 'matching') {
-      q.pairs.forEach((_,pi) => {
-        const leftEl = document.getElementById(`mleft-${i}-${pi}`);
-        if (leftEl) { leftEl.classList.remove('connected','selected','wrong-match'); leftEl.style.pointerEvents=''; }
-        const badge = document.getElementById(`mleft-badge-${i}-${pi}`);
-        if (badge) { badge.style.display='none'; }
-      });
-      for (let si=0; si<q.pairs.length; si++) {
-        const rightEl = document.getElementById(`mright-${i}-${si}`);
-        if (rightEl) rightEl.classList.remove('used');
-      }
-      const prog = document.getElementById(`ans-match-prog-${i}`);
-      if (prog) { prog.textContent = `0/${q.pairs.length} คู่`; prog.style.color=''; }
-      updateMatchHint(i, '👆 คลิกเลือกซ้าย แล้วคลิกขวาเพื่อจับคู่');
-    } else {
-      for(let o=0;o<4;o++){
-        const el=document.getElementById(`qopt-${i}-${o}`);
-        if(el){ el.style.background=''; el.style.borderColor=''; el.style.fontWeight=''; el.style.cursor='pointer'; el.onclick=()=>selectOption(i,o); }
-      }
+  currentExamSet.questions.forEach((_,i)=>{
+    for(let o=0;o<4;o++){
+      const el=document.getElementById(`qopt-${i}-${o}`);
+      if(el){ el.style.background=''; el.style.borderColor=''; el.style.fontWeight=''; el.style.cursor='pointer'; el.onclick=()=>selectOption(i,o); }
     }
     const item=document.getElementById(`qitem-exam-${i}`);
     if(item){ item.style.borderColor=''; item.style.background=''; }
@@ -2295,66 +1965,30 @@ function submitExam(forceSubmit=false) {
   const timeUsedSec=examTimerTotal-examTimerSeconds;
   const timeUsedStr=`${Math.floor(timeUsedSec/60)} นาที ${timeUsedSec%60} วินาที`;
   stopExamTimer();
-  let correct=0, totalScore=0, maxScore=0;
+  let correct=0;
   currentExamSet.questions.forEach((q,i)=>{
-    if (q.type === 'matching') {
-      const pairCount = q.pairs.length;
-      maxScore += pairCount;
-      const ua = userAnswers[i] || [];
-      let pairsCorrect = 0;
-      q.pairs.forEach((_, pi) => { if (ua[pi] === pi) pairsCorrect++; });
-      correct += pairsCorrect; // partial credit
-      totalScore += pairsCorrect;
-      // highlight matching results
-      q.pairs.forEach((_, pi) => {
-        const leftEl = document.getElementById(`mleft-${i}-${pi}`);
-        if (leftEl) {
-          leftEl.classList.remove('connected','selected');
-          leftEl.classList.add(ua[pi]===pi ? 'connected' : 'wrong-match');
-          leftEl.style.pointerEvents = 'none';
-        }
-        // show correct answer in badge
-        const badge = document.getElementById(`mleft-badge-${i}-${pi}`);
-        if (badge) {
-          if (ua[pi] === pi) { badge.textContent='✓'; badge.style.background='var(--green)'; badge.style.display='inline-flex'; }
-          else {
-            const correctSi = q._shuffled.indexOf(pi);
-            badge.textContent = '→'+String.fromCharCode(65+correctSi)+'✓';
-            badge.style.background = 'var(--red)'; badge.style.display='inline-flex'; badge.style.padding='2px 6px'; badge.style.borderRadius='10px'; badge.style.width='auto';
-          }
-        }
-      });
-      const item = document.getElementById(`qitem-exam-${i}`);
-      if (item) { item.style.borderColor = pairsCorrect===pairCount?'var(--green)':pairsCorrect>0?'#f59e0b':'var(--red)'; item.style.background = pairsCorrect===pairCount?'#f0fdf4':pairsCorrect>0?'#fffbeb':'#fff1f2'; }
-      const row=document.getElementById(`ans-row-${i}`);
-      if(row){ row.className='answer-row '+(pairsCorrect===pairCount?'correct-ans':pairsCorrect>0?'':'wrong-ans'); }
-      const prog = document.getElementById(`ans-match-prog-${i}`);
-      if (prog) { prog.textContent = `${pairsCorrect}/${pairCount} ✓`; prog.style.color = pairsCorrect===pairCount?'var(--green)':'var(--red)'; }
-    } else {
-      maxScore++;
-      const ua=userAnswers[i], ok=ua===q.answer;
-      if(ok){ correct++; totalScore++; }
+    const ua=userAnswers[i], ok=ua===q.answer;
+    if(ok) correct++;
+    for(let o=0;o<4;o++){
+      const el=document.getElementById(`ans-${i}-${o}`);
+      if(el){ if(o===q.answer) el.className='ans-opt correct-sel'; else if(o===ua&&!ok) el.className='ans-opt wrong-sel'; }
+    }
+    const row=document.getElementById(`ans-row-${i}`);
+    if(row){ row.className='answer-row '+(ok?'correct-ans':'wrong-ans'); row.style.borderColor=''; row.style.background=''; }
+    const item=document.getElementById(`qitem-exam-${i}`);
+    if(item){
+      item.style.borderColor=ok?'var(--green)':'var(--red)';
+      item.style.background=ok?'#f0fdf4':'#fff1f2';
       for(let o=0;o<4;o++){
-        const el=document.getElementById(`ans-${i}-${o}`);
-        if(el){ if(o===q.answer) el.className='ans-opt correct-sel'; else if(o===ua&&!ok) el.className='ans-opt wrong-sel'; }
-      }
-      const row=document.getElementById(`ans-row-${i}`);
-      if(row){ row.className='answer-row '+(ok?'correct-ans':'wrong-ans'); row.style.borderColor=''; row.style.background=''; }
-      const item=document.getElementById(`qitem-exam-${i}`);
-      if(item){
-        item.style.borderColor=ok?'var(--green)':'var(--red)';
-        item.style.background=ok?'#f0fdf4':'#fff1f2';
-        for(let o=0;o<4;o++){
-          const optEl=document.getElementById(`qopt-${i}-${o}`);
-          if(!optEl) continue;
-          if(o===q.answer){ optEl.style.background='#dcfce7'; optEl.style.borderColor='var(--green)'; optEl.style.fontWeight='700'; }
-          else if(o===ua&&!ok){ optEl.style.background='#fee2e2'; optEl.style.borderColor='var(--red)'; }
-          optEl.style.cursor='default'; optEl.onclick=null;
-        }
+        const optEl=document.getElementById(`qopt-${i}-${o}`);
+        if(!optEl) continue;
+        if(o===q.answer){ optEl.style.background='#dcfce7'; optEl.style.borderColor='var(--green)'; optEl.style.fontWeight='700'; }
+        else if(o===ua&&!ok){ optEl.style.background='#fee2e2'; optEl.style.borderColor='var(--red)'; }
+        optEl.style.cursor='default'; optEl.onclick=null;
       }
     }
   });
-  const pct=Math.round(totalScore/maxScore*100);
+  const pct=Math.round(correct/total*100);
   const pass=pct>=passThreshold;
   const grade=pct>=80?'4 (ดีมาก)':pct>=70?'3 (ดี)':pct>=60?'2 (พอใช้)':pct>=passThreshold?'1 (ผ่าน)':'0 (ไม่ผ่าน)';
   const submitBtn=document.getElementById('submit-btn');
@@ -2363,7 +1997,7 @@ function submitExam(forceSubmit=false) {
   resultEl.style.display='';
   resultEl.innerHTML=`<div class="card">
     <div class="score-box ${pass?'pass':'fail'}">
-      <div class="score-num" style="color:${pass?'var(--green)':'var(--red)'}">${totalScore}/${maxScore}</div>
+      <div class="score-num" style="color:${pass?'var(--green)':'var(--red)'}">${correct}/${total}</div>
       <div class="score-label">คะแนนที่ได้</div>
       <div class="score-grade">${pct}% — ระดับ ${grade}</div>
       <div style="margin-top:6px;font-size:0.85rem;color:#64748b">⏱️ ${timeUsedStr}</div>
