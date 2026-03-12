@@ -1053,7 +1053,7 @@ textarea { resize:vertical; min-height:80px; }
 // ============================================================
 // VERSION
 // ============================================================
-const APP_VERSION = 'v2.9.4';
+const APP_VERSION = 'v2.9.5';
 const APP_CHANGELOG = [
   { v:'v2.9', date:'2026-03-12', note:'🔗 ข้อสอบจับคู่/โยงเส้น: สร้างด้วยปุ่ม เพิ่มจับคู่, ผสมกับปรนัยในชุดเดียวกันได้, คะแนนแบบ partial credit, พิมพ์แบบ 2 คอลัมน์พร้อมเส้นโยง' },
   { v:'v2.8', date:'2026-03-12', note:'🤖 สร้างด้วย AI ภายนอก: ปุ่ม Prompt Generator + แก้บัก subject snap (คณิต→คณิตศาสตร์, english→ภาษาอังกฤษ) ให้ Import แล้วเข้าวิชาเดิมไม่สร้างใหม่' },
@@ -3547,7 +3547,7 @@ function copyGuidePrompt() {
   });
 }
 
-
+function showImportPasteModal() {
   const modal=document.createElement('div');
   modal.id='import-paste-modal';
   modal.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px';
