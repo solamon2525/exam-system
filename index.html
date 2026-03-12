@@ -269,6 +269,7 @@ textarea { resize:vertical; min-height:80px; }
   </div>
   <nav class="header-nav">
     <button class="nav-btn active" id="navbtn-create" onclick="showPage('create',this)">✏️ ออกข้อสอบ</button>
+    <button class="nav-btn" id="navbtn-bank" onclick="showPage('bank',this)">📚 คลังข้อสอบ</button>
     <button class="nav-btn" id="navbtn-exam" onclick="showPage('exam',this)">📋 ทำข้อสอบ</button>
     <button class="nav-btn" id="navbtn-omr" onclick="showPage('omr',this)">📷 OMR สแกน</button>
     <button class="nav-btn" id="navbtn-dashboard" onclick="showPage('dashboard',this)">📈 แดชบอร์ด</button>
@@ -618,6 +619,16 @@ textarea { resize:vertical; min-height:80px; }
         <button class="btn btn-primary" onclick="addManualQuestion()">➕ เพิ่มข้อสอบ</button>
       </div>
 
+    </div><!-- end page-create -->
+
+    <!-- PAGE: BANK -->
+    <div id="page-bank" class="page">
+      <div class="stats-bar" style="margin-bottom:12px">
+        <div class="stat-chip">📚 <div><div class="stat-value" id="stat-bank-total">0</div><div style="font-size:0.75rem;color:var(--muted)">ข้อสอบทั้งหมด</div></div></div>
+        <div class="stat-chip">✅ <div><div class="stat-value" id="stat-bank-exams">0</div><div style="font-size:0.75rem;color:var(--muted)">ชุดข้อสอบ</div></div></div>
+        <div class="stat-chip" style="cursor:pointer" onclick="showPage('create')">✏️ <div><div style="font-size:0.88rem;font-weight:700;color:var(--navy)">ออกข้อสอบ</div><div style="font-size:0.72rem;color:var(--muted)">เพิ่มข้อใหม่</div></div></div>
+      </div>
+
       <!-- Question Bank -->
       <div class="card">
         <div class="card-title">
@@ -631,7 +642,12 @@ textarea { resize:vertical; min-height:80px; }
               <option value="">ทุกวิชา</option>
               <option>คณิตศาสตร์</option><option>ภาษาไทย</option><option>สังคมศึกษา</option><option>วิทยาศาสตร์</option><option>ภาษาอังกฤษ</option><option>ประวัติศาสตร์</option><option>สุขศึกษา</option><option>ศิลปะ</option><option>การงานอาชีพ</option><option>ด้านทุจริต</option>
             </select>
+            <select id="filter-grade" style="padding:6px 10px;border-radius:7px;border:1.5px solid var(--border);font-family:Sarabun,sans-serif;font-size:0.82rem" onchange="renderBank()">
+              <option value="">ทุกชั้น</option>
+              <option>ป.1</option><option>ป.2</option><option>ป.3</option><option>ป.4</option><option>ป.5</option><option>ป.6</option><option>ม.1</option><option>ม.2</option><option>ม.3</option>
+            </select>
             <button class="btn btn-outline btn-sm" onclick="toggleBulkMode()" id="bulk-toggle-btn">☑️ เลือกหลายข้อ</button>
+            <button class="btn btn-outline btn-sm" onclick="toggleCartPanel()" id="cart-toggle-btn" style="border-color:#10b981;color:#059669;position:relative">🛒 ตะกร้า<span id="cart-badge" style="display:none;position:absolute;top:-6px;right:-6px;background:var(--red);color:white;font-size:0.6rem;font-weight:700;padding:1px 5px;border-radius:10px">0</span></button>
             <button class="btn btn-outline btn-sm" onclick="clearBank()">🗑️ ล้างทั้งหมด</button>
           </div>
         </div>
@@ -644,6 +660,38 @@ textarea { resize:vertical; min-height:80px; }
           <button onclick="showExportModal(true)" style="padding:5px 12px;border-radius:7px;border:1.5px solid var(--blue);background:#eff6ff;color:var(--blue);font-family:Sarabun,sans-serif;font-size:0.82rem;cursor:pointer;font-weight:600">📤 Export ที่เลือก</button>
           <button onclick="bulkDelete()" style="padding:5px 12px;border-radius:7px;border:none;background:var(--red);color:white;font-family:Sarabun,sans-serif;font-size:0.82rem;cursor:pointer;font-weight:700;margin-left:auto">🗑️ ลบที่เลือก</button>
           <button onclick="toggleBulkMode()" style="padding:5px 10px;border-radius:7px;border:1.5px solid var(--border);background:white;font-family:Sarabun,sans-serif;font-size:0.82rem;cursor:pointer">✕ ออก</button>
+        </div>
+        <!-- CART PANEL -->
+        <div id="cart-panel" style="display:none;background:linear-gradient(135deg,#f0fdf4,#ecfdf5);border:2px solid #34d399;border-radius:14px;padding:16px;margin-bottom:14px">
+          <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:12px">
+            <span style="font-family:Mitr,sans-serif;font-weight:700;font-size:1rem;color:#065f46">🛒 ตะกร้าชุดข้อสอบ</span>
+            <span id="cart-progress-text" style="font-size:0.82rem;color:#059669;font-weight:600">0 / 0 ข้อ</span>
+            <div style="flex:1;min-width:80px;height:8px;background:#d1fae5;border-radius:4px;overflow:hidden"><div id="cart-progress-bar" style="height:100%;background:#10b981;border-radius:4px;width:0%;transition:width 0.3s"></div></div>
+            <button onclick="closeCartPanel()" style="margin-left:auto;background:none;border:none;font-size:1.2rem;cursor:pointer;color:#6b7280">✕</button>
+          </div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px">
+            <input type="text" id="cart-title" placeholder="ชื่อชุดข้อสอบ เช่น ปลายภาค ป.5" style="flex:2;padding:7px 10px;border-radius:8px;border:1.5px solid #6ee7b7;font-family:Sarabun,sans-serif;font-size:0.88rem;min-width:160px">
+            <select id="cart-grade" style="padding:7px 10px;border-radius:8px;border:1.5px solid #6ee7b7;font-family:Sarabun,sans-serif;font-size:0.88rem" onchange="syncCartFilter()">
+              <option value="">ทุกชั้น</option>
+              <option>ป.1</option><option>ป.2</option><option>ป.3</option><option>ป.4</option><option>ป.5</option><option>ป.6</option><option>ม.1</option><option>ม.2</option><option>ม.3</option>
+            </select>
+            <select id="cart-subject" style="padding:7px 10px;border-radius:8px;border:1.5px solid #6ee7b7;font-family:Sarabun,sans-serif;font-size:0.88rem" onchange="syncCartFilter()">
+              <option value="">ทุกวิชา</option>
+              <option>คณิตศาสตร์</option><option>ภาษาไทย</option><option>สังคมศึกษา</option><option>วิทยาศาสตร์</option><option>ภาษาอังกฤษ</option><option>ประวัติศาสตร์</option><option>สุขศึกษา</option><option>ศิลปะ</option><option>การงานอาชีพ</option><option>ด้านทุจริต</option>
+            </select>
+            <div style="display:flex;align-items:center;gap:6px;background:white;border:1.5px solid #6ee7b7;border-radius:8px;padding:4px 10px">
+              <span style="font-size:0.82rem;color:#059669;font-weight:600">เป้าหมาย</span>
+              <input type="number" id="cart-target" value="30" min="1" max="200" style="width:52px;border:none;font-family:Sarabun,sans-serif;font-size:0.9rem;font-weight:700;color:#065f46;text-align:center;outline:none" oninput="updateCartProgress()">
+              <span style="font-size:0.82rem;color:#059669">ข้อ</span>
+            </div>
+          </div>
+          <div id="cart-items-list" style="display:flex;flex-direction:column;gap:4px;max-height:220px;overflow-y:auto;margin-bottom:12px;padding-right:2px">
+            <div style="text-align:center;padding:18px;color:#6b7280;font-size:0.85rem">ยังไม่มีข้อสอบในตะกร้า — กดปุ่ม <strong>➕</strong> ที่ข้อสอบด้านล่างเพื่อเพิ่ม</div>
+          </div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap">
+            <button onclick="buildExamFromCart()" style="flex:1;padding:10px;background:#059669;color:white;border:none;border-radius:10px;font-family:Sarabun,sans-serif;font-size:0.92rem;font-weight:700;cursor:pointer">📋 สร้างชุดข้อสอบ</button>
+            <button onclick="clearCart()" style="padding:10px 16px;background:white;border:1.5px solid #6ee7b7;border-radius:10px;font-family:Sarabun,sans-serif;font-size:0.88rem;color:#059669;cursor:pointer">🗑️ ล้างตะกร้า</button>
+          </div>
         </div>
         <div id="question-bank-list" class="question-list">
           <div class="empty-state"><div class="empty-icon">📭</div><h3>ยังไม่มีข้อสอบ</h3><p>ใช้ AI สร้าง หรือเพิ่มข้อเองได้เลย</p></div>
@@ -670,13 +718,13 @@ textarea { resize:vertical; min-height:80px; }
         </div>
       </div>
       <div id="print-area" style="display:none"></div>
-    </div>
+    </div><!-- end page-bank -->
 
     <!-- PAGE: EXAM -->
     <div id="page-exam" class="page">
       <div class="card">
         <div class="card-title">📋 เลือกชุดข้อสอบ</div>
-        <div id="exam-set-list"><div class="empty-state"><div class="empty-icon">📝</div><h3>ยังไม่มีชุดข้อสอบ</h3><p>สร้างชุดข้อสอบที่หน้าออกข้อสอบก่อน</p></div></div>
+        <div id="exam-set-list"><div class="empty-state"><div class="empty-icon">📝</div><h3>ยังไม่มีชุดข้อสอบ</h3><p>ไปที่ <button onclick="showPage('bank')" style="border:none;background:var(--blue);color:white;padding:4px 12px;border-radius:6px;font-family:Sarabun,sans-serif;cursor:pointer">📚 คลังข้อสอบ</button> เพื่อสร้างชุดข้อสอบ</p></div></div>
       </div>
 
       <div id="exam-area" style="display:none">
@@ -1043,6 +1091,7 @@ textarea { resize:vertical; min-height:80px; }
 <!-- BOTTOM NAV -->
 <nav id="bottom-nav">
   <button class="bnav-btn active" id="bnav-create" onclick="showPage('create',this)"><span class="bnav-icon">✏️</span>ออกข้อสอบ</button>
+  <button class="bnav-btn" id="bnav-bank" onclick="showPage('bank',this)"><span class="bnav-icon">📚</span>คลัง</button>
   <button class="bnav-btn" id="bnav-exam" onclick="showPage('exam',this)"><span class="bnav-icon">📋</span>ทำข้อสอบ</button>
   <button class="bnav-btn" id="bnav-omr" onclick="showPage('omr',this)"><span class="bnav-icon">📷</span>OMR</button>
   <button class="bnav-btn" id="bnav-dashboard" onclick="showPage('dashboard',this)"><span class="bnav-icon">📈</span>แดชบอร์ด</button>
@@ -1053,7 +1102,7 @@ textarea { resize:vertical; min-height:80px; }
 // ============================================================
 // VERSION
 // ============================================================
-const APP_VERSION = 'v2.9.5';
+const APP_VERSION = 'v3.1';
 const APP_CHANGELOG = [
   { v:'v2.9', date:'2026-03-12', note:'🔗 ข้อสอบจับคู่/โยงเส้น: สร้างด้วยปุ่ม เพิ่มจับคู่, ผสมกับปรนัยในชุดเดียวกันได้, คะแนนแบบ partial credit, พิมพ์แบบ 2 คอลัมน์พร้อมเส้นโยง' },
   { v:'v2.8', date:'2026-03-12', note:'🤖 สร้างด้วย AI ภายนอก: ปุ่ม Prompt Generator + แก้บัก subject snap (คณิต→คณิตศาสตร์, english→ภาษาอังกฤษ) ให้ Import แล้วเข้าวิชาเดิมไม่สร้างใหม่' },
@@ -1607,7 +1656,7 @@ function saveSelectedToBank() {
   document.getElementById('create-exam-card').style.display = '';
   document.getElementById('exam-title').value = `ข้อสอบ${document.getElementById('ai-subject').value}`;
   renderOMRSelects();
-  toast(`✅ บันทึก ${toSave.length} ข้อ เข้าคลังแล้ว`, 'success');
+  toast(`✅ บันทึก ${toSave.length} ข้อ เข้าคลังแล้ว — ไปที่ 📚 คลังข้อสอบ เพื่อสร้างชุดข้อสอบ`, 'success');
 }
 
 // ============================================================
@@ -1817,7 +1866,10 @@ async function bulkDelete() {
 
 function renderBank() {
   const filterSubject = document.getElementById('filter-subject').value;
-  const filtered = filterSubject ? questionBank.filter(q=>q.subject===filterSubject) : questionBank;
+  const filterGrade   = document.getElementById('filter-grade')?.value || '';
+  let filtered = questionBank;
+  if (filterSubject) filtered = filtered.filter(q=>q.subject===filterSubject);
+  if (filterGrade)   filtered = filtered.filter(q=>q.grade===filterGrade);
   const el = document.getElementById('question-bank-list');
   document.getElementById('bank-count').textContent = filtered.length + ' ข้อ';
   const subjects = [...new Set(questionBank.map(q=>q.subject))];
@@ -1826,19 +1878,27 @@ function renderBank() {
     return `<div style="display:flex;justify-content:space-between;padding:3px 4px;font-size:0.82rem"><span>${s}</span><strong>${cnt}</strong></div>`;
   }).join('') || '<span style="font-size:0.82rem">ยังไม่มีข้อสอบ</span>';
   if (!filtered.length) { el.innerHTML=`<div class="empty-state"><div class="empty-icon">📭</div><h3>ยังไม่มีข้อสอบ</h3><p>ใช้ AI สร้าง หรือเพิ่มเอง</p></div>`; return; }
+  const cartOpen = document.getElementById('cart-panel')?.style.display !== 'none';
   el.innerHTML = filtered.map((q,i)=>{
     const sid = String(q.id);
     const checked = bulkSelected.has(sid);
+    const inCart  = cartItems.some(c=>String(c.id)===sid);
     const cbHtml = bulkMode ? `<div id="bulk-cb-${sid}" onclick="event.stopPropagation();toggleBulkItem('${sid}')"
       style="cursor:pointer;width:22px;height:22px;border-radius:6px;border:2px solid ${checked?'var(--blue)':'var(--border)'};background:${checked?'var(--blue)':'white'};display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-right:4px">
       ${checked?'<span style="color:white;font-size:0.75rem;font-weight:900">✓</span>':''}
     </div>` : '';
-    return `<div class="question-item" id="qitem-${sid}" style="${checked?'background:#eff6ff;border-color:var(--sky)':''}" ${bulkMode?`onclick="toggleBulkItem('${sid}')" style="cursor:pointer;${checked?'background:#eff6ff;border-color:var(--sky)':''}"`:''}> 
+    const cartBtn = cartOpen && !bulkMode
+      ? `<button id="cartbtn-${sid}" onclick="event.stopPropagation();toggleCartItem('${sid}')"
+          style="padding:3px 8px;border-radius:6px;border:1.5px solid ${inCart?'var(--green)':'#6ee7b7'};background:${inCart?'#dcfce7':'white'};color:${inCart?'#15803d':'#059669'};font-size:0.8rem;font-weight:700;cursor:pointer;transition:all 0.15s;flex-shrink:0">
+          ${inCart?'✓ ใน🛒':'➕ 🛒'}</button>`
+      : '';
+    return `<div class="question-item" id="qitem-${sid}" style="${checked?'background:#eff6ff;border-color:var(--sky)':inCart?'border-color:#6ee7b7;background:#f0fdf4':''}" ${bulkMode?`onclick="toggleBulkItem('${sid}')" style="cursor:pointer"`:''}> 
       <div class="q-header">
         ${cbHtml}
         <span class="q-number">${i+1}</span>
         <span class="q-text">${q.question}${q.type==='matching'?` <span style="font-size:0.7rem;padding:2px 8px;background:#fef3c7;color:#92400e;border-radius:10px;margin-left:6px;font-weight:700">🔗 จับคู่ (${q.pairs?.length||0} คู่)</span>`:''}</span>
         <div class="q-actions">
+          ${cartBtn}
           <span style="font-size:0.75rem;padding:2px 8px;background:#f1f5f9;border-radius:6px;color:var(--muted)">${q.subject} ${q.grade||''}</span>
           ${!bulkMode ? `<button class="btn btn-outline btn-sm" onclick="event.stopPropagation();editQuestion('${sid}')">✏️</button>
           <button class="btn btn-outline btn-sm" onclick="event.stopPropagation();deleteQuestion('${sid}')">🗑️</button>` : ''}
@@ -1960,6 +2020,111 @@ function clearSelectedForExam() {
   if (badge) badge.style.display = 'none';
   if (preview) preview.style.display = 'none';
   if (wrap) wrap.style.display = '';
+}
+
+// ============================================================
+// CART — เลือกข้อสอบใส่ตะกร้าทีละข้อ
+// ============================================================
+let cartItems = []; // array of question objects
+
+function toggleCartPanel() {
+  const panel = document.getElementById('cart-panel');
+  const isOpen = panel.style.display !== 'none';
+  if (isOpen) { closeCartPanel(); } else { panel.style.display = 'block'; renderBank(); }
+}
+
+function closeCartPanel() {
+  const panel = document.getElementById('cart-panel');
+  if (panel) panel.style.display = 'none';
+  renderBank(); // re-render to hide ➕ buttons
+}
+
+function syncCartFilter() {
+  const grade   = document.getElementById('cart-grade')?.value || '';
+  const subject = document.getElementById('cart-subject')?.value || '';
+  if (grade)   document.getElementById('filter-grade').value = grade;
+  if (subject) document.getElementById('filter-subject').value = subject;
+  renderBank();
+}
+
+function toggleCartItem(id) {
+  const inCart = cartItems.some(c=>String(c.id)===id);
+  if (inCart) {
+    cartItems = cartItems.filter(c=>String(c.id)!==id);
+  } else {
+    const target = parseInt(document.getElementById('cart-target')?.value) || 30;
+    if (cartItems.length >= target) { toast(`ครบ ${target} ข้อแล้ว — กดสร้างชุดข้อสอบได้เลย`, 'error'); return; }
+    const q = questionBank.find(q=>String(q.id)===id);
+    if (q) cartItems.push(q);
+  }
+  updateCartProgress();
+  renderCartItems();
+  // update just this button without full re-render
+  const btn = document.getElementById(`cartbtn-${id}`);
+  const item = document.getElementById(`qitem-${id}`);
+  const inCartNow = cartItems.some(c=>String(c.id)===id);
+  if (btn) { btn.textContent = inCartNow?'✓ ใน🛒':'➕ 🛒'; btn.style.background=inCartNow?'#dcfce7':'white'; btn.style.color=inCartNow?'#15803d':'#059669'; btn.style.borderColor=inCartNow?'var(--green)':'#6ee7b7'; }
+  if (item) { item.style.borderColor=inCartNow?'#6ee7b7':''; item.style.background=inCartNow?'#f0fdf4':''; }
+  updateCartBadge();
+}
+
+function updateCartProgress() {
+  const target = parseInt(document.getElementById('cart-target')?.value) || 30;
+  const count  = cartItems.length;
+  const pct    = Math.min(100, Math.round(count/target*100));
+  const bar    = document.getElementById('cart-progress-bar');
+  const txt    = document.getElementById('cart-progress-text');
+  if (bar) { bar.style.width=pct+'%'; bar.style.background = count>=target?'#059669':'#10b981'; }
+  if (txt) { txt.textContent=`${count} / ${target} ข้อ`; txt.style.color=count>=target?'#065f46':'#059669'; }
+}
+
+function renderCartItems() {
+  const el = document.getElementById('cart-items-list');
+  if (!el) return;
+  if (!cartItems.length) { el.innerHTML='<div style="text-align:center;padding:18px;color:#6b7280;font-size:0.85rem">ยังไม่มีข้อสอบในตะกร้า — กดปุ่ม <strong>➕</strong> ที่ข้อสอบด้านล่าง</div>'; return; }
+  el.innerHTML = cartItems.map((q,i)=>`
+    <div style="display:flex;align-items:center;gap:8px;padding:6px 10px;background:white;border:1.5px solid #d1fae5;border-radius:8px;font-size:0.82rem">
+      <span style="width:20px;height:20px;border-radius:50%;background:#059669;color:white;font-size:0.7rem;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0">${i+1}</span>
+      <span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${q.question}</span>
+      <span style="font-size:0.72rem;color:#6b7280;white-space:nowrap">${q.subject} ${q.grade||''}</span>
+      <button onclick="toggleCartItem('${q.id}')" style="background:none;border:none;color:#dc2626;cursor:pointer;font-size:1rem;padding:0;flex-shrink:0">✕</button>
+    </div>`).join('');
+}
+
+function updateCartBadge() {
+  const badge = document.getElementById('cart-badge');
+  if (!badge) return;
+  if (cartItems.length > 0) { badge.textContent=cartItems.length; badge.style.display=''; }
+  else { badge.style.display='none'; }
+}
+
+function clearCart() {
+  cartItems = [];
+  renderCartItems();
+  updateCartProgress();
+  updateCartBadge();
+  renderBank();
+}
+
+function buildExamFromCart() {
+  if (!cartItems.length) { toast('ยังไม่มีข้อสอบในตะกร้า','error'); return; }
+  const title   = document.getElementById('cart-title')?.value.trim() || 'ชุดข้อสอบ';
+  const subjects = [...new Set(cartItems.map(q=>q.subject))];
+  const examSet = {
+    id: Date.now(), title,
+    subject: subjects.length===1?subjects[0]:'รวมทุกวิชา',
+    questions: [...cartItems],
+    createdAt: new Date().toLocaleDateString('th-TH')
+  };
+  examSets.push(examSet);
+  saveToLS();
+  if(window._fb?.connected) window.pushToFirebase(true);
+  updateStats(); renderExamSets(); renderOMRSelects(); renderPrintArea(examSet);
+  toast(`✅ สร้างชุดข้อสอบ "${title}" ${cartItems.length} ข้อแล้ว`, 'success');
+  clearCart();
+  closeCartPanel();
+  document.getElementById('create-exam-card').style.display = '';
+  setTimeout(()=>document.getElementById('create-exam-card')?.scrollIntoView({behavior:'smooth'}),100);
 }
 
 function createExamSet() {
@@ -2990,6 +3155,8 @@ function updateStats() {
   document.getElementById('stat-total').textContent = questionBank.length;
   document.getElementById('stat-subject-count').textContent = new Set(questionBank.map(q=>q.subject)).size;
   document.getElementById('stat-exams').textContent = examSets.length;
+  const sbt = document.getElementById('stat-bank-total'); if(sbt) sbt.textContent = questionBank.length;
+  const sbe = document.getElementById('stat-bank-exams'); if(sbe) sbe.textContent = examSets.length;
   if (questionBank.length>0) document.getElementById('create-exam-card').style.display='';
   renderSubjectSummary(); renderSubjectCounts();
   updateStorageStat();
@@ -3042,6 +3209,7 @@ function showPage(p, triggerEl) {
   if(bnb) bnb.classList.add('active');
   document.querySelector('.sidebar')?.classList.remove('mobile-open');
   if(p==='exam') renderExamSets();
+  if(p==='bank') renderBank();
   if(p==='omr') renderOMRSelects();
   if(p==='dashboard'){ renderDashboard(); populateStudentDashSelect(); }
   if(p==='settings') updateStorageStat();
