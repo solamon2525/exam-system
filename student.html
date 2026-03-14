@@ -1,1 +1,766 @@
 
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ระบบสอบออนไลน์ — บ้านคำไผ่</title>
+<link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;600;700&family=Mitr:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --blue:#1a3fa0; --sky:#3b82f6; --green:#16a34a; --red:#dc2626;
+  --gold:#f59e0b; --navy:#0f2557; --muted:#64748b; --border:#e2e8f0;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Sarabun',sans-serif;background:#f1f5f9;min-height:100vh;color:#1e293b}
+
+/* ─── NAV ─── */
+.topbar{background:linear-gradient(135deg,#0f2557,#1a3fa0);padding:0 20px;display:flex;align-items:center;gap:14px;height:56px;position:sticky;top:0;z-index:100}
+.topbar-title{font-family:Mitr,sans-serif;font-weight:700;color:white;font-size:1rem}
+.topbar-sub{font-size:0.75rem;color:rgba(255,255,255,0.65)}
+.sync-dot{width:8px;height:8px;border-radius:50%;background:#ef4444;flex-shrink:0}
+.sync-text{font-size:0.72rem;color:rgba(255,255,255,0.7)}
+.ml-auto{margin-left:auto}
+
+/* ─── LAYOUT ─── */
+.container{max-width:760px;margin:0 auto;padding:20px 16px;display:flex;flex-direction:column;gap:16px}
+.card{background:white;border-radius:14px;padding:20px;border:1px solid var(--border)}
+.card-title{font-family:Mitr,sans-serif;font-weight:700;font-size:1rem;color:var(--navy);margin-bottom:14px;display:flex;align-items:center;gap:8px}
+
+/* ─── EXAM LIST ─── */
+.exam-card{border:1.5px solid var(--border);border-radius:12px;padding:16px;display:flex;align-items:center;gap:12px;cursor:pointer;transition:all 0.18s;background:white;margin-bottom:8px}
+.exam-card:hover{border-color:var(--sky);background:#f0f7ff;transform:translateY(-1px);box-shadow:0 4px 14px rgba(26,63,160,0.1)}
+.exam-icon{width:44px;height:44px;border-radius:10px;background:linear-gradient(135deg,#eff6ff,#dbeafe);display:flex;align-items:center;justify-content:center;font-size:1.3rem;flex-shrink:0}
+.exam-info{flex:1}
+.exam-title{font-weight:700;font-size:0.95rem;color:#1e293b}
+.exam-meta{font-size:0.78rem;color:var(--muted);margin-top:3px}
+.exam-arrow{color:#94a3b8;font-size:1.1rem}
+
+/* ─── STUDENT FORM ─── */
+.form-group{display:flex;flex-direction:column;gap:4px;flex:1}
+.form-group label{font-size:0.78rem;font-weight:600;color:var(--muted)}
+.form-group input,.form-group select{padding:10px 12px;border:1.5px solid var(--border);border-radius:9px;font-family:Sarabun,sans-serif;font-size:0.92rem;transition:border-color 0.15s;outline:none}
+.form-group input:focus,.form-group select:focus{border-color:var(--sky)}
+.form-row{display:flex;gap:10px;flex-wrap:wrap}
+
+/* ─── BUTTONS ─── */
+.btn{padding:10px 20px;border-radius:10px;border:none;font-family:Sarabun,sans-serif;font-size:0.92rem;font-weight:700;cursor:pointer;transition:all 0.18s}
+.btn-primary{background:var(--blue);color:white}
+.btn-primary:hover{background:#1e40af}
+.btn-primary:disabled{background:#94a3b8;cursor:not-allowed}
+.btn-outline{background:white;border:1.5px solid var(--border);color:var(--muted)}
+.btn-outline:hover{border-color:var(--sky);color:var(--blue)}
+.btn-green{background:var(--green);color:white}
+.flex-row{display:flex;gap:10px;flex-wrap:wrap}
+
+/* ─── QUESTIONS ─── */
+.question-item{background:white;border:1.5px solid var(--border);border-radius:12px;padding:16px;margin-bottom:12px;transition:border-color 0.2s}
+.q-header{display:flex;align-items:flex-start;gap:10px;margin-bottom:10px}
+.q-number{width:28px;height:28px;border-radius:50%;background:var(--blue);color:white;font-weight:700;font-size:0.8rem;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px}
+.q-text{font-weight:600;font-size:0.92rem;line-height:1.6;flex:1}
+.q-options{display:grid;grid-template-columns:1fr 1fr;gap:7px;padding-left:38px}
+.q-option{padding:9px 14px;border:1.5px solid var(--border);border-radius:9px;cursor:pointer;font-size:0.88rem;transition:all 0.15s;user-select:none}
+.q-option:hover{border-color:var(--sky);background:#f0f7ff}
+.q-option.selected{background:#dbeafe;border-color:var(--sky);font-weight:600;color:var(--blue)}
+.q-option.correct{background:#dcfce7;border-color:var(--green);font-weight:700;color:var(--green)}
+.q-option.wrong{background:#fee2e2;border-color:var(--red);color:var(--red)}
+
+/* ─── TRUE/FALSE ─── */
+.tf-row{display:flex;gap:12px;padding-left:38px;margin-top:4px}
+.tf-btn{flex:1;padding:14px;border-radius:12px;border:2px solid var(--border);background:white;font-family:Sarabun,sans-serif;font-size:1rem;font-weight:600;cursor:pointer;transition:all 0.18s}
+.tf-btn:hover{border-color:var(--sky)}
+.tf-btn.selected-true{background:#dcfce7;border-color:var(--green);color:#15803d}
+.tf-btn.selected-false{background:#fee2e2;border-color:var(--red);color:var(--red)}
+
+/* ─── FILL-IN ─── */
+.fillin-wrap{padding-left:38px;margin-top:8px}
+.fillin-wrap input{width:100%;max-width:320px;padding:10px 14px;border:2px solid var(--border);border-radius:10px;font-family:Sarabun,sans-serif;font-size:0.95rem;outline:none;transition:border-color 0.15s}
+.fillin-wrap input:focus{border-color:var(--blue)}
+
+/* ─── MATCHING ─── */
+.match-left-item{display:flex;align-items:center;gap:8px;padding:9px 12px;border:1.5px solid var(--border);border-radius:9px;cursor:pointer;transition:all 0.18s;margin-bottom:6px}
+.match-left-item:hover{border-color:var(--sky);background:#f0f7ff}
+.match-left-item.connected{border-color:var(--green);background:#f0fdf4}
+.match-left-item.wrong-match{border-color:var(--red);background:#fff1f2}
+.match-num{width:22px;height:22px;border-radius:50%;background:var(--blue);color:white;font-size:0.7rem;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.match-letter{width:22px;height:22px;border-radius:50%;background:#059669;color:white;font-size:0.7rem;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+
+/* ─── PROGRESS ─── */
+.progress-bar-wrap{height:6px;background:#e2e8f0;border-radius:3px;overflow:hidden;margin-bottom:4px}
+.progress-bar{height:100%;background:var(--sky);border-radius:3px;transition:width 0.3s,background 0.3s}
+
+/* ─── TIMER ─── */
+.timer-bar{display:none;background:white;border:1.5px solid var(--border);border-radius:12px;padding:10px 16px;align-items:center;gap:14px;position:sticky;top:64px;z-index:90}
+.timer-display{font-family:monospace;font-size:1.2rem;font-weight:700;color:var(--navy);min-width:56px}
+.timer-track{flex:1;height:6px;background:#e2e8f0;border-radius:3px;overflow:hidden}
+.timer-fill{height:100%;background:var(--green);border-radius:3px;transition:width 1s linear,background 0.5s}
+
+/* ─── SCORE ─── */
+.score-box{text-align:center;padding:28px 20px;border-radius:14px;margin-bottom:16px}
+.score-box.pass{background:linear-gradient(135deg,#f0fdf4,#dcfce7);border:2px solid #86efac}
+.score-box.fail{background:linear-gradient(135deg,#fff1f2,#fee2e2);border:2px solid #fca5a5}
+.score-num{font-size:2.8rem;font-weight:700}
+.score-pct{font-size:1.2rem;font-weight:600;margin-top:4px}
+.score-label{font-size:0.9rem;color:var(--muted);margin-top:4px}
+.score-emoji{font-size:2rem;margin-top:10px}
+
+/* ─── ANSWER SHEET ─── */
+.ans-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:6px}
+.ans-row{display:flex;align-items:center;gap:6px;padding:7px 10px;border:1.5px solid var(--border);border-radius:8px;font-size:0.82rem}
+.ans-num{font-weight:700;color:var(--blue);min-width:22px}
+.ans-opts{display:flex;gap:4px}
+.ans-opt{width:28px;height:28px;border-radius:6px;border:1.5px solid var(--border);background:white;font-size:0.72rem;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all 0.15s;color:var(--muted)}
+.ans-opt:hover{border-color:var(--sky);color:var(--blue)}
+.ans-opt.selected{background:var(--blue);border-color:var(--blue);color:white}
+.ans-opt.correct-sel{background:var(--green);border-color:var(--green);color:white}
+.ans-opt.wrong-sel{background:var(--red);border-color:var(--red);color:white}
+.ans-row.correct-ans{border-color:var(--green);background:#f0fdf4}
+.ans-row.wrong-ans{border-color:var(--red);background:#fff1f2}
+
+/* ─── UNANSWERED WARNING ─── */
+.warn-box{background:#fef3c7;border:1.5px solid #fbbf24;border-radius:10px;padding:12px 16px;font-size:0.85rem;color:#92400e;display:none}
+
+/* ─── EMPTY STATE ─── */
+.empty-state{text-align:center;padding:40px 20px;color:var(--muted)}
+.empty-icon{font-size:2.5rem;margin-bottom:10px}
+
+/* ─── TOAST ─── */
+#toast{position:fixed;bottom:80px;left:50%;transform:translateX(-50%) translateY(20px);background:#1e293b;color:white;padding:10px 20px;border-radius:10px;font-size:0.88rem;font-weight:600;opacity:0;transition:all 0.3s;z-index:9999;white-space:nowrap;pointer-events:none}
+#toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+#toast.success{background:var(--green)}
+#toast.error{background:var(--red)}
+
+/* ─── MOBILE ─── */
+@media(max-width:600px){
+  .q-options{grid-template-columns:1fr}
+  .form-row{flex-direction:column}
+  .ans-grid{grid-template-columns:repeat(auto-fill,minmax(140px,1fr))}
+}
+
+/* ─── SCREENS ─── */
+.screen{display:none}
+.screen.active{display:block}
+</style>
+</head>
+<body>
+
+<!-- TOPBAR -->
+<div class="topbar">
+  <span style="font-size:1.4rem">🏫</span>
+  <div>
+    <div class="topbar-title">ระบบสอบออนไลน์ — บ้านคำไผ่</div>
+    <div class="topbar-sub">สำหรับนักเรียน</div>
+  </div>
+  <div class="ml-auto" style="display:flex;align-items:center;gap:6px">
+    <div id="sync-dot" class="sync-dot"></div>
+    <span id="sync-text" class="sync-text">กำลังเชื่อมต่อ...</span>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<!-- ════════════════════════════════
+     SCREEN 1: เลือกชุดข้อสอบ
+═══════════════════════════════════ -->
+<div id="screen-list" class="screen active">
+  <div class="container">
+    <div class="card">
+      <div class="card-title">📋 เลือกชุดข้อสอบ</div>
+      <div id="exam-list-area">
+        <div class="empty-state"><div class="empty-icon">⏳</div><p>กำลังโหลดข้อสอบ...</p></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════
+     SCREEN 2: กรอกชื่อ
+═══════════════════════════════════ -->
+<div id="screen-info" class="screen">
+  <div class="container">
+    <div class="card">
+      <div class="card-title">👤 ข้อมูลนักเรียน</div>
+      <div id="exam-info-title" style="font-size:0.95rem;font-weight:700;color:var(--navy);background:#f0f7ff;border-radius:10px;padding:12px 16px;margin-bottom:16px"></div>
+      <div class="form-row" style="margin-bottom:12px">
+        <div class="form-group" style="flex:3">
+          <label>ชื่อ–นามสกุล <span style="color:var(--red)">*</span></label>
+          <input type="text" id="stu-name" placeholder="กรอกชื่อ-นามสกุล..." oninput="checkReady()">
+        </div>
+      </div>
+      <div class="form-row" style="margin-bottom:20px">
+        <div class="form-group">
+          <label>ชั้น</label>
+          <input type="text" id="stu-class" placeholder="เช่น ป.5/1">
+        </div>
+        <div class="form-group" style="max-width:100px">
+          <label>เลขที่</label>
+          <input type="number" id="stu-no" placeholder="1" min="1">
+        </div>
+      </div>
+      <!-- exam rules summary -->
+      <div id="exam-rules-box" style="background:#fffbeb;border:1.5px solid #fbbf24;border-radius:10px;padding:14px 16px;margin-bottom:20px;font-size:0.85rem;color:#92400e">
+        <div style="font-weight:700;margin-bottom:6px">📜 กติกาการสอบ</div>
+        <div id="exam-rules-text"></div>
+      </div>
+      <div class="flex-row">
+        <button class="btn btn-primary" id="start-btn" onclick="startExam()" disabled>▶️ เริ่มทำข้อสอบ</button>
+        <button class="btn btn-outline" onclick="goBack()">← ย้อนกลับ</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════
+     SCREEN 3: ทำข้อสอบ
+═══════════════════════════════════ -->
+<div id="screen-exam" class="screen">
+  <div class="container">
+
+    <!-- Timer -->
+    <div id="timer-bar" class="timer-bar" style="display:flex">
+      <span style="font-size:0.82rem;font-weight:600;color:var(--muted)">⏱️ เวลา</span>
+      <span id="timer-display" class="timer-display">60:00</span>
+      <div class="timer-track"><div id="timer-fill" class="timer-fill" style="width:100%"></div></div>
+    </div>
+
+    <!-- Progress -->
+    <div class="card" style="padding:14px 18px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+        <span style="font-size:0.85rem;font-weight:600" id="progress-text">ตอบแล้ว 0 / 0 ข้อ</span>
+        <span id="exam-title-top" style="font-size:0.82rem;color:var(--muted)"></span>
+      </div>
+      <div class="progress-bar-wrap"><div id="progress-bar" class="progress-bar" style="width:0%"></div></div>
+    </div>
+
+    <!-- Questions -->
+    <div id="questions-area"></div>
+
+    <!-- Unanswered warning -->
+    <div id="unanswered-warn" class="warn-box">
+      ⚠️ ยังไม่ได้ตอบ: <span id="unanswered-list"></span>
+    </div>
+
+    <!-- Submit -->
+    <div class="card">
+      <div class="flex-row" style="justify-content:center">
+        <button class="btn btn-primary" id="submit-btn" onclick="submitExam()" disabled style="min-width:160px">📤 ส่งคำตอบ</button>
+        <button class="btn btn-outline" id="force-submit-btn" onclick="submitExam(true)" style="display:none;color:var(--red);border-color:var(--red)">⚠️ ส่งแม้ไม่ครบ</button>
+      </div>
+      <div id="submit-hint" style="text-align:center;font-size:0.78rem;color:var(--muted);margin-top:8px">ต้องตอบทุกข้อก่อนส่ง</div>
+    </div>
+
+    <!-- Answer sheet -->
+    <div class="card">
+      <div class="card-title" style="font-size:0.88rem;margin-bottom:10px">📋 กระดาษคำตอบ</div>
+      <div id="answer-sheet" class="ans-grid"></div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ════════════════════════════════
+     SCREEN 4: ผลสอบ
+═══════════════════════════════════ -->
+<div id="screen-result" class="screen">
+  <div class="container">
+    <div class="card">
+      <div id="result-box"></div>
+      <div class="flex-row" style="justify-content:center;margin-top:4px">
+        <button class="btn btn-primary" onclick="goHome()">🏠 กลับหน้าหลัก</button>
+        <button class="btn btn-outline" onclick="retake()">🔄 ทำใหม่</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════
+     JAVASCRIPT
+═══════════════════════════════════ -->
+<script>
+// ── State ────────────────────────────────────────────────
+let examSets = [];
+let studentList = [];
+let examHistory = [];
+let passThreshold = 60;
+let currentExam = null;
+let userAnswers = {};
+let timerInterval = null, timerSec = 0, timerTotal = 0;
+
+// ── Toast ────────────────────────────────────────────────
+function toast(msg, type='') {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.className = 'show ' + type;
+  setTimeout(() => t.className = '', 2800);
+}
+
+// ── Screen nav ───────────────────────────────────────────
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  window.scrollTo(0, 0);
+}
+
+function goBack() { showScreen('screen-list'); }
+function goHome() { currentExam = null; userAnswers = {}; stopTimer(); showScreen('screen-list'); }
+function retake() { if (currentExam) { selectExam(currentExam); } else { goHome(); } }
+
+// ── Exam List ────────────────────────────────────────────
+function renderExamList() {
+  const el = document.getElementById('exam-list-area');
+  if (!examSets.length) {
+    el.innerHTML = `<div class="empty-state"><div class="empty-icon">📭</div><p>ยังไม่มีชุดข้อสอบ — รอครูเพิ่มข้อสอบ</p></div>`;
+    return;
+  }
+  el.innerHTML = examSets.map(s => {
+    const types = [...new Set(s.questions.map(q => q.type||'mcq'))];
+    const typeLabels = { mcq:'ปรนัย', truefalse:'ถูก/ผิด', fillin:'เติมคำ', matching:'จับคู่' };
+    const typeTags = types.map(t => `<span style="font-size:0.68rem;padding:1px 7px;background:#eff6ff;color:#1e40af;border-radius:20px">${typeLabels[t]||t}</span>`).join(' ');
+    return `<div class="exam-card" onclick="selectExam('${s.id}')">
+      <div class="exam-icon">📝</div>
+      <div class="exam-info">
+        <div class="exam-title">${s.title}</div>
+        <div class="exam-meta">${s.subject} · ${s.questions.length} ข้อ · ${s.createdAt||''} &nbsp; ${typeTags}</div>
+      </div>
+      <span class="exam-arrow">›</span>
+    </div>`;
+  }).join('');
+}
+
+// ── Select Exam → show info screen ──────────────────────
+function selectExam(id) {
+  const s = examSets.find(x => String(x.id) === String(id));
+  if (!s) return;
+  currentExam = s;
+  userAnswers = {};
+  document.getElementById('exam-info-title').textContent = '📝 ' + s.title;
+  document.getElementById('stu-name').value = '';
+  document.getElementById('stu-class').value = '';
+  document.getElementById('stu-no').value = '';
+  document.getElementById('start-btn').disabled = true;
+
+  // rules
+  const matchScore = s.questions.filter(q=>q.type==='matching').reduce((a,q)=>a+(q.pairs?.length||0),0);
+  const otherScore = s.questions.filter(q=>q.type!=='matching').length;
+  document.getElementById('exam-rules-text').innerHTML = `
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:4px">
+      <div>📚 วิชา: <strong>${s.subject}</strong></div>
+      <div>🔢 จำนวน: <strong>${s.questions.length} ข้อ</strong></div>
+      <div>💯 คะแนนเต็ม: <strong>${otherScore + matchScore}</strong></div>
+      <div>✅ เกณฑ์ผ่าน: <strong>${passThreshold}%</strong></div>
+    </div>`;
+  showScreen('screen-info');
+}
+
+function checkReady() {
+  const name = document.getElementById('stu-name').value.trim();
+  document.getElementById('start-btn').disabled = !name;
+}
+
+// ── Start Exam ───────────────────────────────────────────
+function startExam() {
+  if (!currentExam) return;
+  const name = document.getElementById('stu-name').value.trim();
+  if (!name) { toast('กรุณากรอกชื่อก่อน', 'error'); return; }
+  userAnswers = {};
+
+  // render questions
+  document.getElementById('exam-title-top').textContent = currentExam.title;
+  document.getElementById('questions-area').innerHTML = currentExam.questions.map((q, i) => renderQuestion(q, i)).join('');
+  document.getElementById('answer-sheet').innerHTML = currentExam.questions.map((q, i) => renderAnsRow(q, i)).join('');
+
+  document.getElementById('submit-btn').disabled = true;
+  document.getElementById('force-submit-btn').style.display = 'none';
+  document.getElementById('submit-hint').textContent = 'ต้องตอบทุกข้อก่อนส่ง';
+  document.getElementById('unanswered-warn').style.display = 'none';
+  updateProgress();
+  startTimer(60);
+  showScreen('screen-exam');
+}
+
+// ── Render Question ───────────────────────────────────────
+function renderQuestion(q, i) {
+  if (q.type === 'matching') {
+    const shuffled = [...q.pairs.map((_,pi) => pi)].sort(() => Math.random() - 0.5);
+    q._shuffled = shuffled;
+    return `<div class="question-item" id="qi-${i}">
+      <div class="q-header">
+        <span class="q-number">${i+1}</span>
+        <span class="q-text">${q.question} <span style="font-size:0.7rem;padding:2px 8px;background:#fef3c7;color:#92400e;border-radius:10px;margin-left:6px">🔗 จับคู่</span></span>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr auto;gap:12px;padding-left:38px;margin-top:8px">
+        <div>
+          ${q.pairs.map((p,pi) => `
+          <div id="ml-${i}-${pi}">
+            <div class="match-left-item" onclick="openPicker(${i},${pi})">
+              <span class="match-num">${pi+1}</span>
+              <span style="flex:1">${p.left}</span>
+              <span id="mp-${i}-${pi}" style="min-width:28px;height:28px;border-radius:50%;background:#e2e8f0;color:#64748b;font-weight:700;font-size:0.8rem;display:flex;align-items:center;justify-content:center;flex-shrink:0">?</span>
+            </div>
+            <div id="picker-${i}-${pi}" style="display:none;padding:8px 10px;background:#f0f7ff;border:1.5px solid #93c5fd;border-radius:10px;margin-top:4px">
+              <div style="font-size:0.75rem;color:#64748b;margin-bottom:6px">เลือกคู่สำหรับ <strong>${p.left}</strong>:</div>
+              <div style="display:flex;flex-wrap:wrap;gap:6px">
+                ${shuffled.map((oi,si) => `
+                <button onclick="pickMatch(${i},${pi},${si},${oi})"
+                  style="padding:6px 14px;border-radius:20px;border:1.5px solid #93c5fd;background:white;font-family:Sarabun,sans-serif;font-size:0.82rem;font-weight:600;cursor:pointer;color:var(--blue)">
+                  <span style="width:18px;height:18px;border-radius:50%;background:var(--blue);color:white;font-size:0.65rem;display:inline-flex;align-items:center;justify-content:center;margin-right:4px">${String.fromCharCode(65+si)}</span>${q.pairs[oi].right}
+                </button>`).join('')}
+                <button onclick="clearMatch(${i},${pi})" style="padding:6px 10px;border-radius:20px;border:1.5px solid #fca5a5;background:#fff1f2;font-family:Sarabun,sans-serif;font-size:0.78rem;color:var(--red);cursor:pointer">✕</button>
+              </div>
+            </div>
+          </div>`).join('')}
+        </div>
+        <div style="display:flex;flex-direction:column;gap:6px;min-width:140px">
+          <div style="font-size:0.72rem;font-weight:700;color:#94a3b8;text-align:center;padding:3px">คำตอบ</div>
+          ${shuffled.map((oi,si) => `
+          <div style="padding:7px 10px;border-radius:8px;border:1.5px solid #e2e8f0;background:#f8faff;font-size:0.82rem;display:flex;align-items:center;gap:6px">
+            <span class="match-letter">${String.fromCharCode(65+si)}</span>${q.pairs[oi].right}
+          </div>`).join('')}
+        </div>
+      </div>
+      <div id="mhint-${i}" style="padding-left:38px;margin-top:6px;font-size:0.75rem;color:#94a3b8">👆 คลิกที่แถวซ้ายเพื่อเลือก</div>
+    </div>`;
+  }
+  if (q.type === 'truefalse') {
+    return `<div class="question-item" id="qi-${i}">
+      <div class="q-header">
+        <span class="q-number">${i+1}</span>
+        <span class="q-text">${q.question} <span style="font-size:0.7rem;padding:2px 8px;background:#dcfce7;color:#15803d;border-radius:10px;margin-left:6px">✓✗ ถูก/ผิด</span></span>
+      </div>
+      <div class="tf-row">
+        <button id="tf-t-${i}" class="tf-btn" onclick="selTF(${i},true)">✅ ถูก</button>
+        <button id="tf-f-${i}" class="tf-btn" onclick="selTF(${i},false)">❌ ผิด</button>
+      </div>
+    </div>`;
+  }
+  if (q.type === 'fillin') {
+    const qd = q.question.replace(/___/g, '<span style="border-bottom:2px solid var(--blue);display:inline-block;min-width:72px;margin:0 3px">&nbsp;</span>');
+    return `<div class="question-item" id="qi-${i}">
+      <div class="q-header">
+        <span class="q-number">${i+1}</span>
+        <span class="q-text" style="line-height:2.1">${qd} <span style="font-size:0.7rem;padding:2px 8px;background:#eff6ff;color:#1d4ed8;border-radius:10px;margin-left:6px">___ เติมคำ</span></span>
+      </div>
+      <div class="fillin-wrap">
+        <input type="text" id="fi-${i}" placeholder="พิมพ์คำตอบ..." oninput="selFI(${i},this.value)"
+          onfocus="this.style.borderColor='var(--blue)'" onblur="this.style.borderColor='var(--border)'">
+      </div>
+    </div>`;
+  }
+  // MCQ default
+  return `<div class="question-item" id="qi-${i}">
+    <div class="q-header">
+      <span class="q-number">${i+1}</span>
+      <span class="q-text">${q.question}</span>
+    </div>
+    <div class="q-options">
+      ${q.options.map((opt,oi) => `<div class="q-option" id="qo-${i}-${oi}" onclick="selOpt(${i},${oi})">${opt}</div>`).join('')}
+    </div>
+  </div>`;
+}
+
+function renderAnsRow(q, i) {
+  if (q.type === 'matching') {
+    return `<div class="ans-row" id="ar-${i}"><span class="ans-num">${i+1}.</span><span style="font-size:0.72rem;color:#94a3b8">🔗 <span id="amp-${i}">0/${q.pairs.length}</span></span></div>`;
+  }
+  if (q.type === 'truefalse') {
+    return `<div class="ans-row" id="ar-${i}"><span class="ans-num">${i+1}.</span>
+      <div class="ans-opts">
+        <div class="ans-opt" id="at-${i}-t" onclick="selTF(${i},true)">ถ</div>
+        <div class="ans-opt" id="at-${i}-f" onclick="selTF(${i},false)">ผ</div>
+      </div></div>`;
+  }
+  if (q.type === 'fillin') {
+    return `<div class="ans-row" id="ar-${i}"><span class="ans-num">${i+1}.</span><span id="afv-${i}" style="font-size:0.72rem;color:#94a3b8">___</span></div>`;
+  }
+  return `<div class="ans-row" id="ar-${i}"><span class="ans-num">${i+1}.</span>
+    <div class="ans-opts">${['ก','ข','ค','ง'].map((l,oi) => `<div class="ans-opt" id="ao-${i}-${oi}" onclick="selOpt(${i},${oi})">${l}</div>`).join('')}</div>
+  </div>`;
+}
+
+// ── Answer Selectors ─────────────────────────────────────
+function selOpt(qi, oi) {
+  if (userAnswers[qi] === oi) return;
+  userAnswers[qi] = oi;
+  for (let o = 0; o < 4; o++) {
+    const el = document.getElementById(`qo-${qi}-${o}`);
+    if (el) el.className = 'q-option' + (o === oi ? ' selected' : '');
+    const ae = document.getElementById(`ao-${qi}-${o}`);
+    if (ae) ae.className = 'ans-opt' + (o === oi ? ' selected' : '');
+  }
+  updateProgress();
+}
+
+function selTF(qi, val) {
+  userAnswers[qi] = val;
+  const tBtn = document.getElementById(`tf-t-${qi}`), fBtn = document.getElementById(`tf-f-${qi}`);
+  if (tBtn) { tBtn.className = 'tf-btn' + (val ? ' selected-true' : ''); }
+  if (fBtn) { fBtn.className = 'tf-btn' + (!val ? ' selected-false' : ''); }
+  const tA = document.getElementById(`at-${qi}-t`), fA = document.getElementById(`at-${qi}-f`);
+  if (tA) tA.className = 'ans-opt' + (val ? ' selected' : '');
+  if (fA) fA.className = 'ans-opt' + (!val ? ' selected' : '');
+  updateProgress();
+}
+
+function selFI(qi, val) {
+  const v = val.trim();
+  if (v) userAnswers[qi] = v; else delete userAnswers[qi];
+  const ve = document.getElementById(`afv-${qi}`);
+  if (ve) ve.textContent = v || '___';
+  updateProgress();
+}
+
+// ── Matching ─────────────────────────────────────────────
+function openPicker(qi, pi) {
+  const all = currentExam.questions[qi].pairs;
+  for (let p = 0; p < all.length; p++) {
+    const pk = document.getElementById(`picker-${qi}-${p}`);
+    if (pk) pk.style.display = p === pi ? (pk.style.display === 'flex' ? 'none' : 'flex') : 'none';
+  }
+}
+
+function pickMatch(qi, pi, si, oi) {
+  if (!Array.isArray(userAnswers[qi])) userAnswers[qi] = new Array(currentExam.questions[qi].pairs.length).fill(null);
+  userAnswers[qi][pi] = oi;
+  const pill = document.getElementById(`mp-${qi}-${pi}`);
+  if (pill) { pill.textContent = String.fromCharCode(65 + si); pill.style.background = 'var(--blue)'; pill.style.color = 'white'; }
+  const lItem = document.getElementById(`ml-${qi}-${pi}`)?.querySelector('.match-left-item');
+  if (lItem) lItem.classList.add('connected');
+  document.getElementById(`picker-${qi}-${pi}`).style.display = 'none';
+  const filled = userAnswers[qi].filter(v => v !== null).length;
+  const prog = document.getElementById(`amp-${qi}`);
+  if (prog) prog.textContent = `${filled}/${currentExam.questions[qi].pairs.length}`;
+  const hint = document.getElementById(`mhint-${qi}`);
+  if (hint) hint.textContent = filled === currentExam.questions[qi].pairs.length ? '✅ จับคู่ครบแล้ว!' : `เหลืออีก ${currentExam.questions[qi].pairs.length - filled} คู่`;
+  updateProgress();
+}
+
+function clearMatch(qi, pi) {
+  if (!Array.isArray(userAnswers[qi])) return;
+  userAnswers[qi][pi] = null;
+  const pill = document.getElementById(`mp-${qi}-${pi}`);
+  if (pill) { pill.textContent = '?'; pill.style.background = '#e2e8f0'; pill.style.color = '#64748b'; }
+  const lItem = document.getElementById(`ml-${qi}-${pi}`)?.querySelector('.match-left-item');
+  if (lItem) lItem.classList.remove('connected');
+  document.getElementById(`picker-${qi}-${pi}`).style.display = 'none';
+  updateProgress();
+}
+
+// ── Progress ─────────────────────────────────────────────
+function updateProgress() {
+  if (!currentExam) return;
+  const total = currentExam.questions.length;
+  let answered = 0;
+  currentExam.questions.forEach((q, i) => {
+    if (q.type === 'matching') { if (Array.isArray(userAnswers[i]) && userAnswers[i].filter(v=>v!==null).length === q.pairs.length) answered++; }
+    else if (q.type === 'fillin') { if (userAnswers[i]) answered++; }
+    else { if (userAnswers[i] !== undefined) answered++; }
+  });
+  const pct = Math.round(answered / total * 100);
+  const bar = document.getElementById('progress-bar');
+  if (bar) { bar.style.width = pct + '%'; bar.style.background = answered === total ? 'var(--green)' : answered > total * 0.5 ? '#f59e0b' : 'var(--sky)'; }
+  const prog = document.getElementById('progress-text');
+  if (prog) prog.textContent = `ตอบแล้ว ${answered} / ${total} ข้อ`;
+  const btn = document.getElementById('submit-btn');
+  const hint = document.getElementById('submit-hint');
+  const forcebtn = document.getElementById('force-submit-btn');
+  if (answered === total) {
+    if (btn) btn.disabled = false;
+    if (hint) { hint.textContent = '✅ ตอบครบแล้ว! กดส่งได้เลย'; hint.style.color = 'var(--green)'; }
+    if (forcebtn) forcebtn.style.display = 'none';
+  } else {
+    if (btn) btn.disabled = true;
+    if (hint) { hint.textContent = `เหลืออีก ${total - answered} ข้อ`; hint.style.color = '#94a3b8'; }
+    if (forcebtn && timerSec <= 0) forcebtn.style.display = '';
+  }
+  // highlight answered rows
+  currentExam.questions.forEach((q, i) => {
+    const done = q.type==='matching' ? Array.isArray(userAnswers[i]) && userAnswers[i].filter(v=>v!==null).length===q.pairs.length
+      : q.type==='fillin' ? !!userAnswers[i] : userAnswers[i] !== undefined;
+    const row = document.getElementById(`ar-${i}`);
+    if (row) { row.style.borderColor = done ? 'var(--sky)' : ''; row.style.background = done ? '#f0f7ff' : ''; }
+  });
+}
+
+// ── Timer ─────────────────────────────────────────────────
+function startTimer(minutes) {
+  clearInterval(timerInterval);
+  timerSec = timerTotal = minutes * 60;
+  const bar = document.getElementById('timer-bar');
+  if (bar) bar.style.display = 'flex';
+  timerInterval = setInterval(() => {
+    timerSec--;
+    const m = Math.floor(timerSec / 60), s = timerSec % 60;
+    const d = document.getElementById('timer-display');
+    if (d) d.textContent = `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+    const pct = timerSec / timerTotal * 100;
+    const fill = document.getElementById('timer-fill');
+    if (fill) { fill.style.width = pct + '%'; fill.style.background = pct > 50 ? 'var(--green)' : pct > 20 ? '#f59e0b' : 'var(--red)'; }
+    if (timerSec <= 0) {
+      clearInterval(timerInterval);
+      document.getElementById('force-submit-btn').style.display = '';
+      toast('⏰ หมดเวลา! กดส่งคำตอบได้เลย', 'error');
+    }
+  }, 1000);
+}
+
+function stopTimer() { clearInterval(timerInterval); timerInterval = null; }
+
+// ── Submit Exam ───────────────────────────────────────────
+function submitExam(force = false) {
+  if (!currentExam) return;
+  const total = currentExam.questions.length;
+  const missing = [];
+  currentExam.questions.forEach((q, i) => {
+    const done = q.type==='matching' ? Array.isArray(userAnswers[i]) && userAnswers[i].filter(v=>v!==null).length===q.pairs.length
+      : q.type==='fillin' ? !!userAnswers[i] : userAnswers[i] !== undefined;
+    if (!done) missing.push(`ข้อ ${i+1}`);
+  });
+  if (!force && missing.length) {
+    const w = document.getElementById('unanswered-warn');
+    document.getElementById('unanswered-list').textContent = missing.join(', ');
+    w.style.display = '';
+    w.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    toast(`⚠️ ยังไม่ตอบ ${missing.length} ข้อ`, 'error');
+    return;
+  }
+  stopTimer();
+  const timeUsed = timerTotal - timerSec;
+  const timeStr = `${Math.floor(timeUsed/60)} นาที ${timeUsed%60} วินาที`;
+
+  // Score
+  let correct = 0, totalScore = 0, maxScore = 0;
+  currentExam.questions.forEach((q, i) => {
+    if (q.type === 'matching') {
+      const pc = q.pairs.length; maxScore += pc;
+      const ua = userAnswers[i] || [];
+      let c = 0; q.pairs.forEach((_, pi) => { if (ua[pi] === pi) c++; });
+      correct += c; totalScore += c;
+    } else if (q.type === 'truefalse') {
+      maxScore++;
+      if (userAnswers[i] === q.answer) { correct++; totalScore++; }
+    } else if (q.type === 'fillin') {
+      maxScore++;
+      if (String(userAnswers[i]||'').trim().toLowerCase() === String(q.answer||'').trim().toLowerCase()) { correct++; totalScore++; }
+    } else {
+      maxScore++;
+      if (userAnswers[i] === q.answer) { correct++; totalScore++; }
+    }
+  });
+
+  const pct = Math.round(totalScore / maxScore * 100);
+  const pass = pct >= passThreshold;
+  const grade = pct>=80?'4 (ดีมาก)':pct>=70?'3 (ดี)':pct>=60?'2 (พอใช้)':pct>=passThreshold?'1 (ผ่าน)':'0 (ไม่ผ่าน)';
+
+  // Save history
+  const rec = {
+    id: Date.now(),
+    studentName: document.getElementById('stu-name').value.trim() || 'ไม่ระบุชื่อ',
+    studentClass: document.getElementById('stu-class').value.trim(),
+    studentNo: document.getElementById('stu-no').value.trim(),
+    examTitle: currentExam.title, subject: currentExam.subject,
+    score: correct, total, pct, pass, timeUsed: timeStr,
+    date: new Date().toLocaleString('th-TH')
+  };
+  examHistory.unshift(rec);
+  // push to Firebase
+  if (window._fb?.connected) pushHistory();
+
+  // Show result
+  document.getElementById('result-box').innerHTML = `
+    <div class="score-box ${pass?'pass':'fail'}">
+      <div class="score-emoji">${pass ? '🎉' : '📚'}</div>
+      <div class="score-num" style="color:${pass?'var(--green)':'var(--red)'}">${totalScore}<span style="font-size:1.2rem;font-weight:400">/${maxScore}</span></div>
+      <div class="score-pct" style="color:${pass?'var(--green)':'var(--red)'}">${pct}%</div>
+      <div class="score-label">ระดับ ${grade} · ${timeStr}</div>
+      <div style="margin-top:10px;font-size:1rem;font-weight:600">${pass ? '✅ ผ่านการสอบ!' : '❌ ไม่ผ่าน — ต้องทบทวนเพิ่ม'}</div>
+      <div style="margin-top:6px;font-size:0.88rem;color:#64748b">${rec.studentName} · ${currentExam.title}</div>
+    </div>`;
+  showScreen('screen-result');
+  toast(`✅ ตรวจแล้ว ${correct}/${total}`, pass ? 'success' : '');
+}
+
+// ── Firebase ──────────────────────────────────────────────
+window._fb = { app: null, db: null, connected: false };
+</script>
+
+<script type="module">
+import { initializeApp, getApps } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
+import { getFirestore, doc, getDoc, setDoc } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+
+const FIREBASE_CONFIG = {
+  apiKey: "AIzaSyCv_mROsoesT0IJH7jxhtqN74aSyJ1hjzc",
+  authDomain: "exam-school-fa1ac.firebaseapp.com",
+  projectId: "exam-school-fa1ac",
+  storageBucket: "exam-school-fa1ac.firebasestorage.app",
+  messagingSenderId: "244380573184",
+  appId: "1:244380573184:web:d2a118053a46779c9302e5"
+};
+
+function setSyncStatus(ok, detail) {
+  const dot = document.getElementById('sync-dot');
+  const txt = document.getElementById('sync-text');
+  if (dot) dot.style.background = ok ? '#22c55e' : '#ef4444';
+  if (txt) txt.textContent = detail;
+}
+
+async function init() {
+  try {
+    const app = getApps().find(a => a.name === 'student') || initializeApp(FIREBASE_CONFIG, 'student');
+    const db = getFirestore(app);
+    window._fb = { app, db, connected: true };
+
+    // test connection
+    await setDoc(doc(db, 'meta', 'ping_student'), { ts: Date.now() }, { merge: true });
+
+    // load exam sets
+    const snap0 = await getDoc(doc(db, 'data', 'qbank_0'));
+    let qs = [];
+    if (snap0.exists()) {
+      qs = snap0.data().questions || [];
+      const total = snap0.data().total || 1;
+      for (let i = 1; i < total; i++) {
+        const s = await getDoc(doc(db, 'data', `qbank_${i}`));
+        if (s.exists()) qs = qs.concat(s.data().questions || []);
+      }
+    }
+
+    const esSnap = await getDoc(doc(db, 'data', 'examsets'));
+    if (esSnap.exists() && esSnap.data().data?.length) {
+      examSets = esSnap.data().data;
+    }
+
+    const ehSnap = await getDoc(doc(db, 'data', 'examhistory'));
+    if (ehSnap.exists() && ehSnap.data().data?.length) {
+      examHistory = ehSnap.data().data;
+    }
+
+    const ptSnap = await getDoc(doc(db, 'meta', 'settings'));
+    if (ptSnap.exists() && ptSnap.data().passThreshold) {
+      passThreshold = ptSnap.data().passThreshold;
+    }
+
+    setSyncStatus(true, `Online · ${examSets.length} ชุด`);
+    renderExamList();
+
+    // expose push history function
+    window.pushHistory = async function() {
+      try {
+        await setDoc(doc(db, 'data', 'examhistory'), { data: examHistory });
+      } catch(e) { console.warn('push history failed', e); }
+    };
+
+  } catch(e) {
+    setSyncStatus(false, 'Offline');
+    document.getElementById('exam-list-area').innerHTML = `
+      <div class="empty-state">
+        <div class="empty-icon">⚠️</div>
+        <p style="color:var(--red);font-weight:600">เชื่อมต่อไม่ได้</p>
+        <p style="margin-top:6px;font-size:0.82rem">${e.message}</p>
+        <button class="btn btn-primary" onclick="location.reload()" style="margin-top:14px">🔄 ลองใหม่</button>
+      </div>`;
+  }
+}
+
+init();
+</script>
+</body>
+</html>
