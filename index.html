@@ -531,6 +531,8 @@ textarea { resize:vertical; min-height:80px; }
           <button onclick="setAIMode('strict',this)" class="ai-mode-chip">📐 เคร่งครัด</button>
           <button onclick="setAIMode('onet',this)" class="ai-mode-chip">🏆 O-NET Style</button>
           <button onclick="setAIMode('story',this)" class="ai-mode-chip">📖 เล่าเรื่อง</button>
+          <button onclick="setAIMode('truefalse',this)" class="ai-mode-chip">✓✗ ถูก/ผิด</button>
+          <button onclick="setAIMode('fillin',this)" class="ai-mode-chip">___ เติมคำ</button>
         </div>
 
         <div class="flex-row">
@@ -538,6 +540,7 @@ textarea { resize:vertical; min-height:80px; }
           <button class="btn btn-outline" onclick="toggleCard('manual-add-card')">✍️ เพิ่มเอง</button>
           <button class="btn btn-outline" onclick="showMatchingCreator()" style="border-color:#f59e0b;color:#92400e;background:#fffbeb">🔗 เพิ่มจับคู่</button>
           <button class="btn btn-outline" onclick="toggleCard('import-card')">📥 Import</button>
+          <button class="btn btn-outline" onclick="toggleCard('paste-to-exam-card')" style="border-color:#8b5cf6;color:#6d28d9;background:#faf5ff">📄 จากเนื้อหา</button>
         </div>
       </div>
 
@@ -553,6 +556,37 @@ textarea { resize:vertical; min-height:80px; }
 
       <!-- AI Preview -->
       <div class="card" id="ai-preview-panel" style="display:none"></div>
+
+      <!-- Paste-to-Exam -->
+      <div class="card" id="paste-to-exam-card" style="display:none;border:2px solid #8b5cf6;background:linear-gradient(135deg,#faf5ff,#f5f3ff)">
+        <div class="card-title" style="color:#5b21b6">📄 สร้างข้อสอบจากเนื้อหา
+          <button onclick="toggleCard('paste-to-exam-card')" style="margin-left:auto;background:none;border:none;font-size:1.2rem;cursor:pointer;color:#9ca3af">✕</button>
+        </div>
+        <div style="font-size:0.83rem;color:#6d28d9;margin-bottom:10px">วางเนื้อหา บทเรียน หรือข้อความใดก็ได้ → AI จะสกัดเป็นข้อสอบให้อัตโนมัติ</div>
+        <textarea id="paste-content-input" placeholder="วางเนื้อหาที่นี่...&#10;เช่น: บทเรียนเรื่องระบบสุริยะ, เนื้อหาจากหนังสือ, บทความ, หรือย่อหน้าใดก็ได้&#10;&#10;AI จะวิเคราะห์เนื้อหาและสร้างข้อสอบที่เหมาะสมกับระดับชั้นที่เลือก" style="width:100%;min-height:160px;padding:12px;border:1.5px solid #c4b5fd;border-radius:10px;font-family:Sarabun,sans-serif;font-size:0.88rem;resize:vertical;background:white;color:#1e1b4b"></textarea>
+        <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap;align-items:center">
+          <select id="paste-subject" style="padding:7px 10px;border-radius:8px;border:1.5px solid #c4b5fd;font-family:Sarabun,sans-serif;font-size:0.88rem;background:white">
+            <option>คณิตศาสตร์</option><option>ภาษาไทย</option><option>สังคมศึกษา</option><option>วิทยาศาสตร์</option><option>ภาษาอังกฤษ</option><option>ประวัติศาสตร์</option><option>สุขศึกษา</option><option>ศิลปะ</option><option>การงานอาชีพ</option><option>ด้านทุจริต</option>
+          </select>
+          <select id="paste-grade" style="padding:7px 10px;border-radius:8px;border:1.5px solid #c4b5fd;font-family:Sarabun,sans-serif;font-size:0.88rem;background:white">
+            <option>ป.1</option><option>ป.2</option><option>ป.3</option><option>ป.4</option><option selected>ป.5</option><option>ป.6</option><option>ม.1</option><option>ม.2</option><option>ม.3</option>
+          </select>
+          <select id="paste-count" style="padding:7px 10px;border-radius:8px;border:1.5px solid #c4b5fd;font-family:Sarabun,sans-serif;font-size:0.88rem;background:white">
+            <option value="5">5 ข้อ</option><option value="10" selected>10 ข้อ</option><option value="15">15 ข้อ</option><option value="20">20 ข้อ</option>
+          </select>
+          <select id="paste-qtype" style="padding:7px 10px;border-radius:8px;border:1.5px solid #c4b5fd;font-family:Sarabun,sans-serif;font-size:0.88rem;background:white">
+            <option value="mcq">ก ข ค ง ปรนัย</option>
+            <option value="truefalse">✓✗ ถูก/ผิด</option>
+            <option value="fillin">___ เติมคำ</option>
+            <option value="mixed_all">ผสมทุกประเภท</option>
+          </select>
+          <button onclick="generateFromPaste()" id="paste-gen-btn" style="padding:8px 20px;background:#7c3aed;color:white;border:none;border-radius:8px;font-family:Sarabun,sans-serif;font-size:0.9rem;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:6px">
+            <span id="paste-gen-spinner" style="display:none">⏳</span> 🟣 สร้างข้อสอบ
+          </button>
+          <button onclick="document.getElementById('paste-content-input').value=''" style="padding:8px 14px;background:white;border:1.5px solid #c4b5fd;border-radius:8px;font-family:Sarabun,sans-serif;font-size:0.85rem;color:#7c3aed;cursor:pointer">ล้าง</button>
+        </div>
+        <div id="paste-char-count" style="font-size:0.75rem;color:#9ca3af;margin-top:4px">0 ตัวอักษร</div>
+      </div>
 
       <!-- Import -->
       <div class="card" id="import-card" style="display:none">
@@ -599,18 +633,59 @@ textarea { resize:vertical; min-height:80px; }
       <!-- Manual Add -->
       <div class="card" id="manual-add-card" style="display:none">
         <div class="card-title">✍️ เพิ่มข้อสอบด้วยตนเอง</div>
-        <div class="form-row">
-          <div class="form-group" style="flex:3"><label>คำถาม</label><textarea id="manual-q" placeholder="พิมพ์คำถาม..."></textarea></div>
+
+        <!-- Type selector -->
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px">
+          <span style="font-size:0.78rem;font-weight:700;color:var(--muted);align-self:center">ประเภท:</span>
+          <button onclick="setManualType('mcq',this)" id="mtype-mcq" style="padding:5px 14px;border-radius:20px;border:2px solid #1a3fa0;background:#1a3fa0;color:white;font-family:Sarabun,sans-serif;font-size:0.82rem;font-weight:700;cursor:pointer">ก ข ค ง ปรนัย</button>
+          <button onclick="setManualType('truefalse',this)" id="mtype-truefalse" style="padding:5px 14px;border-radius:20px;border:2px solid #e2e8f0;background:white;color:#64748b;font-family:Sarabun,sans-serif;font-size:0.82rem;cursor:pointer">✓✗ ถูก/ผิด</button>
+          <button onclick="setManualType('fillin',this)" id="mtype-fillin" style="padding:5px 14px;border-radius:20px;border:2px solid #e2e8f0;background:white;color:#64748b;font-family:Sarabun,sans-serif;font-size:0.82rem;cursor:pointer">___ เติมคำ</button>
         </div>
+
         <div class="form-row">
-          <div class="form-group"><label>ก.</label><input type="text" id="opt-a"></div>
-          <div class="form-group"><label>ข.</label><input type="text" id="opt-b"></div>
-          <div class="form-group"><label>ค.</label><input type="text" id="opt-c"></div>
-          <div class="form-group"><label>ง.</label><input type="text" id="opt-d"></div>
+          <div class="form-group" style="flex:3">
+            <label id="manual-q-label">คำถาม</label>
+            <textarea id="manual-q" placeholder="พิมพ์คำถาม..."></textarea>
+          </div>
         </div>
-        <div class="form-row">
-          <div class="form-group"><label>เฉลย</label>
-            <select id="correct-ans"><option value="0">ก.</option><option value="1">ข.</option><option value="2">ค.</option><option value="3">ง.</option></select></div>
+
+        <!-- MCQ fields -->
+        <div id="manual-mcq-fields">
+          <div class="form-row">
+            <div class="form-group"><label>ก.</label><input type="text" id="opt-a"></div>
+            <div class="form-group"><label>ข.</label><input type="text" id="opt-b"></div>
+            <div class="form-group"><label>ค.</label><input type="text" id="opt-c"></div>
+            <div class="form-group"><label>ง.</label><input type="text" id="opt-d"></div>
+          </div>
+          <div class="form-row">
+            <div class="form-group"><label>เฉลย</label>
+              <select id="correct-ans"><option value="0">ก.</option><option value="1">ข.</option><option value="2">ค.</option><option value="3">ง.</option></select>
+            </div>
+          </div>
+        </div>
+
+        <!-- True/False fields -->
+        <div id="manual-tf-fields" style="display:none">
+          <div style="display:flex;gap:12px;margin-bottom:8px">
+            <label style="display:flex;align-items:center;gap:8px;cursor:pointer;padding:10px 20px;border:2px solid #e2e8f0;border-radius:10px;background:white;font-family:Sarabun,sans-serif;font-size:0.9rem" id="tf-true-label">
+              <input type="radio" name="tf-answer" value="true" checked onchange="updateTFStyle()"> ✅ ถูก (True)
+            </label>
+            <label style="display:flex;align-items:center;gap:8px;cursor:pointer;padding:10px 20px;border:2px solid #e2e8f0;border-radius:10px;background:white;font-family:Sarabun,sans-serif;font-size:0.9rem" id="tf-false-label">
+              <input type="radio" name="tf-answer" value="false" onchange="updateTFStyle()"> ❌ ผิด (False)
+            </label>
+          </div>
+        </div>
+
+        <!-- Fill-in fields -->
+        <div id="manual-fillin-fields" style="display:none">
+          <div class="form-group">
+            <label>คำตอบที่ถูกต้อง</label>
+            <input type="text" id="fillin-answer" placeholder="พิมพ์คำตอบที่ถูกต้อง...">
+          </div>
+          <div style="font-size:0.78rem;color:#64748b;margin-top:-6px;margin-bottom:8px">💡 ใส่ ___ (ขีดล่าง 3 ตัว) ในคำถามเพื่อแสดงช่องว่าง เช่น "ดวงอาทิตย์อยู่ใจกลาง___"</div>
+        </div>
+
+        <div class="form-row" style="margin-top:8px">
           <div class="form-group"><label>วิชา</label>
             <select id="manual-subject"><option>คณิตศาสตร์</option><option>ภาษาไทย</option><option>สังคมศึกษา</option><option>วิทยาศาสตร์</option><option>ภาษาอังกฤษ</option><option>ประวัติศาสตร์</option><option>สุขศึกษา</option><option>ศิลปะ</option><option>การงานอาชีพ</option><option>ด้านทุจริต</option></select></div>
           <div class="form-group"><label>ระดับชั้น</label>
@@ -657,6 +732,7 @@ textarea { resize:vertical; min-height:80px; }
           <button onclick="bulkSelectAll(true)" style="padding:5px 12px;border-radius:7px;border:1.5px solid #f59e0b;background:white;font-family:Sarabun,sans-serif;font-size:0.82rem;cursor:pointer;font-weight:600">เลือกทั้งหมด</button>
           <button onclick="bulkSelectAll(false)" style="padding:5px 12px;border-radius:7px;border:1.5px solid var(--border);background:white;font-family:Sarabun,sans-serif;font-size:0.82rem;cursor:pointer">ยกเลิก</button>
           <button onclick="createExamFromSelected()" style="padding:5px 12px;border-radius:7px;border:1.5px solid var(--green);background:#f0fdf4;color:#15803d;font-family:Sarabun,sans-serif;font-size:0.82rem;cursor:pointer;font-weight:700">📋 ออกข้อสอบจากที่เลือก</button>
+          <button onclick="bulkPrint()" style="padding:5px 12px;border-radius:7px;border:1.5px solid #8b5cf6;background:#faf5ff;color:#6d28d9;font-family:Sarabun,sans-serif;font-size:0.82rem;cursor:pointer;font-weight:700">🖨️ Print ที่เลือก</button>
           <button onclick="showExportModal(true)" style="padding:5px 12px;border-radius:7px;border:1.5px solid var(--blue);background:#eff6ff;color:var(--blue);font-family:Sarabun,sans-serif;font-size:0.82rem;cursor:pointer;font-weight:600">📤 Export ที่เลือก</button>
           <button onclick="bulkDelete()" style="padding:5px 12px;border-radius:7px;border:none;background:var(--red);color:white;font-family:Sarabun,sans-serif;font-size:0.82rem;cursor:pointer;font-weight:700;margin-left:auto">🗑️ ลบที่เลือก</button>
           <button onclick="toggleBulkMode()" style="padding:5px 10px;border-radius:7px;border:1.5px solid var(--border);background:white;font-family:Sarabun,sans-serif;font-size:0.82rem;cursor:pointer">✕ ออก</button>
@@ -1102,17 +1178,18 @@ textarea { resize:vertical; min-height:80px; }
 // ============================================================
 // VERSION
 // ============================================================
-const APP_VERSION = 'v3.1';
+const APP_VERSION = 'v3.5.1';
 const APP_CHANGELOG = [
+  { v:'v3.5', date:'2026-03-14', note:'✓✗ ถูก/ผิด + ___ เติมคำ: AI สร้าง, เพิ่มเอง, แก้ไข, ทำสอบ, ตรวจคะแนน, พิมพ์, export PDF/CSV/TXT ครบทุกขั้นตอน' },
+  { v:'v3.4', date:'2026-03-14', note:'↕️ จัดลำดับข้อในชุดข้อสอบ: ลาก☰ขึ้น/ลง, ปุ่ม↑↓, เรียงอัตโนมัติตามวิชา/ชั้น/ประเภท/สุ่ม' },
+  { v:'v3.3', date:'2026-03-14', note:'📤 Export ใหม่: คลัง/ชุดข้อสอบ, filter, หัวกระดาษ, PDF ข้อสอบ+เฉลยแยก, CSV ครบ' },
+  { v:'v3.2', date:'2026-03-14', note:'📄 Paste-to-Exam, 📋 Duplicate, 👁️ Preview A4, 🗝️ ใบเฉลย, 🖨️ Bulk print, 💾 ตะกร้า persist' },
+  { v:'v3.1', date:'2026-03-14', note:'🗂️ แยก UI คลังข้อสอบออกเป็นเมนูใหม่ ออกข้อสอบ / คลัง / ทำข้อสอบ, เพิ่ม filter ชั้น, ตะกร้า 🛒 เลือกข้อทีละข้อ' },
+  { v:'v3.0', date:'2026-03-14', note:'🛒 ตะกร้าชุดข้อสอบ + filter ชั้น/วิชา + แก้บัก Firebase init ซ้ำ + syntax error showImportPasteModal' },
   { v:'v2.9', date:'2026-03-12', note:'🔗 ข้อสอบจับคู่/โยงเส้น: สร้างด้วยปุ่ม เพิ่มจับคู่, ผสมกับปรนัยในชุดเดียวกันได้, คะแนนแบบ partial credit, พิมพ์แบบ 2 คอลัมน์พร้อมเส้นโยง' },
-  { v:'v2.8', date:'2026-03-12', note:'🤖 สร้างด้วย AI ภายนอก: ปุ่ม Prompt Generator + แก้บัก subject snap (คณิต→คณิตศาสตร์, english→ภาษาอังกฤษ) ให้ Import แล้วเข้าวิชาเดิมไม่สร้างใหม่' },
-  { v:'v2.7', date:'2026-03-12', note:'✨ Export หลาย format: JSON, CSV/Excel, TXT, PDF, Export Code; เลือกหลายข้อด้วย Checkbox; ลบเป็นกลุ่ม; Export เฉพาะที่เลือก' },
-  { v:'v2.6', date:'2026-03-12', note:'🔧 แก้บัก: Token อัตโนมัติตามจำนวนข้อ — เลือก 15/20/25/30 ข้อ slider ปรับเองทันที, มีเตือนสีแดงถ้า token น้อยเกินไป, buildSmartPrompts คำนวณ floor token ป้องกัน JSON ถูกตัดกลางคัน' },
-  { v:'v2.5', date:'2026-03-11', note:'🔀 รวมทุกฟีเจอร์: Gemini AI provider, Advanced AI (Bloom\'s, Distractor, หลักสูตร, โหมด 5 แบบ), แก้การ์ดวิชาว่าง, กรอกคะแนน%, เลือกรุ่น Claude/Gemini ได้' },
-  { v:'v2.4', date:'2026-03-11', note:'🔵 เพิ่ม Gemini AI provider + เลือกรุ่นได้' },
-  { v:'v2.3', date:'2026-03-11', note:'🤖 Advanced AI: Bloom\'s Taxonomy, ตัวลวงคุณภาพ, โหมด 5 แบบ, ดู Prompt' },
-  { v:'v2.2', date:'2026-03-11', note:'🐛 แก้: ประวัติหายหลัง import — Firebase pull เปลี่ยนเป็น merge' },
-  { v:'v2.1', date:'2026-03-11', note:'เปลี่ยนชื่อ + ระบบ Version' },
+  { v:'v2.8', date:'2026-03-12', note:'🤖 สร้างด้วย AI ภายนอก: ปุ่ม Prompt Generator + แก้บัก subject snap' },
+  { v:'v2.7', date:'2026-03-12', note:'✨ Export หลาย format: JSON, CSV/Excel, TXT, PDF, Export Code; เลือกหลายข้อด้วย Checkbox; ลบเป็นกลุ่ม' },
+  { v:'v2.5', date:'2026-03-11', note:'🔀 รวมทุกฟีเจอร์: Gemini AI provider, Advanced AI (Bloom\'s, Distractor, หลักสูตร, โหมด 5 แบบ)' },
   { v:'v2.0', date:'2026-03-11', note:'localStorage persistence, OMR สแกน, Backup/Restore' },
   { v:'v1.0', date:'2026-03-10', note:'เวอร์ชันแรก' },
 ];
@@ -1143,7 +1220,8 @@ const LS_KEYS = {
   examsets: 'examai_examsets',
   history: 'examai_history',
   students: 'examai_students',
-  passthresh: 'examai_passthresh'
+  passthresh: 'examai_passthresh',
+  cart: 'examai_cart'
 };
 
 function saveToLS() {
@@ -1153,9 +1231,9 @@ function saveToLS() {
     localStorage.setItem(LS_KEYS.history,  JSON.stringify(examHistory));
     localStorage.setItem(LS_KEYS.students, JSON.stringify(studentList));
     localStorage.setItem(LS_KEYS.passthresh, String(passThreshold));
+    localStorage.setItem(LS_KEYS.cart, JSON.stringify(cartItems));
     updateStorageStat();
   } catch(e) {
-    // localStorage might be full
     console.warn('localStorage save failed:', e.message);
     toast('⚠️ พื้นที่เก็บข้อมูลเต็ม — ลอง Export ก่อน', 'error');
   }
@@ -1173,6 +1251,8 @@ function loadFromLS() {
     if (eh) examHistory = JSON.parse(eh);
     if (sl) studentList = JSON.parse(sl);
     if (pt) passThreshold = parseInt(pt) || 60;
+    const ct = localStorage.getItem(LS_KEYS.cart);
+    if (ct) { cartItems = JSON.parse(ct); }
   } catch(e) {
     console.warn('localStorage load failed:', e);
   }
@@ -1250,6 +1330,12 @@ document.addEventListener('DOMContentLoaded', () => {
   if(vl) vl.textContent = passThreshold + '%';
   if(hl) hl.textContent = `ค่าปัจจุบัน: ${passThreshold}%`;
   renderOMRSelects();
+  // restore cart state
+  updateCartBadge();
+  if (cartItems.length > 0) updateCartProgress();
+  // paste char counter
+  const pci = document.getElementById('paste-content-input');
+  if (pci) pci.addEventListener('input', ()=>{ const el=document.getElementById('paste-char-count'); if(el) el.textContent=pci.value.length+' ตัวอักษร'; });
 });
 
 // ============================================================
@@ -1463,7 +1549,7 @@ function buildSmartPrompts() {
   const distractorMap = { standard:'ตัวลวงสมเหตุสมผล', tricky:'ยั่วใจ ใกล้เคียงคำตอบที่ถูก', misconception:'สะท้อนความเข้าใจผิดของนักเรียน', easy:'เห็นชัดว่าผิด เหมาะนักเรียนระดับต้น' };
   const curriculumMap = { thai2551:'หลักสูตรแกนกลาง 2551', thai2560:'หลักสูตรแกนกลาง 2560', onet:'มาตรฐาน O-NET', local:'บูรณาการท้องถิ่น', general:'ทั่วไป' };
   const langMap = { formal:'ทางการ', simple:'เข้าใจง่าย ป.1-3', story:'เล่าเรื่อง/นิทาน', real:'สถานการณ์จริง', news:'โจทย์เชิงข่าว' };
-  const qtypeMap = { mixed:'ผสม', knowledge:'ความรู้ความจำ', comprehension:'ความเข้าใจ', application:'การนำไปใช้', analysis:'การวิเคราะห์', situation:'สถานการณ์/โจทย์ปัญหา', compute:'โจทย์คำนวณ', matching:'จับคู่/โยงเส้น', mixed_matching:'ผสมปรนัย+จับคู่' };
+  const qtypeMap = { mixed:'ผสม', knowledge:'ความรู้ความจำ', comprehension:'ความเข้าใจ', application:'การนำไปใช้', analysis:'การวิเคราะห์', situation:'สถานการณ์/โจทย์ปัญหา', compute:'โจทย์คำนวณ', matching:'จับคู่/โยงเส้น', mixed_matching:'ผสมปรนัย+จับคู่', truefalse:'ถูก/ผิด', fillin:'เติมคำในช่องว่าง' };
   let avoidTxt = '';
   if (avoidRepeat==='yes' && questionBank.length>0) {
     const existing = questionBank.filter(q=>q.subject===subject).slice(0,15).map(q=>q.question?.substring(0,40)).filter(Boolean);
@@ -1472,7 +1558,25 @@ function buildSmartPrompts() {
 
   let systemPrompt, userPrompt;
 
-  if (qtype === 'matching') {
+  if (qtype === 'truefalse') {
+    systemPrompt = `คุณคือผู้เชี่ยวชาญออกข้อสอบถูก/ผิดภาษาไทยระดับประถมศึกษา
+• อ้างอิง: ${curriculumMap[curriculum]||'ทั่วไป'}  • ภาษา: ${langMap[langstyle]||'ทางการ'}
+กฎ: ตอบ JSON array เท่านั้น ห้าม markdown
+รูปแบบ: [{"type":"truefalse","question":"ข้อความที่ต้องตัดสิน","answer":true}]
+- "answer" = true (ถูก) หรือ false (ผิด)
+- ครึ่งหนึ่งเป็น true อีกครึ่งเป็น false ห้ามออกแต่ true/false อย่างเดียว
+- ข้อความควรชัดเจน ไม่คลุมเครือ`;
+    userPrompt = `ออกข้อสอบถูก/ผิด ${count} ข้อ วิชา${subject} ชั้น${grade} ความยาก:${diff}${topic?` หัวข้อ:${topic}`:''}${extraInstr?` คำสั่ง:${extraInstr}`:''}${avoidTxt}\nตอบ JSON array:`;
+  } else if (qtype === 'fillin') {
+    systemPrompt = `คุณคือผู้เชี่ยวชาญออกข้อสอบเติมคำในช่องว่างภาษาไทยระดับประถมศึกษา
+• อ้างอิง: ${curriculumMap[curriculum]||'ทั่วไป'}  • ภาษา: ${langMap[langstyle]||'ทางการ'}
+กฎ: ตอบ JSON array เท่านั้น ห้าม markdown
+รูปแบบ: [{"type":"fillin","question":"ประโยคที่มี ___ แทนช่องว่าง","answer":"คำตอบ"}]
+- ใช้ ___ (ขีดล่าง 3 ตัว) แทนช่องว่างในประโยค
+- "answer" คือคำ/วลีที่ถูกต้อง ควรสั้น กระชับ 1-5 คำ
+- ประโยคควรมีบริบทเพียงพอ ไม่คลุมเครือ`;
+    userPrompt = `ออกข้อสอบเติมคำ ${count} ข้อ วิชา${subject} ชั้น${grade} ความยาก:${diff}${topic?` หัวข้อ:${topic}`:''}${extraInstr?` คำสั่ง:${extraInstr}`:''}${avoidTxt}\nตอบ JSON array:`;
+  } else if (qtype === 'matching') {
     systemPrompt = `คุณคือผู้เชี่ยวชาญออกข้อสอบจับคู่ภาษาไทยระดับประถมศึกษา
 • อ้างอิง: ${curriculumMap[curriculum]||'ทั่วไป'}
 • ภาษา: ${langMap[langstyle]||'ทางการ'}
@@ -1554,6 +1658,24 @@ async function generateWithAI() {
           selected:true, generatedBy:providerName
         };
       }
+      // truefalse
+      if (q.type==='truefalse' && (q.q||q.question)) {
+        return {
+          id:Date.now()+Math.random(), subject, grade, difficulty:diff,
+          type:'truefalse', question:q.q||q.question,
+          answer: q.answer===true || String(q.answer).toLowerCase()==='true',
+          selected:true, generatedBy:providerName
+        };
+      }
+      // fillin
+      if (q.type==='fillin' && (q.q||q.question) && q.answer) {
+        return {
+          id:Date.now()+Math.random(), subject, grade, difficulty:diff,
+          type:'fillin', question:q.q||q.question,
+          answer: String(q.answer).trim(),
+          selected:true, generatedBy:providerName
+        };
+      }
       // MCQ (default)
       if ((q.q||q.question)&&Array.isArray(q.options)&&q.options.length>=4) {
         return {
@@ -1600,14 +1722,27 @@ function renderAIPreview(subject, grade, diff, topic) {
 }
 
 function renderPreviewItem(q,i) {
-  const body = q.type==='matching'
-    ? `<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:6px">
+  let body;
+  if (q.type==='matching') {
+    body = `<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:6px">
         <div>${(q.pairs||[]).map((p,pi)=>`<div style="padding:4px 8px;border-radius:6px;font-size:0.82rem;border:1.5px solid var(--border);background:white;margin-bottom:4px"><span style="font-weight:700;color:var(--blue)">${pi+1}.</span> ${p.left}</div>`).join('')}</div>
         <div>${(q.pairs||[]).map((p,pi)=>`<div style="padding:4px 8px;border-radius:6px;font-size:0.82rem;border:1.5px solid #dcfce7;background:#f0fdf4;margin-bottom:4px"><span style="font-weight:700;color:var(--green)">${String.fromCharCode(65+pi)}.</span> ${p.right}</div>`).join('')}</div>
-       </div>`
-    : `<div style="display:grid;grid-template-columns:1fr 1fr;gap:5px">
+       </div>`;
+  } else if (q.type==='truefalse') {
+    body = `<div style="display:flex;gap:8px;margin-top:6px">
+        <div style="padding:6px 16px;border-radius:8px;border:1.5px solid ${q.answer?'var(--green)':'var(--border)'};background:${q.answer?'#dcfce7':'white'};font-size:0.85rem;font-weight:${q.answer?'700':'400'}">✅ ถูก</div>
+        <div style="padding:6px 16px;border-radius:8px;border:1.5px solid ${!q.answer?'var(--red)':'var(--border)'};background:${!q.answer?'#fee2e2':'white'};font-size:0.85rem;font-weight:${!q.answer?'700':'400'}">❌ ผิด</div>
+        <span style="font-size:0.78rem;color:var(--muted);align-self:center">เฉลย: <strong>${q.answer?'ถูก':'ผิด'}</strong></span>
+       </div>`;
+  } else if (q.type==='fillin') {
+    const qDisplay = q.question.replace(/___/g,'<span style="border-bottom:2px solid #1a3fa0;min-width:60px;display:inline-block;margin:0 4px">&nbsp;&nbsp;&nbsp;&nbsp;</span>');
+    body = `<div style="margin-top:6px;padding:8px 12px;background:#eff6ff;border-radius:8px;font-size:0.85rem">
+        ${qDisplay}<br><span style="color:var(--muted);font-size:0.78rem">เฉลย: </span><strong style="color:#1a3fa0">${q.answer}</strong></div>`;
+  } else {
+    body = `<div style="display:grid;grid-template-columns:1fr 1fr;gap:5px">
         ${q.options.map((opt,oi)=>`<div style="padding:5px 9px;border-radius:7px;font-size:0.83rem;border:1.5px solid ${oi===q.answer?'var(--green)':'var(--border)'};background:${oi===q.answer?'#dcfce7':'white'};color:${oi===q.answer?'var(--green)':'inherit'};font-weight:${oi===q.answer?'600':'400'}">${opt}</div>`).join('')}
        </div>`;
+  }
   return `<div id="preview-item-${i}" style="border:2px solid ${q.selected?'var(--blue)':'var(--border)'};border-radius:12px;padding:14px;background:${q.selected?'#f0f4ff':'white'};transition:all 0.2s">
     <div style="display:flex;align-items:flex-start;gap:10px">
       <div onclick="togglePreviewSelect(${i})" style="cursor:pointer;width:22px;height:22px;border-radius:6px;border:2px solid ${q.selected?'var(--blue)':'var(--border)'};background:${q.selected?'var(--blue)':'white'};display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:2px">
@@ -1662,23 +1797,59 @@ function saveSelectedToBank() {
 // ============================================================
 // MANUAL ADD
 // ============================================================
-function addManualQuestion() {
-  const q=document.getElementById('manual-q').value.trim();
-  const a=document.getElementById('opt-a').value.trim();
-  const b=document.getElementById('opt-b').value.trim();
-  const c=document.getElementById('opt-c').value.trim();
-  const d=document.getElementById('opt-d').value.trim();
-  if (!q||!a||!b||!c||!d) { toast('กรอกข้อมูลให้ครบ','error'); return; }
-  questionBank.push({
-    id: Date.now(), subject: document.getElementById('manual-subject').value,
-    grade: document.getElementById('manual-grade').value, difficulty:'ปานกลาง',
-    question: q,
-    options: ['ก. '+a,'ข. '+b,'ค. '+c,'ง. '+d],
-    answer: parseInt(document.getElementById('correct-ans').value)
+let _manualType = 'mcq';
+
+function setManualType(type, btn) {
+  _manualType = type;
+  ['mcq','truefalse','fillin'].forEach(t=>{
+    const b = document.getElementById('mtype-'+t);
+    if (b) { b.style.background = t===type?'#1a3fa0':'white'; b.style.color = t===type?'white':'#64748b'; b.style.borderColor = t===type?'#1a3fa0':'#e2e8f0'; b.style.fontWeight = t===type?'700':'400'; }
   });
+  document.getElementById('manual-mcq-fields').style.display = type==='mcq' ? '' : 'none';
+  document.getElementById('manual-tf-fields').style.display = type==='truefalse' ? '' : 'none';
+  document.getElementById('manual-fillin-fields').style.display = type==='fillin' ? '' : 'none';
+  const lbl = document.getElementById('manual-q-label');
+  if (lbl) lbl.textContent = type==='fillin' ? 'คำถาม (ใส่ ___ แทนช่องว่าง)' : 'คำถาม';
+  const ta = document.getElementById('manual-q');
+  if (ta) ta.placeholder = type==='fillin' ? 'เช่น: ดาวเคราะห์ที่อยู่ใกล้ดวงอาทิตย์ที่สุดคือ ___' : type==='truefalse' ? 'พิมพ์ข้อความที่ต้องตัดสินว่าถูกหรือผิด...' : 'พิมพ์คำถาม...';
+}
+
+function updateTFStyle() {
+  const val = document.querySelector('input[name="tf-answer"]:checked')?.value;
+  const tl = document.getElementById('tf-true-label');
+  const fl = document.getElementById('tf-false-label');
+  if (tl) { tl.style.borderColor = val==='true'?'var(--green)':'#e2e8f0'; tl.style.background = val==='true'?'#dcfce7':'white'; }
+  if (fl) { fl.style.borderColor = val==='false'?'var(--red)':'#e2e8f0'; fl.style.background = val==='false'?'#fee2e2':'white'; }
+}
+
+function addManualQuestion() {
+  const q = document.getElementById('manual-q').value.trim();
+  const subject = document.getElementById('manual-subject').value;
+  const grade   = document.getElementById('manual-grade').value;
+  if (!q) { toast('กรอกคำถามก่อน','error'); return; }
+
+  let entry;
+  if (_manualType === 'truefalse') {
+    const ans = document.querySelector('input[name="tf-answer"]:checked')?.value === 'true';
+    entry = { id:Date.now(), subject, grade, difficulty:'ปานกลาง', type:'truefalse', question:q, answer:ans };
+  } else if (_manualType === 'fillin') {
+    const ans = document.getElementById('fillin-answer').value.trim();
+    if (!ans) { toast('กรอกคำตอบที่ถูกต้องก่อน','error'); return; }
+    entry = { id:Date.now(), subject, grade, difficulty:'ปานกลาง', type:'fillin', question:q, answer:ans };
+  } else {
+    const a=document.getElementById('opt-a').value.trim(), b=document.getElementById('opt-b').value.trim();
+    const c=document.getElementById('opt-c').value.trim(), d=document.getElementById('opt-d').value.trim();
+    if (!a||!b||!c||!d) { toast('กรอกตัวเลือก ก-ง ให้ครบ','error'); return; }
+    entry = { id:Date.now(), subject, grade, difficulty:'ปานกลาง', question:q,
+      options:['ก. '+a,'ข. '+b,'ค. '+c,'ง. '+d],
+      answer:parseInt(document.getElementById('correct-ans').value) };
+  }
+  questionBank.push(entry);
   saveBank(); renderBank(); updateStats();
   toast('✅ เพิ่มข้อสอบแล้ว','success');
-  ['manual-q','opt-a','opt-b','opt-c','opt-d'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('manual-q').value = '';
+  if (_manualType==='mcq') ['opt-a','opt-b','opt-c','opt-d'].forEach(id=>document.getElementById(id).value='');
+  if (_manualType==='fillin') document.getElementById('fillin-answer').value='';
   document.getElementById('create-exam-card').style.display = '';
 }
 
@@ -1896,7 +2067,7 @@ function renderBank() {
       <div class="q-header">
         ${cbHtml}
         <span class="q-number">${i+1}</span>
-        <span class="q-text">${q.question}${q.type==='matching'?` <span style="font-size:0.7rem;padding:2px 8px;background:#fef3c7;color:#92400e;border-radius:10px;margin-left:6px;font-weight:700">🔗 จับคู่ (${q.pairs?.length||0} คู่)</span>`:''}</span>
+        <span class="q-text">${q.question}${q.type==='matching'?` <span style="font-size:0.7rem;padding:2px 8px;background:#fef3c7;color:#92400e;border-radius:10px;margin-left:6px;font-weight:700">🔗 จับคู่ (${q.pairs?.length||0} คู่)</span>`:q.type==='truefalse'?` <span style="font-size:0.7rem;padding:2px 8px;background:#dcfce7;color:#15803d;border-radius:10px;margin-left:6px;font-weight:700">✓✗ ถูก/ผิด</span>`:q.type==='fillin'?` <span style="font-size:0.7rem;padding:2px 8px;background:#eff6ff;color:#1d4ed8;border-radius:10px;margin-left:6px;font-weight:700">___ เติมคำ</span>`:''}</span>
         <div class="q-actions">
           ${cartBtn}
           <span style="font-size:0.75rem;padding:2px 8px;background:#f1f5f9;border-radius:6px;color:var(--muted)">${q.subject} ${q.grade||''}</span>
@@ -1907,7 +2078,14 @@ function renderBank() {
       ${q.type==='matching' ? `<div class="match-table" style="pointer-events:none">
         <div class="match-col">${(q.pairs||[]).map((p,pi)=>`<div class="match-left-item" style="cursor:default"><span class="match-num">${pi+1}</span>${p.left}</div>`).join('')}</div>
         <div class="match-col">${(q.pairs||[]).map((p,pi)=>`<div class="match-right-item" style="cursor:default"><span class="match-letter">${String.fromCharCode(65+pi)}</span>${p.right}</div>`).join('')}</div>
-      </div>` : `<div class="q-options">
+      </div>`
+      : q.type==='truefalse' ? `<div style="display:flex;gap:8px;padding:6px 0 2px">
+          <span style="padding:4px 14px;border-radius:8px;border:1.5px solid ${q.answer?'var(--green)':'var(--border)'};background:${q.answer?'#dcfce7':'white'};font-size:0.82rem;font-weight:${q.answer?'700':'400'}">✅ ถูก</span>
+          <span style="padding:4px 14px;border-radius:8px;border:1.5px solid ${!q.answer?'var(--red)':'var(--border)'};background:${!q.answer?'#fee2e2':'white'};font-size:0.82rem;font-weight:${!q.answer?'700':'400'}">❌ ผิด</span>
+          <span style="font-size:0.75rem;color:var(--muted);align-self:center">เฉลย: <strong>${q.answer?'ถูก':'ผิด'}</strong></span>
+        </div>`
+      : q.type==='fillin' ? `<div style="padding:6px 0 2px;font-size:0.84rem;color:#1e293b">${q.question.replace(/___/g,'<span style="border-bottom:2px solid var(--blue);padding:0 20px;margin:0 3px"></span>')} <span style="font-size:0.75rem;color:var(--muted)">[เฉลย: <strong>${q.answer}</strong>]</span></div>`
+      : `<div class="q-options">
         ${q.options.map((opt,oi)=>`<div class="q-option ${oi===q.answer?'correct':''}">${opt}</div>`).join('')}
       </div>`}
     </div>`;
@@ -1918,6 +2096,8 @@ function editQuestion(id) {
   const q = questionBank.find(x=>String(x.id)===String(id));
   if (!q) return;
   if (q.type === 'matching') { showMatchingCreator(q); return; }
+  if (q.type === 'truefalse') { showEditTFModal(q); return; }
+  if (q.type === 'fillin') { showEditFillinModal(q); return; }
   const opts = q.options.map(o=>String(o).replace(/^[กขคง][.)]\s*/u,'').trim());
   const modal = document.createElement('div');
   modal.id = 'edit-q-modal';
@@ -1967,6 +2147,97 @@ function saveEditQuestion(id) {
   };
   saveBank(); renderBank(); updateStats();
   document.getElementById('edit-q-modal')?.remove();
+  toast('✅ บันทึกแล้ว','success');
+}
+
+function showEditTFModal(q) {
+  const modal = document.createElement('div');
+  modal.id = 'edit-tf-modal';
+  modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:9999;display:flex;align-items:center;justify-content:center;padding:16px';
+  modal.innerHTML = `<div style="background:white;border-radius:16px;padding:24px;max-width:500px;width:100%;display:flex;flex-direction:column;gap:14px">
+    <div style="display:flex;justify-content:space-between;align-items:center">
+      <div style="font-family:Mitr,sans-serif;font-weight:700;font-size:1.05rem;color:var(--navy)">✏️ แก้ไขข้อถูก/ผิด</div>
+      <button onclick="document.getElementById('edit-tf-modal').remove()" style="background:none;border:none;font-size:1.4rem;cursor:pointer;color:#888">✕</button>
+    </div>
+    <div style="display:flex;gap:10px;flex-wrap:wrap">
+      <div class="form-group" style="flex:2"><label>วิชา</label>
+        <select id="etf-subject" style="padding:8px 10px;border:1.5px solid var(--border);border-radius:8px;font-family:Sarabun,sans-serif">
+          ${['คณิตศาสตร์','ภาษาไทย','สังคมศึกษา','วิทยาศาสตร์','ภาษาอังกฤษ','ประวัติศาสตร์','สุขศึกษา','ศิลปะ','การงานอาชีพ','ด้านทุจริต'].map(s=>`<option ${s===q.subject?'selected':''}>${s}</option>`).join('')}</select></div>
+      <div class="form-group" style="min-width:90px"><label>ชั้น</label>
+        <select id="etf-grade" style="padding:8px 10px;border:1.5px solid var(--border);border-radius:8px;font-family:Sarabun,sans-serif">
+          ${['ป.1','ป.2','ป.3','ป.4','ป.5','ป.6'].map(g=>`<option ${g===q.grade?'selected':''}>${g}</option>`).join('')}</select></div>
+    </div>
+    <div class="form-group"><label>ข้อความ</label>
+      <textarea id="etf-question" style="padding:9px 12px;border:1.5px solid var(--border);border-radius:8px;font-family:Sarabun,sans-serif;min-height:70px;resize:vertical">${q.question}</textarea></div>
+    <div><label style="font-size:0.82rem;font-weight:600;color:var(--muted);display:block;margin-bottom:8px">เฉลย</label>
+      <div style="display:flex;gap:12px">
+        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;padding:10px 20px;border:2px solid ${q.answer?'var(--green)':'#e2e8f0'};border-radius:10px;background:${q.answer?'#dcfce7':'white'}">
+          <input type="radio" name="etf-ans" value="true" ${q.answer?'checked':''} style="accent-color:var(--green)"> ✅ ถูก</label>
+        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;padding:10px 20px;border:2px solid ${!q.answer?'var(--red)':'#e2e8f0'};border-radius:10px;background:${!q.answer?'#fee2e2':'white'}">
+          <input type="radio" name="etf-ans" value="false" ${!q.answer?'checked':''} style="accent-color:var(--red)"> ❌ ผิด</label>
+      </div></div>
+    <div style="display:flex;gap:10px">
+      <button onclick="saveEditTF('${q.id}')" style="flex:1;padding:10px;background:var(--blue);color:white;border:none;border-radius:8px;font-family:Sarabun,sans-serif;font-weight:600;cursor:pointer">💾 บันทึก</button>
+      <button onclick="document.getElementById('edit-tf-modal').remove()" style="padding:10px 20px;background:white;border:1.5px solid var(--border);border-radius:8px;font-family:Sarabun,sans-serif;cursor:pointer">ยกเลิก</button>
+    </div>
+  </div>`;
+  document.body.appendChild(modal);
+}
+
+function saveEditTF(id) {
+  const idx = questionBank.findIndex(x=>String(x.id)===String(id));
+  if(idx<0) return;
+  questionBank[idx] = { ...questionBank[idx],
+    subject: document.getElementById('etf-subject').value,
+    grade: document.getElementById('etf-grade').value,
+    question: document.getElementById('etf-question').value.trim(),
+    answer: document.querySelector('input[name="etf-ans"]:checked')?.value === 'true'
+  };
+  saveBank(); renderBank(); updateStats();
+  document.getElementById('edit-tf-modal')?.remove();
+  toast('✅ บันทึกแล้ว','success');
+}
+
+function showEditFillinModal(q) {
+  const modal = document.createElement('div');
+  modal.id = 'edit-fi-modal';
+  modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:9999;display:flex;align-items:center;justify-content:center;padding:16px';
+  modal.innerHTML = `<div style="background:white;border-radius:16px;padding:24px;max-width:500px;width:100%;display:flex;flex-direction:column;gap:14px">
+    <div style="display:flex;justify-content:space-between;align-items:center">
+      <div style="font-family:Mitr,sans-serif;font-weight:700;font-size:1.05rem;color:var(--navy)">✏️ แก้ไขข้อเติมคำ</div>
+      <button onclick="document.getElementById('edit-fi-modal').remove()" style="background:none;border:none;font-size:1.4rem;cursor:pointer;color:#888">✕</button>
+    </div>
+    <div style="display:flex;gap:10px;flex-wrap:wrap">
+      <div class="form-group" style="flex:2"><label>วิชา</label>
+        <select id="efi-subject" style="padding:8px 10px;border:1.5px solid var(--border);border-radius:8px;font-family:Sarabun,sans-serif">
+          ${['คณิตศาสตร์','ภาษาไทย','สังคมศึกษา','วิทยาศาสตร์','ภาษาอังกฤษ','ประวัติศาสตร์','สุขศึกษา','ศิลปะ','การงานอาชีพ','ด้านทุจริต'].map(s=>`<option ${s===q.subject?'selected':''}>${s}</option>`).join('')}</select></div>
+      <div class="form-group" style="min-width:90px"><label>ชั้น</label>
+        <select id="efi-grade" style="padding:8px 10px;border:1.5px solid var(--border);border-radius:8px;font-family:Sarabun,sans-serif">
+          ${['ป.1','ป.2','ป.3','ป.4','ป.5','ป.6'].map(g=>`<option ${g===q.grade?'selected':''}>${g}</option>`).join('')}</select></div>
+    </div>
+    <div class="form-group"><label>คำถาม (ใส่ ___ แทนช่องว่าง)</label>
+      <textarea id="efi-question" style="padding:9px 12px;border:1.5px solid var(--border);border-radius:8px;font-family:Sarabun,sans-serif;min-height:70px;resize:vertical">${q.question}</textarea></div>
+    <div class="form-group"><label>คำตอบที่ถูกต้อง</label>
+      <input type="text" id="efi-answer" value="${q.answer||''}" style="padding:9px 12px;border:1.5px solid var(--border);border-radius:8px;font-family:Sarabun,sans-serif"></div>
+    <div style="display:flex;gap:10px">
+      <button onclick="saveEditFillin('${q.id}')" style="flex:1;padding:10px;background:var(--blue);color:white;border:none;border-radius:8px;font-family:Sarabun,sans-serif;font-weight:600;cursor:pointer">💾 บันทึก</button>
+      <button onclick="document.getElementById('edit-fi-modal').remove()" style="padding:10px 20px;background:white;border:1.5px solid var(--border);border-radius:8px;font-family:Sarabun,sans-serif;cursor:pointer">ยกเลิก</button>
+    </div>
+  </div>`;
+  document.body.appendChild(modal);
+}
+
+function saveEditFillin(id) {
+  const idx = questionBank.findIndex(x=>String(x.id)===String(id));
+  if(idx<0) return;
+  questionBank[idx] = { ...questionBank[idx],
+    subject: document.getElementById('efi-subject').value,
+    grade: document.getElementById('efi-grade').value,
+    question: document.getElementById('efi-question').value.trim(),
+    answer: document.getElementById('efi-answer').value.trim()
+  };
+  saveBank(); renderBank(); updateStats();
+  document.getElementById('edit-fi-modal')?.remove();
   toast('✅ บันทึกแล้ว','success');
 }
 
@@ -2104,6 +2375,7 @@ function clearCart() {
   updateCartProgress();
   updateCartBadge();
   renderBank();
+  try { localStorage.setItem(LS_KEYS.cart, '[]'); } catch(e) {}
 }
 
 function buildExamFromCart() {
@@ -2153,9 +2425,9 @@ function createExamSet() {
 }
 
 function renderPrintArea(examSet) {
-  const matchingCount = examSet.questions.filter(q=>q.type==='matching').reduce((s,q)=>s+(q.pairs?.length||0),0);
-  const mcqCount = examSet.questions.filter(q=>q.type!=='matching').length;
-  const totalScore = mcqCount + matchingCount;
+  const matchingScore = examSet.questions.filter(q=>q.type==='matching').reduce((s,q)=>s+(q.pairs?.length||0),0);
+  const otherCount = examSet.questions.filter(q=>q.type!=='matching').length;
+  const totalScore = otherCount + matchingScore;
   const html = `<div style="padding:20px;font-family:Sarabun,sans-serif">
     <div style="text-align:center;margin-bottom:20px">
       <h2 style="font-size:1.3rem;font-weight:700">${examSet.title}</h2>
@@ -2166,28 +2438,41 @@ function renderPrintArea(examSet) {
     </div>
     ${examSet.questions.map((q,i)=>{
       if (q.type === 'matching') {
-        // shuffle right for print
         const shuffled = [...q.pairs.map((_,pi)=>pi)].sort(()=>Math.random()-0.5);
         return `<div style="margin-bottom:22px;page-break-inside:avoid">
           <p style="font-weight:600;margin-bottom:8px">${i+1}. ${q.question} <span style="font-size:0.75rem;color:#92400e;background:#fef3c7;padding:1px 8px;border-radius:10px">${q.pairs.length} คะแนน</span></p>
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;padding-left:20px">
-            <div>
-              ${q.pairs.map((p,pi)=>`<div style="display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid #f1f5f9">
-                <span style="min-width:22px;font-weight:700;color:#1a3fa0">${pi+1}.</span>
-                <span>${p.left}</span>
-                <span style="margin-left:auto;min-width:50px;border-bottom:1px solid #666;display:inline-block">&nbsp;&nbsp;&nbsp;&nbsp;</span>
-              </div>`).join('')}
+            <div>${q.pairs.map((p,pi)=>`<div style="display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid #f1f5f9">
+              <span style="min-width:22px;font-weight:700;color:#1a3fa0">${pi+1}.</span><span>${p.left}</span>
+              <span style="margin-left:auto;min-width:50px;border-bottom:1px solid #666;display:inline-block">&nbsp;&nbsp;&nbsp;&nbsp;</span>
+            </div>`).join('')}</div>
+            <div>${shuffled.map((origIdx,si)=>`<div style="display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid #f1f5f9">
+              <span style="min-width:22px;font-weight:700;color:#15803d">${String.fromCharCode(65+si)}.</span>
+              <span>${q.pairs[origIdx].right}</span>
+            </div>`).join('')}</div>
+          </div>
+        </div>`;
+      }
+      if (q.type === 'truefalse') {
+        return `<div style="margin-bottom:18px;page-break-inside:avoid">
+          <p style="font-weight:600;margin-bottom:8px">${i+1}. ${q.question}</p>
+          <div style="display:flex;gap:16px;padding-left:20px">
+            <div style="display:flex;align-items:center;gap:8px;padding:6px 16px;border:1.5px solid #e2e8f0;border-radius:8px">
+              <span style="width:14px;height:14px;border-radius:50%;border:1.5px solid #64748b;display:inline-block"></span> ถูก
             </div>
-            <div>
-              ${shuffled.map((origIdx,si)=>`<div style="display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid #f1f5f9">
-                <span style="min-width:22px;font-weight:700;color:#15803d">${String.fromCharCode(65+si)}.</span>
-                <span>${q.pairs[origIdx].right}</span>
-              </div>`).join('')}
+            <div style="display:flex;align-items:center;gap:8px;padding:6px 16px;border:1.5px solid #e2e8f0;border-radius:8px">
+              <span style="width:14px;height:14px;border-radius:50%;border:1.5px solid #64748b;display:inline-block"></span> ผิด
             </div>
           </div>
         </div>`;
       }
-      return `<div style="margin-bottom:18px">
+      if (q.type === 'fillin') {
+        const qDisplay = q.question.replace(/___/g, '<span style="border-bottom:1.5px solid #334155;display:inline-block;min-width:80px;margin:0 4px">&nbsp;</span>');
+        return `<div style="margin-bottom:18px;page-break-inside:avoid">
+          <p style="font-weight:600;margin-bottom:4px;line-height:2">${i+1}. ${qDisplay}</p>
+        </div>`;
+      }
+      return `<div style="margin-bottom:18px;page-break-inside:avoid">
         <p style="font-weight:600;margin-bottom:8px">${i+1}. ${q.question}</p>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px;padding-left:20px">
           ${q.options.map(opt=>`<div style="padding:3px 0">${opt}</div>`).join('')}
@@ -2233,13 +2518,17 @@ function renderExamSets() {
   const el = document.getElementById('exam-set-list');
   if (!examSets.length) { el.innerHTML=`<div class="empty-state"><div class="empty-icon">📝</div><h3>ยังไม่มีชุดข้อสอบ</h3></div>`; return; }
   el.innerHTML = examSets.map(s=>`
-    <div style="display:flex;align-items:center;justify-content:space-between;padding:14px;border:1.5px solid var(--border);border-radius:10px;margin-bottom:8px;background:#fafbff">
-      <div>
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:14px;border:1.5px solid var(--border);border-radius:10px;margin-bottom:8px;background:#fafbff;gap:8px;flex-wrap:wrap">
+      <div style="flex:1;min-width:160px">
         <div style="font-weight:600">${s.title}</div>
         <div style="font-size:0.8rem;color:var(--muted);margin-top:3px">${s.subject} | ${s.questions.length} ข้อ | ${s.createdAt}</div>
       </div>
-      <div style="display:flex;gap:8px">
+      <div style="display:flex;gap:6px;flex-wrap:wrap">
         <button class="btn btn-primary btn-sm" onclick="startExam('${s.id}')">📝 เริ่มทำ</button>
+        <button class="btn btn-outline btn-sm" onclick="showA4Preview('${s.id}')" title="Preview A4">👁️ Preview</button>
+        <button class="btn btn-outline btn-sm" onclick="printAnswerKey('${s.id}')" title="พิมพ์ใบเฉลย" style="border-color:#10b981;color:#059669">🗝️ เฉลย</button>
+        <button class="btn btn-outline btn-sm" onclick="showReorderModal('${s.id}')" title="จัดลำดับข้อ" style="border-color:#6366f1;color:#4338ca">↕️ จัดลำดับ</button>
+        <button class="btn btn-outline btn-sm" onclick="duplicateExamSet('${s.id}')" title="ทำสำเนา" style="border-color:#f59e0b;color:#92400e">📋 Copy</button>
         <button class="btn btn-outline btn-sm" onclick="deleteExamSet('${s.id}')">🗑️</button>
       </div>
     </div>`).join('');
@@ -2250,6 +2539,358 @@ function deleteExamSet(id) {
   saveToLS();
   if(window._fb?.connected) window.pushToFirebase(true);
   renderExamSets(); renderOMRSelects(); toast('ลบชุดข้อสอบแล้ว');
+}
+
+// ── Reorder Questions in Exam Set ─────────────────────────
+function showReorderModal(id) {
+  const s = examSets.find(x=>String(x.id)===String(id));
+  if (!s) return;
+
+  // working copy — we mutate this array live
+  let qs = [...s.questions];
+
+  const modal = document.createElement('div');
+  modal.id = 'reorder-modal';
+  modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.65);z-index:9999;display:flex;align-items:flex-start;justify-content:center;padding:20px;overflow-y:auto';
+
+  modal.innerHTML = `
+    <div style="background:white;border-radius:16px;max-width:620px;width:100%;margin-top:16px;overflow:hidden;box-shadow:0 12px 48px rgba(0,0,0,0.22)">
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:16px 20px;background:linear-gradient(135deg,#4338ca,#6366f1);border-radius:16px 16px 0 0">
+        <div>
+          <div style="font-family:Mitr,sans-serif;font-weight:700;font-size:1rem;color:white">↕️ จัดลำดับข้อสอบ</div>
+          <div style="font-size:0.75rem;color:rgba(255,255,255,0.75);margin-top:2px">${s.title} — ${qs.length} ข้อ</div>
+        </div>
+        <button onclick="document.getElementById('reorder-modal').remove()" style="background:rgba(255,255,255,0.2);border:none;width:30px;height:30px;border-radius:50%;cursor:pointer;color:white;font-size:1rem">✕</button>
+      </div>
+
+      <div style="padding:14px 18px 10px;background:#f8f7ff;border-bottom:1px solid #e2e8f0;display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+        <span style="font-size:0.78rem;color:#6366f1;font-weight:600">เรียงอัตโนมัติ:</span>
+        <button onclick="sortQuestions('subject')" style="padding:4px 12px;border-radius:6px;border:1.5px solid #6366f1;background:white;color:#4338ca;font-family:Sarabun,sans-serif;font-size:0.78rem;cursor:pointer;font-weight:600">ตามวิชา</button>
+        <button onclick="sortQuestions('grade')" style="padding:4px 12px;border-radius:6px;border:1.5px solid #6366f1;background:white;color:#4338ca;font-family:Sarabun,sans-serif;font-size:0.78rem;cursor:pointer;font-weight:600">ตามชั้น</button>
+        <button onclick="sortQuestions('type')" style="padding:4px 12px;border-radius:6px;border:1.5px solid #6366f1;background:white;color:#4338ca;font-family:Sarabun,sans-serif;font-size:0.78rem;cursor:pointer;font-weight:600">ประเภท (ปรนัย→จับคู่)</button>
+        <button onclick="sortQuestions('shuffle')" style="padding:4px 12px;border-radius:6px;border:1.5px solid #e2e8f0;background:white;color:#64748b;font-family:Sarabun,sans-serif;font-size:0.78rem;cursor:pointer">สุ่มลำดับ</button>
+      </div>
+
+      <div style="padding:14px 18px;font-size:0.75rem;color:#94a3b8;display:flex;align-items:center;gap:6px">
+        <span style="font-size:14px">☰</span> ลากแถบซ้ายเพื่อเรียงใหม่ &nbsp;|&nbsp; กด ↑↓ เพื่อเลื่อนทีละข้อ
+      </div>
+
+      <div id="reorder-list" style="padding:0 14px 14px;display:flex;flex-direction:column;gap:6px;max-height:480px;overflow-y:auto"></div>
+
+      <div style="padding:14px 18px;border-top:1px solid #e2e8f0;display:flex;gap:10px;background:#fafbff;border-radius:0 0 16px 16px">
+        <button onclick="saveReorder('${s.id}')" style="flex:1;padding:10px;background:#4338ca;color:white;border:none;border-radius:9px;font-family:Sarabun,sans-serif;font-size:0.92rem;font-weight:700;cursor:pointer">✅ บันทึกลำดับใหม่</button>
+        <button onclick="document.getElementById('reorder-modal').remove()" style="padding:10px 18px;background:white;border:1.5px solid #e2e8f0;border-radius:9px;font-family:Sarabun,sans-serif;font-size:0.88rem;color:#64748b;cursor:pointer">ยกเลิก</button>
+      </div>
+    </div>`;
+
+  document.body.appendChild(modal);
+  modal.addEventListener('click', e=>{ if(e.target===modal) modal.remove(); });
+
+  // ── render list ────────────────────────────────────────────
+  window._reorderQs = qs;
+  window._reorderSetId = id;
+  renderReorderList();
+
+  // ── auto-sort helper ───────────────────────────────────────
+  window.sortQuestions = (by) => {
+    const list = window._reorderQs;
+    if (by==='subject') list.sort((a,b)=>(a.subject||'').localeCompare(b.subject||'','th'));
+    else if (by==='grade') list.sort((a,b)=>(a.grade||'').localeCompare(b.grade||'','th'));
+    else if (by==='type') list.sort((a,b)=>(a.type==='matching'?1:0)-(b.type==='matching'?1:0));
+    else if (by==='shuffle') { for(let i=list.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1));[list[i],list[j]]=[list[j],list[i]]; } }
+    renderReorderList();
+  };
+}
+
+function renderReorderList() {
+  const list = window._reorderQs;
+  const el = document.getElementById('reorder-list');
+  if (!el) return;
+
+  el.innerHTML = list.map((q,i) => {
+    const label = q.type==='matching'
+      ? `<span style="font-size:0.68rem;padding:1px 7px;background:#fef3c7;color:#92400e;border-radius:10px;margin-left:6px;font-weight:700">🔗 จับคู่</span>`
+      : '';
+    const meta = `<span style="font-size:0.72rem;color:#94a3b8;margin-left:6px">${q.subject||''} ${q.grade||''}</span>`;
+    return `<div
+        id="rq-${i}"
+        draggable="true"
+        data-idx="${i}"
+        style="display:flex;align-items:center;gap:10px;padding:10px 12px;background:white;border:1.5px solid #e2e8f0;border-radius:9px;cursor:grab;user-select:none;transition:box-shadow 0.15s,border-color 0.15s"
+        ondragstart="roDragStart(event,${i})"
+        ondragover="roDragOver(event)"
+        ondrop="roDrop(event,${i})"
+        ondragend="roDragEnd(event)"
+        ondragleave="roDragLeave(event)">
+      <span style="cursor:grab;color:#c4c4c4;font-size:1.1rem;flex-shrink:0;padding:0 2px">☰</span>
+      <span style="min-width:22px;height:22px;border-radius:50%;background:#ede9fe;color:#4338ca;font-size:0.72rem;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0">${i+1}</span>
+      <span style="flex:1;font-size:0.84rem;color:#1e293b;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${q.question}${label}${meta}</span>
+      <div style="display:flex;gap:4px;flex-shrink:0">
+        <button onclick="roMove(${i},-1)" ${i===0?'disabled':''} style="width:26px;height:26px;border-radius:6px;border:1px solid #e2e8f0;background:white;cursor:pointer;font-size:0.9rem;color:${i===0?'#d1d5db':'#4338ca'};display:flex;align-items:center;justify-content:center">↑</button>
+        <button onclick="roMove(${i},1)" ${i===list.length-1?'disabled':''} style="width:26px;height:26px;border-radius:6px;border:1px solid #e2e8f0;background:white;cursor:pointer;font-size:0.9rem;color:${i===list.length-1?'#d1d5db':'#4338ca'};display:flex;align-items:center;justify-content:center">↓</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ── Arrow-button move ──────────────────────────────────────
+window.roMove = (idx, dir) => {
+  const list = window._reorderQs;
+  const to = idx + dir;
+  if (to < 0 || to >= list.length) return;
+  [list[idx], list[to]] = [list[to], list[idx]];
+  renderReorderList();
+  // keep focus on moved item
+  setTimeout(()=>{ const btn = document.querySelector(`#rq-${to} button:nth-child(${dir===-1?1:2})`); if(btn&&!btn.disabled) btn.focus(); },30);
+};
+
+// ── Drag-and-drop ──────────────────────────────────────────
+let _roDragIdx = null;
+
+window.roDragStart = (e, idx) => {
+  _roDragIdx = idx;
+  e.dataTransfer.effectAllowed = 'move';
+  setTimeout(()=>{ const el=document.getElementById(`rq-${idx}`); if(el){ el.style.opacity='0.4'; el.style.border='1.5px dashed #6366f1'; } }, 0);
+};
+
+window.roDragOver = (e) => {
+  e.preventDefault();
+  e.dataTransfer.dropEffect = 'move';
+  const row = e.currentTarget;
+  row.style.borderColor = '#6366f1';
+  row.style.background = '#f5f3ff';
+};
+
+window.roDragLeave = (e) => {
+  const row = e.currentTarget;
+  row.style.borderColor = '#e2e8f0';
+  row.style.background = 'white';
+};
+
+window.roDrop = (e, toIdx) => {
+  e.preventDefault();
+  const row = e.currentTarget;
+  row.style.borderColor = '#e2e8f0';
+  row.style.background = 'white';
+  if (_roDragIdx === null || _roDragIdx === toIdx) return;
+  const list = window._reorderQs;
+  const [item] = list.splice(_roDragIdx, 1);
+  list.splice(toIdx, 0, item);
+  _roDragIdx = null;
+  renderReorderList();
+};
+
+window.roDragEnd = (e) => {
+  _roDragIdx = null;
+  // reset all rows in case dragLeave didn't fire
+  document.querySelectorAll('#reorder-list > div').forEach(r=>{
+    r.style.opacity='1'; r.style.borderColor='#e2e8f0'; r.style.background='white'; r.style.border='1.5px solid #e2e8f0';
+  });
+};
+
+// ── Save ───────────────────────────────────────────────────
+window.saveReorder = (id) => {
+  const s = examSets.find(x=>String(x.id)===String(id));
+  if (!s) return;
+  s.questions = [...window._reorderQs];
+  saveToLS();
+  if(window._fb?.connected) window.pushToFirebase(true);
+  renderExamSets(); renderOMRSelects();
+  document.getElementById('reorder-modal')?.remove();
+  toast(`✅ บันทึกลำดับ ${s.questions.length} ข้อแล้ว`, 'success');
+};
+
+// ── Duplicate ──────────────────────────────────────────────
+function duplicateExamSet(id) {
+  const orig = examSets.find(s=>String(s.id)===String(id));
+  if (!orig) return;
+  const copy = JSON.parse(JSON.stringify(orig));
+  copy.id = Date.now();
+  copy.title = orig.title + ' (สำเนา)';
+  copy.createdAt = new Date().toLocaleDateString('th-TH');
+  examSets.push(copy);
+  saveToLS();
+  if(window._fb?.connected) window.pushToFirebase(true);
+  renderExamSets(); renderOMRSelects();
+  toast(`📋 คัดลอก "${orig.title}" แล้ว`, 'success');
+}
+
+// ── A4 Preview Modal ───────────────────────────────────────
+function showA4Preview(id) {
+  const s = examSets.find(x=>String(x.id)===String(id));
+  if (!s) return;
+  const matchingCount = s.questions.filter(q=>q.type==='matching').reduce((a,q)=>a+(q.pairs?.length||0),0);
+  const mcqCount = s.questions.filter(q=>q.type!=='matching').length;
+  const totalScore = mcqCount + matchingCount;
+  const qHtml = s.questions.map((q,i)=>{
+    if (q.type === 'matching') {
+      const sh = [...q.pairs.map((_,pi)=>pi)].sort(()=>Math.random()-0.5);
+      return `<div style="margin-bottom:20px;page-break-inside:avoid">
+        <p style="font-weight:700;margin-bottom:6px">${i+1}. ${q.question} <span style="font-size:0.72rem;background:#fef3c7;color:#92400e;padding:1px 7px;border-radius:8px">${q.pairs.length} คะแนน</span></p>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;padding-left:16px">
+          <div>${q.pairs.map((p,pi)=>`<div style="padding:4px 0;border-bottom:1px solid #f1f5f9;display:flex;gap:6px"><span style="font-weight:700;color:#1a3fa0;min-width:20px">${pi+1}.</span><span>${p.left}</span><span style="margin-left:auto;border-bottom:1px solid #666;min-width:44px;display:inline-block">&nbsp;</span></div>`).join('')}</div>
+          <div>${sh.map((oi,si)=>`<div style="padding:4px 0;border-bottom:1px solid #f1f5f9;display:flex;gap:6px"><span style="font-weight:700;color:#15803d;min-width:20px">${String.fromCharCode(65+si)}.</span><span>${q.pairs[oi].right}</span></div>`).join('')}</div>
+        </div></div>`;
+    }
+    return `<div style="margin-bottom:16px;page-break-inside:avoid">
+      <p style="font-weight:700;margin-bottom:6px">${i+1}. ${q.question}</p>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:3px;padding-left:16px">
+        ${q.options.map((opt,oi)=>`<div style="padding:3px 0">ก ข ค ง`.replace(/ก ข ค ง/,['ก.','ข.','ค.','ง.'][oi])+` ${opt}</div>`).join('')}
+      </div></div>`;
+  }).join('');
+  const modal = document.createElement('div');
+  modal.id = 'a4-preview-modal';
+  modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:9999;display:flex;align-items:flex-start;justify-content:center;padding:20px;overflow-y:auto';
+  modal.innerHTML = `
+    <div style="background:white;border-radius:16px;max-width:800px;width:100%;box-shadow:0 8px 40px rgba(0,0,0,0.3)">
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:1px solid #e2e8f0;position:sticky;top:0;background:white;border-radius:16px 16px 0 0;z-index:1">
+        <div style="font-family:Mitr,sans-serif;font-weight:700;font-size:1rem;color:#1e293b">👁️ Preview A4 — ${s.title}</div>
+        <div style="display:flex;gap:8px">
+          <button onclick="window.print()" style="padding:7px 16px;background:#1a3fa0;color:white;border:none;border-radius:8px;font-family:Sarabun,sans-serif;font-size:0.85rem;font-weight:700;cursor:pointer">🖨️ พิมพ์</button>
+          <button onclick="document.getElementById('a4-preview-modal').remove()" style="background:none;border:1.5px solid #e2e8f0;border-radius:8px;padding:7px 14px;font-family:Sarabun,sans-serif;cursor:pointer;color:#64748b">✕ ปิด</button>
+        </div>
+      </div>
+      <div id="a4-page-content" style="padding:32px 40px;font-family:Sarabun,sans-serif;font-size:0.9rem;line-height:1.7">
+        <div style="text-align:center;margin-bottom:24px">
+          <div style="font-size:1.2rem;font-weight:700">${s.title}</div>
+          <div style="color:#64748b;margin-top:4px;font-size:0.85rem">วิชา: ${s.subject} | จำนวน ${s.questions.length} ข้อ | คะแนนรวม ${totalScore} คะแนน</div>
+          <div style="display:flex;gap:40px;justify-content:center;margin-top:16px;font-size:0.88rem">
+            <span>ชื่อ–นามสกุล: ___________________________________</span>
+            <span>ชั้น: ________</span>
+            <span>คะแนน: ______/${totalScore}</span>
+          </div>
+          <hr style="margin-top:16px;border:none;border-top:1.5px solid #334155">
+        </div>
+        ${qHtml}
+      </div>
+    </div>`;
+  document.body.appendChild(modal);
+  modal.addEventListener('click', e=>{ if(e.target===modal) modal.remove(); });
+}
+
+// ── Answer Key Print ──────────────────────────────────────
+function printAnswerKey(id) {
+  const s = examSets.find(x=>String(x.id)===String(id));
+  if (!s) return;
+  const ansHtml = s.questions.map((q,i)=>{
+    if (q.type === 'matching') {
+      return `<div style="margin-bottom:10px"><strong>${i+1}. จับคู่:</strong> ${q.pairs.map((p,pi)=>`${pi+1}→${p.right}`).join(', ')}</div>`;
+    }
+    const letter = ['ก','ข','ค','ง'][q.answer] || q.answer;
+    return `<div style="display:inline-flex;gap:4px;align-items:center;margin:3px 6px 3px 0;padding:4px 10px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:6px;font-size:0.85rem">
+      <span style="color:#64748b">${i+1}.</span><span style="font-weight:700;color:#1a3fa0">${letter}</span></div>`;
+  }).join('');
+  const win = window.open('','_blank','width=700,height=500');
+  win.document.write(`<!DOCTYPE html><html><head><title>เฉลย — ${s.title}</title>
+    <style>body{font-family:Sarabun,sans-serif;padding:32px;font-size:0.9rem}h2{color:#1e293b;margin-bottom:4px}p{color:#64748b;margin-bottom:20px}</style></head><body>
+    <h2>🗝️ เฉลย — ${s.title}</h2>
+    <p>วิชา: ${s.subject} | ${s.questions.length} ข้อ | ${s.createdAt}</p>
+    <div style="display:flex;flex-wrap:wrap">${ansHtml}</div>
+    <script>window.onload=()=>window.print()<\/script></body></html>`);
+  win.document.close();
+}
+
+// ── Bulk Print ─────────────────────────────────────────────
+function bulkPrint() {
+  if (!bulkSelected.size) { toast('ยังไม่ได้เลือกข้อ','error'); return; }
+  const qs = questionBank.filter(q=>bulkSelected.has(String(q.id)));
+  const tmpSet = { id:0, title:'พิมพ์ข้อที่เลือก', subject:'', questions:qs, createdAt:new Date().toLocaleDateString('th-TH') };
+  renderPrintArea(tmpSet);
+  setTimeout(()=>window.print(), 300);
+  toast(`🖨️ เตรียมพิมพ์ ${qs.length} ข้อ`);
+}
+
+// ── Paste-to-Exam ──────────────────────────────────────────
+async function generateFromPaste() {
+  const content = document.getElementById('paste-content-input').value.trim();
+  if (!content || content.length < 50) { toast('กรุณาวางเนื้อหาอย่างน้อย 50 ตัวอักษร','error'); return; }
+  const subject = document.getElementById('paste-subject').value;
+  const grade   = document.getElementById('paste-grade').value;
+  const count   = document.getElementById('paste-count').value;
+  const qtype   = document.getElementById('paste-qtype')?.value || 'mcq';
+  const btn     = document.getElementById('paste-gen-btn');
+  const spinner = document.getElementById('paste-gen-spinner');
+  btn.disabled = true; spinner.style.display = 'inline';
+
+  // Build prompt based on type
+  const contentBlock = `\nเนื้อหา:\n"""\n${content.substring(0,3000)}\n"""\n`;
+  let prompt;
+  if (qtype === 'truefalse') {
+    prompt = `คุณคือผู้ออกข้อสอบ ระดับ${grade} วิชา${subject}
+${contentBlock}
+สร้างข้อสอบถูก/ผิดจากเนื้อหาข้างต้น จำนวน ${count} ข้อ (ครึ่งหนึ่งถูก ครึ่งหนึ่งผิด)
+ตอบ JSON array เท่านั้น ห้าม markdown:
+[{"type":"truefalse","question":"ข้อความ...","answer":true,"subject":"${subject}","grade":"${grade}"}]`;
+  } else if (qtype === 'fillin') {
+    prompt = `คุณคือผู้ออกข้อสอบ ระดับ${grade} วิชา${subject}
+${contentBlock}
+สร้างข้อสอบเติมคำในช่องว่างจากเนื้อหาข้างต้น จำนวน ${count} ข้อ
+ใช้ ___ แทนช่องว่าง คำตอบควรสั้น 1-5 คำ
+ตอบ JSON array เท่านั้น ห้าม markdown:
+[{"type":"fillin","question":"ประโยคที่มี ___","answer":"คำตอบ","subject":"${subject}","grade":"${grade}"}]`;
+  } else if (qtype === 'mixed_all') {
+    prompt = `คุณคือผู้ออกข้อสอบ ระดับ${grade} วิชา${subject}
+${contentBlock}
+สร้างข้อสอบผสมจากเนื้อหาข้างต้น จำนวน ${count} ข้อ
+ผสมทั้ง 3 ประเภท: ปรนัย, ถูก/ผิด, เติมคำ (อย่างละประมาณ 1/3)
+ตอบ JSON array เท่านั้น ห้าม markdown รูปแบบ:
+- ปรนัย: {"type":"mcq","question":"...","options":["...","...","...","..."],"answer":0,"subject":"${subject}","grade":"${grade}"}
+- ถูก/ผิด: {"type":"truefalse","question":"...","answer":true,"subject":"${subject}","grade":"${grade}"}
+- เติมคำ: {"type":"fillin","question":"ประโยคที่มี ___","answer":"คำตอบ","subject":"${subject}","grade":"${grade}"}`;
+  } else {
+    prompt = `คุณคือผู้ออกข้อสอบ ระดับ${grade} วิชา${subject}
+${contentBlock}
+สร้างข้อสอบปรนัย 4 ตัวเลือกจากเนื้อหาข้างต้น จำนวน ${count} ข้อ
+ตอบ JSON array เท่านั้น ห้าม markdown:
+[{"type":"mcq","question":"...","options":["...","...","...","..."],"answer":0,"subject":"${subject}","grade":"${grade}"}]
+- "answer" = index คำตอบที่ถูก (0-3)`;
+  }
+
+  try {
+    const provider = document.getElementById('provider-btn-claude')?.classList.contains('provider-chip-active') ? 'claude' : 'gemini';
+    let rawText = '';
+    if (provider === 'claude') {
+      const model = document.getElementById('claude-model')?.value || 'claude-sonnet-4-20250514';
+      const res = await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model,max_tokens:4000,messages:[{role:'user',content:prompt}]})});
+      const data = await res.json();
+      rawText = data.content?.[0]?.text || '';
+    } else {
+      const key = 'AIzaSyCsxMZYnRMne29x52Eyg4VCYGZCBRJ8POw';
+      const model = document.getElementById('gemini-model')?.value || 'gemini-2.0-flash';
+      const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${key}`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({contents:[{parts:[{text:prompt}]}]})});
+      const data = await res.json();
+      rawText = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+    }
+
+    const match = rawText.match(/\[[\s\S]*\]/);
+    if (!match) throw new Error('ไม่สามารถสร้างข้อสอบได้');
+    const raw = JSON.parse(match[0]);
+
+    // Parse all types
+    const questions = raw.map(q=>{
+      const base = { id: Date.now()+Math.random(), subject: q.subject||subject, grade: q.grade||grade };
+      if (q.type==='truefalse') return { ...base, type:'truefalse', question:q.question, answer: q.answer===true||String(q.answer).toLowerCase()==='true' };
+      if (q.type==='fillin') return { ...base, type:'fillin', question:q.question, answer:String(q.answer||'').trim() };
+      // mcq default
+      if ((q.q||q.question) && Array.isArray(q.options) && q.options.length>=4) {
+        return { ...base, question:q.q||q.question, options:q.options.map((o,i)=>(['ก.','ข.','ค.','ง.'][i]||'')+' '+String(o).replace(/^[กขคง][.)]\s*/u,'').trim()), answer:Math.min(Math.max(parseInt(q.answer)||0,0),3) };
+      }
+      return null;
+    }).filter(Boolean);
+
+    if (!questions.length) throw new Error('ไม่พบข้อสอบที่ถูกรูปแบบ');
+    questionBank.push(...questions);
+    saveBank();
+    renderBank(); updateStats();
+    toast(`✅ สร้าง ${questions.length} ข้อจากเนื้อหาแล้ว — ไปที่ 📚 คลังข้อสอบ`, 'success');
+    toggleCard('paste-to-exam-card');
+    document.getElementById('paste-content-input').value = '';
+    document.getElementById('paste-char-count').textContent = '0 ตัวอักษร';
+  } catch(e) {
+    toast('❌ '+e.message, 'error');
+  } finally {
+    btn.disabled = false; spinner.style.display = 'none';
+  }
 }
 
 function startExam(id) {
@@ -2282,9 +2923,7 @@ function startExam(id) {
           <span class="q-number">${i+1}</span>
           <span class="q-text">${q.question} <span style="font-size:0.72rem;padding:2px 8px;background:#fef3c7;color:#92400e;border-radius:10px;margin-left:6px;font-weight:700">🔗 จับคู่</span></span>
         </div>
-        <!-- layout: left rows + right answer column side by side -->
         <div style="display:grid;grid-template-columns:1fr auto;gap:12px;padding-left:36px;margin-top:8px;align-items:start">
-          <!-- LEFT: clickable rows, each has inline letter picker -->
           <div style="display:flex;flex-direction:column;gap:6px" id="match-left-col-${i}">
             ${q.pairs.map((p,pi)=>`
             <div id="mleft-wrap-${i}-${pi}">
@@ -2293,7 +2932,6 @@ function startExam(id) {
                 <span style="flex:1">${p.left}</span>
                 <span id="mleft-pill-${i}-${pi}" style="min-width:28px;height:28px;border-radius:50%;background:#e2e8f0;color:#64748b;font-weight:700;font-size:0.8rem;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all 0.2s">?</span>
               </div>
-              <!-- inline picker: hidden by default -->
               <div id="mpicker-${i}-${pi}" style="display:none;padding:8px 10px;background:#f0f7ff;border:1.5px solid var(--sky);border-radius:10px;margin-top:4px;flex-wrap:wrap;gap:6px">
                 <div style="font-size:0.75rem;color:var(--muted);margin-bottom:6px;width:100%">เลือกคำตอบสำหรับ <strong>${p.left}</strong>:</div>
                 <div style="display:flex;flex-wrap:wrap;gap:6px">
@@ -2308,7 +2946,6 @@ function startExam(id) {
               </div>
             </div>`).join('')}
           </div>
-          <!-- RIGHT: answer column, fixed -->
           <div style="display:flex;flex-direction:column;gap:6px;min-width:180px">
             <div style="font-size:0.75rem;font-weight:700;color:var(--muted);text-align:center;padding:4px">คำตอบ</div>
             ${shuffled.map((origIdx,si)=>`
@@ -2319,6 +2956,39 @@ function startExam(id) {
           </div>
         </div>
         <div id="match-hint-${i}" style="padding-left:36px;margin-top:8px;font-size:0.78rem;color:var(--muted)">👆 คลิกที่แถวซ้ายเพื่อเลือกคำตอบ</div>
+      </div>`;
+    }
+    if (q.type === 'truefalse') {
+      return `<div class="question-item" style="margin-bottom:16px" id="qitem-exam-${i}">
+        <div class="q-header">
+          <span class="q-number">${i+1}</span>
+          <span class="q-text">${q.question} <span style="font-size:0.7rem;padding:2px 8px;background:#dcfce7;color:#15803d;border-radius:10px;margin-left:6px;font-weight:700">✓✗ ถูก/ผิด</span></span>
+        </div>
+        <div style="display:flex;gap:12px;padding-left:36px;margin-top:12px">
+          <button id="tf-true-${i}" onclick="selectTF(${i},true)"
+            style="flex:1;padding:14px;border-radius:12px;border:2px solid #e2e8f0;background:white;font-family:Sarabun,sans-serif;font-size:1rem;font-weight:600;cursor:pointer;transition:all 0.18s;color:#15803d">
+            ✅ ถูก
+          </button>
+          <button id="tf-false-${i}" onclick="selectTF(${i},false)"
+            style="flex:1;padding:14px;border-radius:12px;border:2px solid #e2e8f0;background:white;font-family:Sarabun,sans-serif;font-size:1rem;font-weight:600;cursor:pointer;transition:all 0.18s;color:#dc2626">
+            ❌ ผิด
+          </button>
+        </div>
+      </div>`;
+    }
+    if (q.type === 'fillin') {
+      const qDisplay = q.question.replace(/___/g, `<span style="border-bottom:2px solid var(--blue);display:inline-block;min-width:80px;margin:0 4px">&nbsp;</span>`);
+      return `<div class="question-item" style="margin-bottom:16px" id="qitem-exam-${i}">
+        <div class="q-header">
+          <span class="q-number">${i+1}</span>
+          <span class="q-text" style="line-height:2">${qDisplay} <span style="font-size:0.7rem;padding:2px 8px;background:#eff6ff;color:#1d4ed8;border-radius:10px;margin-left:6px;font-weight:700">___ เติมคำ</span></span>
+        </div>
+        <div style="padding-left:36px;margin-top:10px">
+          <input type="text" id="fillin-input-${i}" placeholder="พิมพ์คำตอบที่นี่..."
+            oninput="selectFillin(${i},this.value)"
+            style="width:100%;max-width:320px;padding:10px 14px;border:2px solid var(--border);border-radius:10px;font-family:Sarabun,sans-serif;font-size:0.95rem;outline:none;transition:border-color 0.15s"
+            onfocus="this.style.borderColor='var(--blue)'" onblur="this.style.borderColor='var(--border)'">
+        </div>
       </div>`;
     }
     return `<div class="question-item" style="margin-bottom:16px" id="qitem-exam-${i}">
@@ -2336,6 +3006,21 @@ function startExam(id) {
       return `<div class="answer-row" id="ans-row-${i}">
         <span class="ans-num">${i+1}.</span>
         <div style="font-size:0.75rem;color:var(--muted);padding:2px 6px">🔗 จับคู่ <span id="ans-match-prog-${i}">0/${q.pairs.length} คู่</span></div>
+      </div>`;
+    }
+    if (q.type === 'truefalse') {
+      return `<div class="answer-row" id="ans-row-${i}">
+        <span class="ans-num">${i+1}.</span>
+        <div style="display:flex;gap:4px">
+          <div class="ans-opt" id="ans-tf-${i}-true" onclick="selectTF(${i},true)" style="font-size:0.8rem;padding:3px 10px">ถูก</div>
+          <div class="ans-opt" id="ans-tf-${i}-false" onclick="selectTF(${i},false)" style="font-size:0.8rem;padding:3px 10px">ผิด</div>
+        </div>
+      </div>`;
+    }
+    if (q.type === 'fillin') {
+      return `<div class="answer-row" id="ans-row-${i}">
+        <span class="ans-num">${i+1}.</span>
+        <div style="font-size:0.75rem;color:var(--muted);padding:2px 6px">___ <span id="ans-fillin-val-${i}">ยังไม่ตอบ</span></div>
       </div>`;
     }
     return `<div class="answer-row" id="ans-row-${i}">
@@ -2496,6 +3181,32 @@ function clearMatchPair(qIdx, leftIdx) {
   updateProgress();
 }
 
+function selectTF(qIdx, val) {
+  userAnswers[qIdx] = val; // true or false
+  const tBtn = document.getElementById(`tf-true-${qIdx}`);
+  const fBtn = document.getElementById(`tf-false-${qIdx}`);
+  if (tBtn) { tBtn.style.background=val?'#dcfce7':'white'; tBtn.style.borderColor=val?'var(--green)':'#e2e8f0'; tBtn.style.transform=val?'scale(1.02)':'scale(1)'; }
+  if (fBtn) { fBtn.style.background=!val?'#fee2e2':'white'; fBtn.style.borderColor=!val?'var(--red)':'#e2e8f0'; fBtn.style.transform=!val?'scale(1.02)':'scale(1)'; }
+  // sync answer sheet
+  const tEl = document.getElementById(`ans-tf-${qIdx}-true`);
+  const fEl = document.getElementById(`ans-tf-${qIdx}-false`);
+  if (tEl) tEl.className = 'ans-opt' + (val?' selected':'');
+  if (fEl) fEl.className = 'ans-opt' + (!val?' selected':'');
+  updateProgress();
+}
+
+function selectFillin(qIdx, val) {
+  const trimmed = val.trim();
+  if (trimmed) {
+    userAnswers[qIdx] = trimmed;
+  } else {
+    delete userAnswers[qIdx];
+  }
+  const valEl = document.getElementById(`ans-fillin-val-${qIdx}`);
+  if (valEl) valEl.textContent = trimmed || 'ยังไม่ตอบ';
+  updateProgress();
+}
+
 function selectOption(qIdx, optIdx) {
   userAnswers[qIdx] = optIdx;
   for(let o=0;o<4;o++){
@@ -2530,6 +3241,10 @@ function updateProgress() {
   currentExamSet.questions.forEach((q,i) => {
     if (q.type === 'matching') {
       if (Array.isArray(userAnswers[i]) && userAnswers[i].filter(v=>v!==null).length === q.pairs.length) answered++;
+    } else if (q.type === 'truefalse') {
+      if (userAnswers[i] !== undefined) answered++;
+    } else if (q.type === 'fillin') {
+      if (userAnswers[i] !== undefined && userAnswers[i] !== '') answered++;
     } else {
       if (userAnswers[i] !== undefined) answered++;
     }
@@ -2554,7 +3269,9 @@ function updateProgress() {
     if(!row) continue;
     const done = q.type==='matching'
       ? Array.isArray(userAnswers[i]) && userAnswers[i].filter(v=>v!==null).length === q.pairs.length
-      : userAnswers[i]!==undefined;
+      : q.type==='fillin'
+        ? userAnswers[i] !== undefined && userAnswers[i] !== ''
+        : userAnswers[i] !== undefined;
     if(done){ row.style.borderColor='var(--sky)'; row.style.background='#f0f7ff'; }
     else { row.style.borderColor=''; row.style.background=''; }
   }
@@ -2583,6 +3300,17 @@ function clearAnswers() {
       if (prog) { prog.textContent = `0/${q.pairs.length} คู่`; prog.style.color=''; }
       const hint = document.getElementById(`match-hint-${i}`);
       if (hint) hint.textContent = '👆 คลิกที่แถวซ้ายเพื่อเลือกคำตอบ';
+    } else if (q.type === 'truefalse') {
+      const tBtn=document.getElementById(`tf-true-${i}`), fBtn=document.getElementById(`tf-false-${i}`);
+      if(tBtn){ tBtn.style.background='white'; tBtn.style.borderColor='#e2e8f0'; tBtn.style.transform=''; tBtn.style.cursor='pointer'; tBtn.onclick=()=>selectTF(i,true); }
+      if(fBtn){ fBtn.style.background='white'; fBtn.style.borderColor='#e2e8f0'; fBtn.style.transform=''; fBtn.style.cursor='pointer'; fBtn.onclick=()=>selectTF(i,false); }
+      const tEl=document.getElementById(`ans-tf-${i}-true`), fEl=document.getElementById(`ans-tf-${i}-false`);
+      if(tEl) tEl.className='ans-opt'; if(fEl) fEl.className='ans-opt';
+    } else if (q.type === 'fillin') {
+      const inp=document.getElementById(`fillin-input-${i}`);
+      if(inp){ inp.value=''; inp.style.borderColor=''; inp.style.background=''; inp.readOnly=false; }
+      document.querySelectorAll(`#qitem-exam-${i} .fillin-ans-hint`).forEach(el=>el.remove());
+      const valEl=document.getElementById(`ans-fillin-val-${i}`); if(valEl) valEl.textContent='ยังไม่ตอบ';
     } else {
       for(let o=0;o<4;o++){
         const el=document.getElementById(`qopt-${i}-${o}`);
@@ -2608,7 +3336,9 @@ function submitExam(forceSubmit=false) {
   currentExamSet.questions.forEach((q,i)=>{
     const done = q.type==='matching'
       ? Array.isArray(userAnswers[i]) && userAnswers[i].filter(v=>v!==null).length===q.pairs.length
-      : userAnswers[i]!==undefined;
+      : q.type==='fillin'
+        ? userAnswers[i] !== undefined && userAnswers[i] !== ''
+        : userAnswers[i]!==undefined;
     if (done) answered++; else missing.push(`ข้อ ${i+1}`);
   });
   if (!forceSubmit && answered<total) {
@@ -2660,6 +3390,38 @@ function submitExam(forceSubmit=false) {
       if(row){ row.className='answer-row '+(pairsCorrect===pairCount?'correct-ans':pairsCorrect>0?'':'wrong-ans'); }
       const prog = document.getElementById(`ans-match-prog-${i}`);
       if (prog) { prog.textContent = `${pairsCorrect}/${pairCount} ✓`; prog.style.color = pairsCorrect===pairCount?'var(--green)':'var(--red)'; }
+    } else if (q.type === 'truefalse') {
+      maxScore++;
+      const ua = userAnswers[i];
+      const ok = ua === q.answer;
+      if (ok) { correct++; totalScore++; }
+      const tBtn=document.getElementById(`tf-true-${i}`), fBtn=document.getElementById(`tf-false-${i}`);
+      if (tBtn) { tBtn.style.cursor='default'; tBtn.onclick=null; tBtn.style.background=q.answer?'#dcfce7':'#f8fafc'; tBtn.style.borderColor=q.answer?'var(--green)':'#e2e8f0'; }
+      if (fBtn) { fBtn.style.cursor='default'; fBtn.onclick=null; fBtn.style.background=!q.answer?'#dcfce7':'#f8fafc'; fBtn.style.borderColor=!q.answer?'var(--green)':'#e2e8f0'; }
+      if (ua===true&&!ok&&tBtn)  { tBtn.style.background='#fee2e2'; tBtn.style.borderColor='var(--red)'; }
+      if (ua===false&&!ok&&fBtn) { fBtn.style.background='#fee2e2'; fBtn.style.borderColor='var(--red)'; }
+      const tEl=document.getElementById(`ans-tf-${i}-true`), fEl=document.getElementById(`ans-tf-${i}-false`);
+      if(tEl) tEl.className='ans-opt'+(ua===true?(ok?' correct-sel':' wrong-sel'):'');
+      if(fEl) fEl.className='ans-opt'+(ua===false?(ok?' correct-sel':' wrong-sel'):'');
+      const row=document.getElementById(`ans-row-${i}`); if(row){ row.className='answer-row '+(ok?'correct-ans':'wrong-ans'); }
+      const item=document.getElementById(`qitem-exam-${i}`); if(item){ item.style.borderColor=ok?'var(--green)':'var(--red)'; item.style.background=ok?'#f0fdf4':'#fff1f2'; }
+    } else if (q.type === 'fillin') {
+      maxScore++;
+      const ua = String(userAnswers[i]||'').trim().toLowerCase();
+      const ok = ua === String(q.answer||'').trim().toLowerCase();
+      if (ok) { correct++; totalScore++; }
+      const inp=document.getElementById(`fillin-input-${i}`);
+      if (inp) { inp.style.borderColor=ok?'var(--green)':'var(--red)'; inp.style.background=ok?'#f0fdf4':'#fff1f2'; inp.readOnly=true; }
+      if (!ok) {
+        const container=inp?.parentElement;
+        if(container && !container.querySelector('.fillin-ans-hint')) {
+          const hint=document.createElement('div'); hint.className='fillin-ans-hint';
+          hint.style.cssText='font-size:0.78rem;color:var(--green);margin-top:4px;font-weight:600';
+          hint.textContent=`✅ เฉลย: ${q.answer}`; container.appendChild(hint);
+        }
+      }
+      const row=document.getElementById(`ans-row-${i}`); if(row){ row.className='answer-row '+(ok?'correct-ans':'wrong-ans'); }
+      const item=document.getElementById(`qitem-exam-${i}`); if(item){ item.style.borderColor=ok?'var(--green)':'var(--red)'; item.style.background=ok?'#f0fdf4':'#fff1f2'; }
     } else {
       maxScore++;
       const ua=userAnswers[i], ok=ua===q.answer;
@@ -3377,106 +4139,285 @@ function showExportModal(selectedOnly=false) {
     : questionBank;
   if (!pool.length) { toast('ไม่มีข้อสอบ','error'); return; }
 
+  // build subject/grade options from pool
+  const subjects = [...new Set(pool.map(q=>q.subject).filter(Boolean))];
+  const grades   = [...new Set(pool.map(q=>q.grade).filter(Boolean))].sort();
+
   const modal = document.createElement('div');
   modal.id = 'export-modal';
-  modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px;overflow-y:auto';
+  modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.65);z-index:9999;display:flex;align-items:flex-start;justify-content:center;padding:20px;overflow-y:auto';
   modal.innerHTML = `
-  <div style="background:white;border-radius:18px;padding:28px;max-width:580px;width:100%;display:flex;flex-direction:column;gap:18px">
-    <div style="display:flex;justify-content:space-between;align-items:center">
-      <div style="font-family:Mitr,sans-serif;font-weight:700;font-size:1.15rem;color:var(--navy)">📤 Export ข้อสอบ</div>
-      <button onclick="document.getElementById('export-modal').remove()" style="background:none;border:none;font-size:1.5rem;cursor:pointer;color:#888">✕</button>
-    </div>
-    <div style="background:#f0f4ff;border-radius:10px;padding:10px 16px;font-size:0.88rem;color:var(--blue);display:flex;align-items:center;gap:8px">
-      <span style="font-size:1.2rem">📚</span>
-      ส่งออก <strong>${pool.length} ข้อ</strong>${selectedOnly?' (ที่เลือกไว้)':' (ทั้งหมด)'}
-      — จาก ${[...new Set(pool.map(q=>q.subject))].join(', ')}
+  <div style="background:white;border-radius:18px;padding:0;max-width:640px;width:100%;margin-top:20px;overflow:hidden;box-shadow:0 12px 48px rgba(0,0,0,0.25)">
+
+    <!-- Header -->
+    <div style="display:flex;justify-content:space-between;align-items:center;padding:20px 24px;border-bottom:1.5px solid #e2e8f0;background:linear-gradient(135deg,#1e3a8a,#1a3fa0)">
+      <div style="font-family:Mitr,sans-serif;font-weight:700;font-size:1.1rem;color:white">📤 ส่งออกข้อสอบ</div>
+      <button onclick="document.getElementById('export-modal').remove()" style="background:rgba(255,255,255,0.2);border:none;width:30px;height:30px;border-radius:50%;cursor:pointer;color:white;font-size:1.1rem;display:flex;align-items:center;justify-content:center">✕</button>
     </div>
 
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+    <div style="padding:22px 24px;display:flex;flex-direction:column;gap:18px">
 
-      <!-- JSON -->
-      <div onclick="exportFormat('json',window._exportPool)" style="cursor:pointer;border:1.5px solid var(--border);border-radius:14px;padding:16px;text-align:center;transition:all 0.2s" onmouseover="this.style.borderColor='var(--blue)';this.style.background='#f0f4ff'" onmouseout="this.style.borderColor='var(--border)';this.style.background=''">
-        <div style="font-size:2rem;margin-bottom:6px">🔧</div>
-        <div style="font-family:Mitr,sans-serif;font-weight:700;color:var(--navy)">JSON</div>
-        <div style="font-size:0.75rem;color:var(--muted);margin-top:4px">Import กลับเข้าระบบได้ทันที</div>
+      <!-- Source tab -->
+      <div>
+        <div style="font-size:0.78rem;font-weight:700;color:#64748b;margin-bottom:8px;text-transform:uppercase;letter-spacing:0.05em">แหล่งข้อมูล</div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap">
+          <button id="exp-src-bank" onclick="switchExportSource('bank')" style="padding:7px 16px;border-radius:8px;border:2px solid #1a3fa0;background:#1a3fa0;color:white;font-family:Sarabun,sans-serif;font-size:0.85rem;font-weight:700;cursor:pointer">📚 คลังข้อสอบ (${pool.length} ข้อ)</button>
+          <button id="exp-src-set" onclick="switchExportSource('set')" style="padding:7px 16px;border-radius:8px;border:2px solid #e2e8f0;background:white;color:#64748b;font-family:Sarabun,sans-serif;font-size:0.85rem;cursor:pointer">📋 ชุดข้อสอบ (${examSets.length} ชุด)</button>
+        </div>
       </div>
 
-      <!-- CSV -->
-      <div onclick="exportFormat('csv',window._exportPool)" style="cursor:pointer;border:1.5px solid var(--border);border-radius:14px;padding:16px;text-align:center;transition:all 0.2s" onmouseover="this.style.borderColor='var(--green)';this.style.background='#f0fdf4'" onmouseout="this.style.borderColor='var(--border)';this.style.background=''">
-        <div style="font-size:2rem;margin-bottom:6px">📊</div>
-        <div style="font-family:Mitr,sans-serif;font-weight:700;color:var(--navy)">CSV / Excel</div>
-        <div style="font-size:0.75rem;color:var(--muted);margin-top:4px">เปิดใน Excel, Google Sheets</div>
+      <!-- Bank filters -->
+      <div id="exp-bank-filters" style="display:flex;gap:8px;flex-wrap:wrap">
+        <select id="exp-filter-subject" onchange="updateExportPool()" style="padding:7px 10px;border-radius:8px;border:1.5px solid #e2e8f0;font-family:Sarabun,sans-serif;font-size:0.85rem">
+          <option value="">ทุกวิชา</option>
+          ${subjects.map(s=>`<option>${s}</option>`).join('')}
+        </select>
+        <select id="exp-filter-grade" onchange="updateExportPool()" style="padding:7px 10px;border-radius:8px;border:1.5px solid #e2e8f0;font-family:Sarabun,sans-serif;font-size:0.85rem">
+          <option value="">ทุกชั้น</option>
+          ${grades.map(g=>`<option>${g}</option>`).join('')}
+        </select>
+        <div id="exp-pool-count" style="padding:7px 12px;background:#eff6ff;border-radius:8px;font-size:0.83rem;color:#1a3fa0;font-weight:600;align-self:center">${pool.length} ข้อ</div>
       </div>
 
-      <!-- TXT -->
-      <div onclick="exportFormat('txt',window._exportPool)" style="cursor:pointer;border:1.5px solid var(--border);border-radius:14px;padding:16px;text-align:center;transition:all 0.2s" onmouseover="this.style.borderColor='#f59e0b';this.style.background='#fffbeb'" onmouseout="this.style.borderColor='var(--border)';this.style.background=''">
-        <div style="font-size:2rem;margin-bottom:6px">📝</div>
-        <div style="font-family:Mitr,sans-serif;font-weight:700;color:var(--navy)">ข้อความ (TXT)</div>
-        <div style="font-size:0.75rem;color:var(--muted);margin-top:4px">อ่านง่าย พิมพ์ลงกระดาษ</div>
+      <!-- Exam set picker -->
+      <div id="exp-set-picker" style="display:none">
+        <select id="exp-set-select" onchange="updateExportPool()" style="width:100%;padding:9px 12px;border-radius:8px;border:1.5px solid #e2e8f0;font-family:Sarabun,sans-serif;font-size:0.88rem">
+          ${examSets.map(s=>`<option value="${s.id}">${s.title} (${s.questions.length} ข้อ)</option>`).join('')}
+        </select>
       </div>
 
-      <!-- PDF -->
-      <div onclick="exportFormat('pdf',window._exportPool)" style="cursor:pointer;border:1.5px solid var(--border);border-radius:14px;padding:16px;text-align:center;transition:all 0.2s" onmouseover="this.style.borderColor='var(--red)';this.style.background='#fff1f2'" onmouseout="this.style.borderColor='var(--border)';this.style.background=''">
-        <div style="font-size:2rem;margin-bottom:6px">🖨️</div>
-        <div style="font-family:Mitr,sans-serif;font-weight:700;color:var(--navy)">PDF / พิมพ์</div>
-        <div style="font-size:0.75rem;color:var(--muted);margin-top:4px">เปิดหน้าต่างพิมพ์ทันที</div>
+      <!-- Header template -->
+      <div style="border:1.5px solid #e2e8f0;border-radius:12px;overflow:hidden">
+        <div onclick="toggleExportHeader()" style="display:flex;justify-content:space-between;align-items:center;padding:11px 16px;cursor:pointer;background:#f8faff;user-select:none">
+          <span style="font-size:0.85rem;font-weight:700;color:#334155">🏫 หัวกระดาษข้อสอบ (สำหรับ PDF / Print)</span>
+          <span id="exp-header-arrow" style="color:#94a3b8;font-size:0.8rem">▸ กำหนดเอง</span>
+        </div>
+        <div id="exp-header-panel" style="display:none;padding:14px 16px;display:none;flex-direction:column;gap:10px;border-top:1px solid #e2e8f0">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+            <div><label style="font-size:0.75rem;color:#64748b;display:block;margin-bottom:4px">ชื่อโรงเรียน</label><input id="exp-school" type="text" placeholder="โรงเรียนบ้านคำไผ่" value="${localStorage.getItem('examai_school')||'โรงเรียนบ้านคำไผ่'}" style="width:100%;padding:7px 10px;border:1.5px solid #e2e8f0;border-radius:7px;font-family:Sarabun,sans-serif;font-size:0.85rem"></div>
+            <div><label style="font-size:0.75rem;color:#64748b;display:block;margin-bottom:4px">ชื่อครูผู้สอน</label><input id="exp-teacher" type="text" placeholder="ครู..." value="${localStorage.getItem('examai_teacher')||''}" style="width:100%;padding:7px 10px;border:1.5px solid #e2e8f0;border-radius:7px;font-family:Sarabun,sans-serif;font-size:0.85rem"></div>
+            <div><label style="font-size:0.75rem;color:#64748b;display:block;margin-bottom:4px">ภาคเรียน / ปีการศึกษา</label><input id="exp-term" type="text" placeholder="ภาคเรียนที่ 1 / 2568" value="${localStorage.getItem('examai_term')||''}" style="width:100%;padding:7px 10px;border:1.5px solid #e2e8f0;border-radius:7px;font-family:Sarabun,sans-serif;font-size:0.85rem"></div>
+            <div><label style="font-size:0.75rem;color:#64748b;display:block;margin-bottom:4px">วันที่สอบ</label><input id="exp-date" type="text" placeholder="วันที่ ..." value="${new Date().toLocaleDateString('th-TH',{year:'numeric',month:'long',day:'numeric'})}" style="width:100%;padding:7px 10px;border:1.5px solid #e2e8f0;border-radius:7px;font-family:Sarabun,sans-serif;font-size:0.85rem"></div>
+          </div>
+          <button onclick="saveExportHeaderPrefs()" style="align-self:flex-start;padding:6px 14px;background:#eff6ff;border:1.5px solid #93c5fd;border-radius:7px;font-family:Sarabun,sans-serif;font-size:0.8rem;color:#1d4ed8;cursor:pointer">💾 จำค่านี้ไว้</button>
+        </div>
       </div>
 
-      <!-- Export Code -->
-      <div onclick="exportFormat('code',window._exportPool)" style="cursor:pointer;border:1.5px solid var(--border);border-radius:14px;padding:16px;text-align:center;transition:all 0.2s;grid-column:span 2" onmouseover="this.style.borderColor='#7c3aed';this.style.background='#faf5ff'" onmouseout="this.style.borderColor='var(--border)';this.style.background=''">
-        <div style="font-size:2rem;margin-bottom:6px">📋</div>
-        <div style="font-family:Mitr,sans-serif;font-weight:700;color:var(--navy)">Export Code (แชร์ระหว่างเครื่อง)</div>
-        <div style="font-size:0.75rem;color:var(--muted);margin-top:4px">คัดลอก code ไปวางในเครื่องอื่น หรือส่งทาง Line/Chat</div>
+      <!-- Format grid -->
+      <div>
+        <div style="font-size:0.78rem;font-weight:700;color:#64748b;margin-bottom:10px;text-transform:uppercase;letter-spacing:0.05em">เลือกรูปแบบ</div>
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px" id="exp-format-grid">
+
+          <div class="exp-fmt-card" onclick="runExport('json')" style="cursor:pointer;border:1.5px solid #e2e8f0;border-radius:12px;padding:14px 10px;text-align:center;transition:all 0.18s" onmouseover="this.style.borderColor='#3b82f6';this.style.background='#eff6ff'" onmouseout="this.style.borderColor='#e2e8f0';this.style.background=''">
+            <div style="font-size:1.6rem;margin-bottom:5px">🔧</div>
+            <div style="font-size:0.82rem;font-weight:700;color:#1e293b">JSON</div>
+            <div style="font-size:0.68rem;color:#94a3b8;margin-top:3px">import กลับได้</div>
+          </div>
+
+          <div class="exp-fmt-card" onclick="runExport('csv')" style="cursor:pointer;border:1.5px solid #e2e8f0;border-radius:12px;padding:14px 10px;text-align:center;transition:all 0.18s" onmouseover="this.style.borderColor='#10b981';this.style.background='#f0fdf4'" onmouseout="this.style.borderColor='#e2e8f0';this.style.background=''">
+            <div style="font-size:1.6rem;margin-bottom:5px">📊</div>
+            <div style="font-size:0.82rem;font-weight:700;color:#1e293b">CSV / Excel</div>
+            <div style="font-size:0.68rem;color:#94a3b8;margin-top:3px">เปิดใน Sheets</div>
+          </div>
+
+          <div class="exp-fmt-card" onclick="runExport('txt')" style="cursor:pointer;border:1.5px solid #e2e8f0;border-radius:12px;padding:14px 10px;text-align:center;transition:all 0.18s" onmouseover="this.style.borderColor='#f59e0b';this.style.background='#fffbeb'" onmouseout="this.style.borderColor='#e2e8f0';this.style.background=''">
+            <div style="font-size:1.6rem;margin-bottom:5px">📝</div>
+            <div style="font-size:0.82rem;font-weight:700;color:#1e293b">TXT</div>
+            <div style="font-size:0.68rem;color:#94a3b8;margin-top:3px">อ่านง่าย</div>
+          </div>
+
+          <div class="exp-fmt-card" onclick="runExport('pdf-exam')" style="cursor:pointer;border:1.5px solid #e2e8f0;border-radius:12px;padding:14px 10px;text-align:center;transition:all 0.18s" onmouseover="this.style.borderColor='#1a3fa0';this.style.background='#eff6ff'" onmouseout="this.style.borderColor='#e2e8f0';this.style.background=''">
+            <div style="font-size:1.6rem;margin-bottom:5px">🖨️</div>
+            <div style="font-size:0.82rem;font-weight:700;color:#1e293b">PDF ข้อสอบ</div>
+            <div style="font-size:0.68rem;color:#94a3b8;margin-top:3px">ไม่มีเฉลย</div>
+          </div>
+
+          <div class="exp-fmt-card" onclick="runExport('pdf-key')" style="cursor:pointer;border:1.5px solid #e2e8f0;border-radius:12px;padding:14px 10px;text-align:center;transition:all 0.18s" onmouseover="this.style.borderColor='#10b981';this.style.background='#f0fdf4'" onmouseout="this.style.borderColor='#e2e8f0';this.style.background=''">
+            <div style="font-size:1.6rem;margin-bottom:5px">🗝️</div>
+            <div style="font-size:0.82rem;font-weight:700;color:#1e293b">PDF เฉลย</div>
+            <div style="font-size:0.68rem;color:#94a3b8;margin-top:3px">ใบเฉลยแยก</div>
+          </div>
+
+          <div class="exp-fmt-card" onclick="runExport('code')" style="cursor:pointer;border:1.5px solid #e2e8f0;border-radius:12px;padding:14px 10px;text-align:center;transition:all 0.18s" onmouseover="this.style.borderColor='#7c3aed';this.style.background='#faf5ff'" onmouseout="this.style.borderColor='#e2e8f0';this.style.background=''">
+            <div style="font-size:1.6rem;margin-bottom:5px">📋</div>
+            <div style="font-size:0.82rem;font-weight:700;color:#1e293b">Code แชร์</div>
+            <div style="font-size:0.68rem;color:#94a3b8;margin-top:3px">ส่งทาง Line</div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- Code output area (hidden by default) -->
+      <div id="exp-code-area" style="display:none;flex-direction:column;gap:8px">
+        <textarea id="exp-code-text" readonly style="width:100%;min-height:80px;padding:10px;border:1.5px solid #c4b5fd;border-radius:8px;font-family:monospace;font-size:0.7rem;background:#faf5ff;color:#4c1d95;resize:none"></textarea>
+        <button id="exp-code-copy-btn" onclick="copyExportCode()" style="padding:9px;background:#7c3aed;color:white;border:none;border-radius:8px;font-family:Sarabun,sans-serif;font-size:0.88rem;font-weight:600;cursor:pointer">📋 คัดลอก Export Code</button>
       </div>
 
     </div>
   </div>`;
   document.body.appendChild(modal);
+  modal.addEventListener('click', e=>{ if(e.target===modal) modal.remove(); });
+
+  // init state
   window._exportPool = pool;
+  window._exportSource = 'bank';
+  window._exportAllPool = pool;
 }
 
-function exportFormat(fmt, pool) {
-  if (!pool?.length) return;
-  const ts = new Date().toISOString().slice(0,10);
+function switchExportSource(src) {
+  window._exportSource = src;
+  const bankBtn = document.getElementById('exp-src-bank');
+  const setBtn  = document.getElementById('exp-src-set');
+  const filters = document.getElementById('exp-bank-filters');
+  const setPicker = document.getElementById('exp-set-picker');
+  if (src === 'bank') {
+    bankBtn.style.cssText += ';background:#1a3fa0;color:white;border-color:#1a3fa0;font-weight:700';
+    setBtn.style.cssText  += ';background:white;color:#64748b;border-color:#e2e8f0;font-weight:400';
+    if(filters) filters.style.display = 'flex';
+    if(setPicker) setPicker.style.display = 'none';
+    updateExportPool();
+  } else {
+    setBtn.style.cssText  += ';background:#1a3fa0;color:white;border-color:#1a3fa0;font-weight:700';
+    bankBtn.style.cssText += ';background:white;color:#64748b;border-color:#e2e8f0;font-weight:400';
+    if(filters) filters.style.display = 'none';
+    if(setPicker) setPicker.style.display = '';
+    updateExportPool();
+  }
+}
+
+function updateExportPool() {
+  if (window._exportSource === 'set') {
+    const selId = document.getElementById('exp-set-select')?.value;
+    const s = examSets.find(x=>String(x.id)===String(selId));
+    window._exportPool = s ? s.questions : [];
+  } else {
+    let p = window._exportAllPool || questionBank;
+    const subj = document.getElementById('exp-filter-subject')?.value;
+    const grade = document.getElementById('exp-filter-grade')?.value;
+    if (subj) p = p.filter(q=>q.subject===subj);
+    if (grade) p = p.filter(q=>q.grade===grade);
+    window._exportPool = p;
+  }
+  const cnt = document.getElementById('exp-pool-count');
+  if (cnt) cnt.textContent = (window._exportPool?.length||0) + ' ข้อ';
+}
+
+function toggleExportHeader() {
+  const panel = document.getElementById('exp-header-panel');
+  const arrow = document.getElementById('exp-header-arrow');
+  if (!panel) return;
+  const open = panel.style.display === 'flex';
+  panel.style.display = open ? 'none' : 'flex';
+  if (arrow) arrow.textContent = open ? '▸ กำหนดเอง' : '▾ ซ่อน';
+}
+
+function saveExportHeaderPrefs() {
+  const school  = document.getElementById('exp-school')?.value || '';
+  const teacher = document.getElementById('exp-teacher')?.value || '';
+  const term    = document.getElementById('exp-term')?.value || '';
+  try {
+    localStorage.setItem('examai_school', school);
+    localStorage.setItem('examai_teacher', teacher);
+    localStorage.setItem('examai_term', term);
+  } catch(e) {}
+  toast('💾 บันทึกค่าหัวกระดาษแล้ว', 'success');
+}
+
+function getExportHeader() {
+  return {
+    school:  document.getElementById('exp-school')?.value  || localStorage.getItem('examai_school') || '',
+    teacher: document.getElementById('exp-teacher')?.value || localStorage.getItem('examai_teacher') || '',
+    term:    document.getElementById('exp-term')?.value    || localStorage.getItem('examai_term') || '',
+    date:    document.getElementById('exp-date')?.value    || new Date().toLocaleDateString('th-TH'),
+  };
+}
+
+function buildPdfHeader(title, pool, hdr, showAnswers) {
+  const subjects = [...new Set(pool.map(q=>q.subject).filter(Boolean))];
+  const grades   = [...new Set(pool.map(q=>q.grade).filter(Boolean))];
+  const matchingCount = pool.filter(q=>q.type==='matching').reduce((a,q)=>a+(q.pairs?.length||0),0);
+  const mcqCount = pool.filter(q=>q.type!=='matching').length;
+  const totalScore = mcqCount + matchingCount;
+  return `
+    <div style="border:2px solid #1e3a8a;border-radius:8px;padding:14px 18px;margin-bottom:22px;background:#f8faff">
+      ${hdr.school ? `<div style="text-align:center;font-size:1rem;font-weight:700;color:#1e3a8a;margin-bottom:3px">${hdr.school}</div>` : ''}
+      <div style="text-align:center;font-size:1.15rem;font-weight:700;color:#1e293b;margin-bottom:6px">${title}</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;font-size:0.82rem;margin-bottom:8px">
+        <div>วิชา: <strong>${subjects.join(', ')||'-'}</strong></div>
+        <div>ชั้น: <strong>${grades.join(', ')||'-'}</strong></div>
+        <div>คะแนนรวม: <strong>${totalScore} คะแนน</strong></div>
+        ${hdr.teacher ? `<div>ครูผู้สอน: <strong>${hdr.teacher}</strong></div>` : '<div></div>'}
+        ${hdr.term ? `<div>ภาคเรียน: <strong>${hdr.term}</strong></div>` : '<div></div>'}
+        <div>วันที่สอบ: <strong>${hdr.date}</strong></div>
+      </div>
+      ${!showAnswers ? `<div style="display:flex;gap:32px;padding-top:8px;border-top:1px solid #cbd5e1;font-size:0.85rem">
+        <span>ชื่อ–นามสกุล: ___________________________________</span>
+        <span>ชั้น: ________</span>
+        <span>เลขที่: ____</span>
+        <span>คะแนน: ______/${totalScore}</span>
+      </div>` : ''}
+    </div>`;
+}
+
+function runExport(fmt) {
+  const pool = window._exportPool;
+  if (!pool?.length) { toast('ไม่มีข้อสอบ','error'); return; }
+  const ts   = new Date().toISOString().slice(0,10);
   const name = `ข้อสอบ_${ts}`;
+  const src  = window._exportSource;
+  const hdr  = getExportHeader();
+
+  // Get title for PDF
+  let pdfTitle = 'แบบทดสอบ';
+  if (src === 'set') {
+    const selId = document.getElementById('exp-set-select')?.value;
+    const s = examSets.find(x=>String(x.id)===String(selId));
+    if (s) pdfTitle = s.title;
+  }
 
   if (fmt === 'json') {
-    const json = JSON.stringify({ version:'2.6', exportedAt: new Date().toLocaleString('th-TH'), questions: pool }, null, 2);
-    dlFile(json, `${name}.json`, 'application/json');
+    const payload = src === 'set'
+      ? { version:'3.2', exportedAt: new Date().toLocaleString('th-TH'), type:'examset', examSet: examSets.find(x=>String(x.id)===String(document.getElementById('exp-set-select')?.value)), questions: pool }
+      : { version:'3.2', exportedAt: new Date().toLocaleString('th-TH'), type:'bank', questions: pool };
+    dlFile(JSON.stringify(payload, null, 2), `${name}.json`, 'application/json');
     toast('✅ Download JSON', 'success');
     document.getElementById('export-modal')?.remove();
   }
 
   else if (fmt === 'csv') {
-    const header = 'คำถาม,ก,ข,ค,ง,เฉลย,วิชา,ชั้น';
-    const rows = pool.map(q => {
-      const opts = q.options.map(o => `"${String(o).replace(/^[กขคง][.)]\s*/u,'').replace(/"/g,'""')}"`);
-      const ans = ['ก','ข','ค','ง'][q.answer] || '0';
-      return `"${q.question.replace(/"/g,'""')}",${opts.join(',')},${ans},"${q.subject||''}","${q.grade||''}"`;
+    const header = '\uFEFF' + 'ลำดับ,คำถาม,ก,ข,ค,ง,เฉลย,วิชา,ชั้น,ประเภท\n';
+    const rows = pool.map((q,i) => {
+      if (q.type === 'matching') {
+        const lefts  = q.pairs.map(p=>p.left).join(' | ');
+        const rights = q.pairs.map(p=>p.right).join(' | ');
+        return `${i+1},"${q.question.replace(/"/g,'""')}","${lefts}","${rights}","","","จับคู่","${q.subject||''}","${q.grade||''}","matching"`;
+      }
+      const opts = q.options.map(o=>`"${String(o).replace(/^[กขคง][.)]\s*/u,'').replace(/"/g,'""')}"`);
+      const ans  = ['ก','ข','ค','ง'][q.answer] || '';
+      return `${i+1},"${q.question.replace(/"/g,'""')}",${opts.join(',')},${ans},"${q.subject||''}","${q.grade||''}","mcq"`;
     });
-    const csv = '\uFEFF' + header + '\n' + rows.join('\n');
-    dlFile(csv, `${name}.csv`, 'text/csv;charset=utf-8;');
+    dlFile(header + rows.join('\n'), `${name}.csv`, 'text/csv;charset=utf-8;');
     toast('✅ Download CSV', 'success');
     document.getElementById('export-modal')?.remove();
   }
 
   else if (fmt === 'txt') {
     const subjects = [...new Set(pool.map(q=>q.subject))];
-    let out = `คลังข้อสอบ — ส่งออกเมื่อ ${new Date().toLocaleString('th-TH')}\n`;
-    out += `จำนวน ${pool.length} ข้อ | วิชา: ${subjects.join(', ')}\n`;
+    let out = `${hdr.school ? hdr.school+'\n' : ''}`;
+    out += `${pdfTitle}\n`;
+    out += `${hdr.teacher ? 'ครู: '+hdr.teacher+'   ' : ''}${hdr.term||''}   วันที่: ${hdr.date}\n`;
+    out += `วิชา: ${subjects.join(', ')} | ${pool.length} ข้อ\n`;
     out += '='.repeat(60) + '\n\n';
-    pool.forEach((q, i) => {
+    pool.forEach((q,i) => {
       if (q.type === 'matching') {
-        out += `ข้อ ${i+1}. [${q.subject} ${q.grade||''}] 🔗 จับคู่ — ${q.question}\n`;
-        out += `   คอลัมน์ซ้าย          | คอลัมน์ขวา (เฉลย)\n`;
-        q.pairs.forEach((p,pi) => {
-          out += `   ${pi+1}. ${p.left.padEnd(20)} | ${String.fromCharCode(65+pi)}. ${p.right}\n`;
-        });
-        out += `   เฉลย: ${q.pairs.map((_,pi)=>`${pi+1}→${String.fromCharCode(65+pi)}`).join(', ')}\n\n`;
+        out += `ข้อ ${i+1}. [${q.subject} ${q.grade||''}] 🔗 ${q.question}\n`;
+        out += `  ซ้าย                    | ขวา\n`;
+        q.pairs.forEach((p,pi)=>{ out += `  ${(pi+1+'. '+p.left).padEnd(24)}| ${String.fromCharCode(65+pi)}. ${p.right}\n`; });
+        out += `  เฉลย: ${q.pairs.map((_,pi)=>`${pi+1}→${String.fromCharCode(65+pi)}`).join(', ')}\n\n`;
       } else {
-        out += `ข้อ ${i+1}. [${q.subject} ${q.grade||''}] ${q.question}\n`;
-        q.options.forEach(opt => { out += `   ${opt}\n`; });
-        out += `   ✅ เฉลย: ${q.options[q.answer]}\n\n`;
+        out += `ข้อ ${i+1}. ${q.question}  [${q.subject} ${q.grade||''}]\n`;
+        ['ก','ข','ค','ง'].forEach((l,oi)=>{ out += `  ${l}. ${q.options[oi]||''}${oi===q.answer?' ✅':''}\n`; });
+        out += '\n';
       }
     });
     dlFile(out, `${name}.txt`, 'text/plain;charset=utf-8;');
@@ -3484,83 +4425,96 @@ function exportFormat(fmt, pool) {
     document.getElementById('export-modal')?.remove();
   }
 
-  else if (fmt === 'pdf') {
+  else if (fmt === 'pdf-exam' || fmt === 'pdf-key') {
     document.getElementById('export-modal')?.remove();
-    const subjects = [...new Set(pool.map(q=>q.subject))];
-    const win = window.open('','_blank');
+    const showAnswers = fmt === 'pdf-key';
+    const headerHtml  = buildPdfHeader(pdfTitle, pool, hdr, showAnswers);
+    const qHtml = pool.map((q,i)=>{
+      if (q.type === 'matching') {
+        const sh = showAnswers ? q.pairs.map((_,pi)=>pi) : [...q.pairs.map((_,pi)=>pi)].sort(()=>Math.random()-0.5);
+        return `<div class="q">
+          <p class="qtext"><span class="qnum">${i+1}.</span>${q.question} <span class="tag">${q.pairs.length} คะแนน</span></p>
+          <div class="match-grid">
+            <div>${q.pairs.map((p,pi)=>`<div class="mrow"><span class="mnum">${pi+1}.</span><span>${p.left}</span>${!showAnswers?'<span class="blank"></span>':''}</div>`).join('')}</div>
+            <div>${sh.map((oi,si)=>`<div class="mrow"><span class="mltr">${String.fromCharCode(65+si)}.</span><span>${q.pairs[oi].right}</span>${showAnswers?`<span class="ans-mark">(${q.pairs.indexOf(q.pairs[oi])+1}→${String.fromCharCode(65+si)})</span>`:''}</div>`).join('')}</div>
+          </div></div>`;
+      }
+      if (q.type === 'truefalse') {
+        return `<div class="q">
+          <p class="qtext"><span class="qnum">${i+1}.</span>${q.question} <span class="tag">ถูก/ผิด</span></p>
+          <div style="display:flex;gap:12px;padding-left:24px;margin-top:6px">
+            <div class="opt${showAnswers&&q.answer?' correct':''}">○ ถูก${showAnswers&&q.answer?' ✓':''}</div>
+            <div class="opt${showAnswers&&!q.answer?' correct':''}">○ ผิด${showAnswers&&!q.answer?' ✓':''}</div>
+          </div></div>`;
+      }
+      if (q.type === 'fillin') {
+        const qDisplay = q.question.replace(/___/g,'<span style="border-bottom:1.5px solid #334155;display:inline-block;min-width:72px;margin:0 3px">&nbsp;</span>');
+        return `<div class="q">
+          <p class="qtext" style="line-height:2.2"><span class="qnum">${i+1}.</span>${qDisplay}</p>
+          ${showAnswers?`<p style="padding-left:24px;font-size:0.82rem;color:#15803d;margin-top:2px">เฉลย: <strong>${q.answer}</strong></p>`:''}
+        </div>`;
+      }
+      return `<div class="q">
+        <p class="qtext"><span class="qnum">${i+1}.</span>${q.question}</p>
+        <div class="opts">
+          ${q.options.map((opt,oi)=>`<div class="opt${showAnswers&&oi===q.answer?' correct':''}">${['ก','ข','ค','ง'][oi]}. ${opt}${showAnswers&&oi===q.answer?' ✓':''}</div>`).join('')}
+        </div></div>`;
+    }).join('');
+
+    const win = window.open('','_blank','width=800,height=700');
     win.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8">
+      <title>${showAnswers?'เฉลย':pdfTitle}</title>
       <style>
         @import url('https://fonts.googleapis.com/css2?family=Sarabun:wght@400;600;700&display=swap');
-        body { font-family:'Sarabun',sans-serif; padding:28px; color:#1e2a4a; font-size:14px; }
-        h1 { font-size:1.3rem; color:#0f2557; margin-bottom:4px; }
-        .meta { color:#64748b; font-size:0.85rem; margin-bottom:20px; }
-        .q { margin-bottom:20px; page-break-inside:avoid; }
-        .qnum { font-weight:700; color:#1a3fa0; margin-right:6px; }
-        .opts { display:grid; grid-template-columns:1fr 1fr; gap:4px; padding-left:24px; margin-top:6px; }
-        .opt { padding:4px 8px; border:1px solid #dde4f5; border-radius:5px; font-size:0.88rem; }
-        .correct { background:#dcfce7; border-color:#86efac; font-weight:600; color:#15803d; }
-        .subj-tag { background:#eff6ff; color:#1d4ed8; padding:1px 8px; border-radius:20px; font-size:0.72rem; margin-left:8px; }
-        .match-grid { display:grid; grid-template-columns:1fr 1fr; gap:12px; padding-left:24px; margin-top:8px; }
-        .match-row { display:flex; align-items:center; gap:8px; padding:4px 0; border-bottom:1px solid #f1f5f9; font-size:0.88rem; }
-        .match-num { font-weight:700; color:#1a3fa0; min-width:20px; }
-        .match-letter { font-weight:700; color:#15803d; min-width:20px; }
-        @media print { body { padding:16px; } }
+        body{font-family:'Sarabun',sans-serif;padding:24px 32px;color:#1e293b;font-size:14px;line-height:1.7}
+        .q{margin-bottom:18px;page-break-inside:avoid}
+        .qtext{font-weight:600;margin-bottom:6px}
+        .qnum{font-weight:700;color:#1a3fa0;margin-right:6px;min-width:28px;display:inline-block}
+        .tag{font-size:0.72rem;background:#fef3c7;color:#92400e;padding:1px 8px;border-radius:20px;margin-left:8px}
+        .opts{display:grid;grid-template-columns:1fr 1fr;gap:4px;padding-left:24px;margin-top:4px}
+        .opt{padding:4px 8px;border:1px solid #e2e8f0;border-radius:5px;font-size:0.88rem}
+        .correct{background:#dcfce7;border-color:#86efac;font-weight:600;color:#15803d}
+        .match-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;padding-left:24px;margin-top:6px}
+        .mrow{display:flex;align-items:center;gap:8px;padding:4px 0;border-bottom:1px solid #f1f5f9;font-size:0.88rem}
+        .mnum{font-weight:700;color:#1a3fa0;min-width:22px;flex-shrink:0}
+        .mltr{font-weight:700;color:#15803d;min-width:22px;flex-shrink:0}
+        .blank{margin-left:auto;border-bottom:1.5px solid #64748b;min-width:48px;display:inline-block}
+        .ans-mark{margin-left:auto;font-size:0.72rem;color:#64748b}
+        @media print{body{padding:12px 20px} @page{margin:1.2cm}}
       </style></head><body>
-      <h1>📚 คลังข้อสอบ</h1>
-      <div class="meta">วิชา: ${subjects.join(', ')} | ${pool.length} ข้อ | ${new Date().toLocaleDateString('th-TH')}</div>
-      ${pool.map((q,i)=>{
-        if (q.type === 'matching') {
-          return `<div class="q">
-            <div><span class="qnum">${i+1}.</span>🔗 ${q.question}<span class="subj-tag">${q.subject} ${q.grade||''}</span></div>
-            <div class="match-grid">
-              <div>${q.pairs.map((p,pi)=>`<div class="match-row"><span class="match-num">${pi+1}.</span>${p.left}</div>`).join('')}</div>
-              <div>${q.pairs.map((p,pi)=>`<div class="match-row"><span class="match-letter">${String.fromCharCode(65+pi)}.</span>${p.right} <span style="margin-left:auto;font-size:0.75rem;color:#64748b">(เฉลย: ${pi+1}→${String.fromCharCode(65+pi)})</span></div>`).join('')}</div>
-            </div>
-          </div>`;
-        }
-        return `<div class="q">
-          <div><span class="qnum">${i+1}.</span>${q.question}<span class="subj-tag">${q.subject} ${q.grade||''}</span></div>
-          <div class="opts">
-            ${q.options.map((opt,oi)=>`<div class="opt ${oi===q.answer?'correct':''}">${opt}${oi===q.answer?' ✓':''}</div>`).join('')}
-          </div>
-        </div>`;
-      }).join('')}
-      <script>window.onload=()=>window.print();<\/script>
+      ${headerHtml}
+      ${showAnswers?`<div style="background:#dcfce7;border:1.5px solid #86efac;border-radius:8px;padding:8px 14px;margin-bottom:18px;font-size:0.88rem;color:#15803d;font-weight:600">🗝️ ใบเฉลย — ${pdfTitle}</div>`:''}
+      ${qHtml}
+      <script>window.onload=()=>window.print()<\/script>
     </body></html>`);
     win.document.close();
-    toast('✅ เปิดหน้าพิมพ์', 'success');
+    toast(showAnswers?'✅ เปิดใบเฉลย':'✅ เปิดข้อสอบ PDF', 'success');
   }
 
   else if (fmt === 'code') {
-    const json = JSON.stringify({ version:'2.6', exportedAt: new Date().toLocaleString('th-TH'), questions: pool });
-    const b64 = 'EXAMDATA:' + btoa(unescape(encodeURIComponent(json)));
-    const codeArea = document.createElement('textarea');
-    codeArea.value = b64;
-    codeArea.style.cssText = 'width:100%;min-height:80px;padding:8px;border:1.5px solid #c4b5fd;border-radius:8px;font-family:monospace;font-size:0.72rem;resize:none;background:#faf5ff';
-    codeArea.readOnly = true;
-    const wrap = document.querySelector('#export-modal > div');
-    const copyBtn = document.createElement('button');
-    copyBtn.textContent = '📋 คัดลอก Export Code';
-    copyBtn.style.cssText = 'width:100%;padding:10px;background:#7c3aed;color:white;border:none;border-radius:8px;font-family:Sarabun,sans-serif;font-size:0.9rem;font-weight:600;cursor:pointer';
-    copyBtn.onclick = () => {
-      navigator.clipboard.writeText(b64).then(() => { copyBtn.textContent='✅ คัดลอกแล้ว!'; copyBtn.style.background='var(--green)'; setTimeout(()=>{ copyBtn.textContent='📋 คัดลอก Export Code'; copyBtn.style.background='#7c3aed'; }, 2500); });
-    };
-    // Clear grid and show code
-    const grid = wrap.querySelector('[style*="grid-template-columns"]');
-    if (grid) { grid.replaceWith(codeArea); wrap.appendChild(copyBtn); }
+    const payload = { version:'3.2', exportedAt: new Date().toLocaleString('th-TH'), questions: pool };
+    const b64 = 'EXAMDATA:' + btoa(unescape(encodeURIComponent(JSON.stringify(payload))));
+    const codeArea = document.getElementById('exp-code-area');
+    const codeText = document.getElementById('exp-code-text');
+    if (codeArea && codeText) {
+      codeText.value = b64;
+      codeArea.style.display = 'flex';
+      codeArea.scrollIntoView({ behavior:'smooth', block:'nearest' });
+    }
   }
 }
 
-function dlFile(content, filename, mimeType) {
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(new Blob([content], { type: mimeType }));
-  a.download = filename;
-  a.click();
-  setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+function copyExportCode() {
+  const text = document.getElementById('exp-code-text')?.value;
+  if (!text) return;
+  navigator.clipboard.writeText(text).then(()=>{
+    const btn = document.getElementById('exp-code-copy-btn');
+    if (btn) { btn.textContent='✅ คัดลอกแล้ว!'; btn.style.background='#059669'; setTimeout(()=>{ btn.textContent='📋 คัดลอก Export Code'; btn.style.background='#7c3aed'; },2500); }
+  });
 }
 
-// keep old name for backward compat
-function exportAllQuestions() { showExportModal(false); }
+// legacy alias
+function exportFormat(fmt, pool) { runExport(fmt); }
 
 function importAllQuestions(event) {
   const file=event.target.files[0]; if(!file) return;
